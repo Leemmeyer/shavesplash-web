@@ -1,0 +1,86 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { sendOTP } from "@/lib/auth";
+import { useSession } from "@/lib/session-context";
+
+export default function SignInPage() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { session, loading: sessionLoading } = useSession();
+
+  useEffect(() => {
+    if (!sessionLoading && session) router.replace("/den");
+  }, [session, sessionLoading, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) { setError("Please enter your email address"); return; }
+    setLoading(true);
+    setError(null);
+    const { error: err } = await sendOTP(email.trim().toLowerCase());
+    setLoading(false);
+    if (err) {
+      setError(err);
+    } else {
+      router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <Link href="/" className="font-[family-name:var(--font-fredericka)] text-2xl text-[#c9a050]">
+          ShaveSplash
+        </Link>
+      </nav>
+
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-2 text-center">
+            Sign In
+          </h1>
+          <p className="text-gray-500 text-sm text-center mb-8">
+            Access your Den, logs, and the marketplace
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                placeholder="you@example.com"
+                autoComplete="email"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 text-base"
+              />
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#c9a050] text-black font-bold py-3.5 rounded-xl hover:bg-[#b8903f] transition-colors disabled:opacity-60 text-base"
+            >
+              {loading ? "Sending..." : "Send Verification Code"}
+            </button>
+          </form>
+
+          <p className="text-gray-600 text-xs text-center mt-6">
+            We&apos;ll send a 6-digit code to your email. No password needed.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

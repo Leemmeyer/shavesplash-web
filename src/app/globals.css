@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --amber: #c9a050;
+  --ivory: #f5f2eb;
+  --charcoal: #1a1a1a;
+  --charcoal-light: #242424;
+  --charcoal-lighter: #2a2a2a;
+}
+
+body {
+  background-color: var(--charcoal);
+  color: var(--ivory);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+@font-face {
+  font-family: 'FrederickaTheGreat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/frederickathe great/v14/9Bt33CxNwt7aOctW2xjbCstzArxpinE.woff2') format('woff2');
+}

@@ -53,11 +53,21 @@ function ItemDetailContent({ id }: { id: string }) {
   const [item, setItem] = useState<InventoryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBST, setShowBST] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("");
   const [bstError, setBstError] = useState<string | null>(null);
   const [bstLoading, setBstLoading] = useState(false);
   const [bstSuccess, setBstSuccess] = useState(false);
+
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editBrand, setEditBrand] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api.get<{ items: InventoryItem[] }>("/api/inventory")
@@ -67,6 +77,49 @@ function ItemDetailContent({ id }: { id: string }) {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const openEdit = () => {
+    if (!item) return;
+    setEditName(item.name);
+    setEditBrand(item.brand);
+    setEditNotes(item.notes ?? "");
+    setEditError(null);
+    setShowEdit(true);
+    setShowBST(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!item) return;
+    if (!editName.trim()) { setEditError("Name is required"); return; }
+    if (!editBrand.trim()) { setEditError("Brand is required"); return; }
+    setEditError(null);
+    setEditSaving(true);
+    try {
+      await api.patch(`/api/inventory/${item.id}`, {
+        name: editName.trim(),
+        brand: editBrand.trim(),
+        notes: editNotes.trim() || undefined,
+      });
+      setItem({ ...item, name: editName.trim(), brand: editBrand.trim(), notes: editNotes.trim() || undefined });
+      setShowEdit(false);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!item) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/api/inventory/${item.id}`);
+      router.push("/den");
+    } catch {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   const handleListInBST = async () => {
     if (!item) return;
@@ -117,9 +170,25 @@ function ItemDetailContent({ id }: { id: string }) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 w-full">
-      <Link href="/den" className="text-[#c9a050] text-sm hover:underline mb-6 inline-block">
-        ← Back to Den
-      </Link>
+      <div className="flex items-center justify-between mb-6">
+        <Link href="/den" className="text-[#c9a050] text-sm hover:underline">
+          ← Back to Den
+        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={openEdit}
+            className="text-sm px-3 py-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-[#f5f2eb] hover:border-white/20 transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-sm px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
         {/* Photo */}
@@ -141,7 +210,6 @@ function ItemDetailContent({ id }: { id: string }) {
           <p className="text-[#c9a050] text-sm font-medium mb-1">{item.brand}</p>
           <h1 className="text-[#f5f2eb] text-2xl font-bold mb-4">{item.name}</h1>
 
-          {/* Key specs */}
           <div className="bg-[#242424] rounded-xl p-4 border border-white/5 space-y-2 mb-4 flex-1">
             {item.notes && <Spec label="Notes" value={item.notes} />}
             {item.edgeType && <Spec label="Edge Type" value={item.edgeType} />}
@@ -165,8 +233,7 @@ function ItemDetailContent({ id }: { id: string }) {
             {item.soapIsTallow != null && <Spec label="Base" value={item.soapIsTallow ? "Tallow" : "Vegan"} />}
           </div>
 
-          {/* List in BST */}
-          {isBSTEligible && !showBST && (
+          {isBSTEligible && !showBST && !showEdit && (
             <button
               onClick={() => setShowBST(true)}
               className="w-full border border-[#c9a050]/30 text-[#c9a050] py-3 rounded-xl hover:bg-[#c9a050]/10 transition-colors font-semibold text-sm"
@@ -176,6 +243,86 @@ function ItemDetailContent({ id }: { id: string }) {
           )}
         </div>
       </div>
+
+      {/* Edit Form */}
+      {showEdit && (
+        <div className="mt-8 bg-[#242424] rounded-2xl border border-white/10 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb]">Edit Item</h2>
+            <button onClick={() => setShowEdit(false)} className="text-gray-500 hover:text-gray-300 text-xl">✕</button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Brand *</label>
+              <input
+                value={editBrand}
+                onChange={(e) => setEditBrand(e.target.value)}
+                className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Name *</label>
+              <input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Notes</label>
+              <textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                rows={3}
+                className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 resize-none"
+              />
+            </div>
+          </div>
+          {editError && <p className="text-red-400 text-sm mt-3">{editError}</p>}
+          <div className="flex gap-3 mt-5">
+            <button
+              onClick={() => setShowEdit(false)}
+              className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveEdit}
+              disabled={editSaving}
+              className="flex-1 py-2.5 rounded-xl bg-[#c9a050] text-black font-bold text-sm hover:bg-[#b8903f] transition-colors disabled:opacity-60"
+            >
+              {editSaving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#242424] rounded-2xl border border-white/10 p-6 max-w-sm w-full">
+            <h2 className="text-[#f5f2eb] font-bold text-lg mb-2">Delete item?</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              <span className="text-[#f5f2eb]">{item.brand} {item.name}</span> will be removed from your den. This can be undone by syncing from your phone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors disabled:opacity-60"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* BST Form */}
       {isBSTEligible && showBST && (
@@ -187,7 +334,6 @@ function ItemDetailContent({ id }: { id: string }) {
             <button onClick={() => setShowBST(false)} className="text-gray-500 hover:text-gray-300 text-xl">✕</button>
           </div>
 
-          {/* Item preview */}
           <div className="flex items-center gap-3 bg-[#1e1e1e] rounded-xl p-3 mb-5">
             <div className="w-10 h-10 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-lg">
               {item.photoUrl
@@ -200,7 +346,6 @@ function ItemDetailContent({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* Price */}
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price (USD) *</label>
           <div className="flex items-center bg-[#1e1e1e] border border-white/10 rounded-xl px-4 h-12 mb-5 focus-within:border-[#c9a050]/50">
             <span className="text-[#c9a050] font-bold text-lg mr-2">$</span>
@@ -212,7 +357,6 @@ function ItemDetailContent({ id }: { id: string }) {
             />
           </div>
 
-          {/* Condition */}
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Condition *</label>
           <div className="flex gap-2 flex-wrap mb-5">
             {BST_CONDITIONS.map((c) => (

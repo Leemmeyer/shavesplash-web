@@ -69,6 +69,8 @@ function LogsContent() {
   const [logs, setLogs] = useState<ShaveLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api.get<{ logs: ShaveLog[] }>("/api/logs")
@@ -76,6 +78,19 @@ function LogsContent() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (id: string) => {
+    setDeleting(true);
+    try {
+      await api.delete(`/api/logs/${id}`);
+      setLogs((prev) => prev.filter((l) => l.id !== id));
+      setConfirmDelete(null);
+    } catch {
+      // ignore
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -106,6 +121,31 @@ function LogsContent() {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#242424] rounded-2xl border border-white/10 p-6 max-w-sm w-full">
+            <h2 className="text-[#f5f2eb] font-bold text-lg mb-2">Delete this shave?</h2>
+            <p className="text-gray-400 text-sm mb-6">This entry will be removed from your journal.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors disabled:opacity-60"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {logs.length === 0 ? (
         <div className="text-center py-20 text-gray-600">
@@ -172,6 +212,12 @@ function LogsContent() {
                         )}
 
                         <span className="text-gray-600 ml-1">{isExpanded ? "▲" : "▼"}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setConfirmDelete(log.id); }}
+                          className="ml-1 text-gray-600 hover:text-red-400 transition-colors text-xs px-1.5 py-0.5 rounded"
+                        >
+                          ✕
+                        </button>
                       </button>
 
                       {/* Expanded detail */}

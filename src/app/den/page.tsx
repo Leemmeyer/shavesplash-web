@@ -148,24 +148,33 @@ function DenContent() {
           return (
             <section key={cat.id}>
               {/* Category Header */}
-              <button
-                onClick={() => toggleCollapse(cat.id)}
-                className="w-full flex items-center gap-3 mb-4 group"
-              >
-                <span className="text-xl">{cat.icon}</span>
-                <h2 className="text-[#f5f2eb] font-semibold text-base group-hover:text-[#c9a050] transition-colors">
-                  {cat.label}
-                </h2>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  isEmpty
-                    ? "bg-white/5 text-gray-600"
-                    : "bg-[#c9a050]/15 text-[#c9a050]"
-                }`}>
-                  {catItems.length}
-                </span>
-                <div className="flex-1 h-px bg-white/5" />
-                <span className="text-gray-600 text-xs">{isCollapsed ? "▶" : "▼"}</span>
-              </button>
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={() => toggleCollapse(cat.id)}
+                  className="flex-1 flex items-center gap-3 group min-w-0"
+                >
+                  <span className="text-xl">{cat.icon}</span>
+                  <h2 className="text-[#f5f2eb] font-semibold text-base group-hover:text-[#c9a050] transition-colors">
+                    {cat.label}
+                  </h2>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    isEmpty
+                      ? "bg-white/5 text-gray-600"
+                      : "bg-[#c9a050]/15 text-[#c9a050]"
+                  }`}>
+                    {catItems.length}
+                  </span>
+                  <div className="flex-1 h-px bg-white/5" />
+                  <span className="text-gray-600 text-xs">{isCollapsed ? "▶" : "▼"}</span>
+                </button>
+                <Link
+                  href={`/den/new?category=${cat.id}`}
+                  className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 hover:border-[#c9a050]/50 hover:text-[#c9a050] transition-colors text-base"
+                  title={`Add ${cat.label}`}
+                >
+                  +
+                </Link>
+              </div>
 
               {/* Category Content */}
               {!isCollapsed && (

@@ -19,11 +19,10 @@ const DEFAULT_CATEGORIES = [
 
 
 const SORT_OPTIONS = [
-  { value: "name-asc",    label: "A → Z" },
-  { value: "name-desc",   label: "Z → A" },
-  { value: "brand-asc",   label: "Brand A → Z" },
-  { value: "newest",      label: "Newest First" },
-  { value: "oldest",      label: "Oldest First" },
+  { value: "name",       label: "Name" },
+  { value: "brand",      label: "Brand" },
+  { value: "most_used",  label: "Most Used" },
+  { value: "least_used", label: "Least Used" },
 ];
 
 type InventoryItem = {
@@ -31,15 +30,17 @@ type InventoryItem = {
   notes?: string; photoUrl?: string; createdAt: number;
 };
 
-function sortItems(items: InventoryItem[], sort: string): InventoryItem[] {
+function sortItems(items: InventoryItem[], sort: string, usageCounts: Record<string, number>): InventoryItem[] {
   return [...items].sort((a, b) => {
     switch (sort) {
-      case "name-asc":   return a.name.localeCompare(b.name);
-      case "name-desc":  return b.name.localeCompare(a.name);
-      case "brand-asc":  return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name);
-      case "newest":     return b.createdAt - a.createdAt;
-      case "oldest":     return a.createdAt - b.createdAt;
-      default:           return 0;
+      case "brand":
+        return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name);
+      case "most_used":
+        return (usageCounts[b.id] ?? 0) - (usageCounts[a.id] ?? 0);
+      case "least_used":
+        return (usageCounts[a.id] ?? 0) - (usageCounts[b.id] ?? 0);
+      default: // "name"
+        return a.name.localeCompare(b.name);
     }
   });
 }
@@ -57,16 +58,26 @@ export default function DenPage() {
 
 function DenContent() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("name-asc");
+  const [sort, setSort] = useState("name");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    api.get<{ items: InventoryItem[] }>("/api/inventory")
-      .then((d) => setItems(d.items))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
+      api.get<{ logs: Array<{ selectedItems: Record<string, { itemId?: string }> }> }>("/api/logs").then((d) => d.logs).catch(() => []),
+    ]).then(([inv, logs]) => {
+      setItems(inv);
+      const counts: Record<string, number> = {};
+      for (const log of logs) {
+        for (const sel of Object.values(log.selectedItems ?? {})) {
+          if (sel.itemId) counts[sel.itemId] = (counts[sel.itemId] ?? 0) + 1;
+        }
+      }
+      setUsageCounts(counts);
+    }).finally(() => setLoading(false));
   }, []);
 
   // Build category list: defaults first, then any custom categories from items
@@ -140,7 +151,8 @@ function DenContent() {
         {categories.map((cat) => {
           const catItems = sortItems(
             filteredItems.filter((i) => i.categoryId === cat.id),
-            sort
+            sort,
+            usageCounts
           );
           const isCollapsed = collapsed.has(cat.id);
           const isEmpty = catItems.length === 0;

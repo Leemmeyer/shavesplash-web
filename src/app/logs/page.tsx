@@ -17,6 +17,15 @@ const DEFAULT_SCORE_PARAMETERS = [
   { id: "consistency", name: "Consistency", shortName: "Cons" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "newest",         label: "Newest First" },
+  { value: "oldest",         label: "Oldest First" },
+  { value: "highest_score",  label: "Highest Score" },
+  { value: "lowest_score",   label: "Lowest Score" },
+  { value: "highest_result", label: "Best Result" },
+  { value: "lowest_result",  label: "Lowest Result" },
+];
+
 const CATEGORY_ORDER = ["razors","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
 const CATEGORY_LABELS: Record<string, string> = {
   razors:"Razor", blades:"Blade", brushes:"Brush", soaps:"Soap",
@@ -53,6 +62,36 @@ function avgScore(scores: Record<string, ScoreEntry>): number | null {
 }
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric", year:"numeric" });
+}
+function sortLogs(logs: ShaveLog[], sort: string, resultOptions: string[]): ShaveLog[] {
+  return [...logs].sort((a, b) => {
+    switch (sort) {
+      case "oldest":
+        return a.date - b.date;
+      case "highest_score": {
+        const as = avgScore(a.scores) ?? -1;
+        const bs = avgScore(b.scores) ?? -1;
+        return bs - as;
+      }
+      case "lowest_score": {
+        const as = avgScore(a.scores) ?? Infinity;
+        const bs = avgScore(b.scores) ?? Infinity;
+        return as - bs;
+      }
+      case "highest_result": {
+        const ar = a.resultRank ?? (resultOptions.indexOf(a.result) + 1);
+        const br = b.resultRank ?? (resultOptions.indexOf(b.result) + 1);
+        return br - ar;
+      }
+      case "lowest_result": {
+        const ar = a.resultRank ?? (resultOptions.indexOf(a.result) + 1);
+        const br = b.resultRank ?? (resultOptions.indexOf(b.result) + 1);
+        return ar - br;
+      }
+      default: // "newest"
+        return b.date - a.date;
+    }
+  });
 }
 function groupByMonth(logs: ShaveLog[]): [string, ShaveLog[]][] {
   const groups = new Map<string, ShaveLog[]>();
@@ -358,6 +397,7 @@ function LogsContent() {
   const [deleting, setDeleting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editLog, setEditLog] = useState<ShaveLog | null>(null);
+  const [sort, setSort] = useState("newest");
 
   useEffect(() => {
     Promise.all([
@@ -402,7 +442,7 @@ function LogsContent() {
     );
   }
 
-  const grouped = groupByMonth(logs);
+  const grouped = groupByMonth(sortLogs(logs, sort, resultOptions));
   const totalAvg = logs.length
     ? logs.reduce((sum, l) => sum + (avgScore(l.scores) ?? 0), 0) / logs.length
     : null;
@@ -415,13 +455,22 @@ function LogsContent() {
           <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">Shave History</h1>
           <p className="text-gray-500 text-sm">{logs.length} shave{logs.length !== 1 ? "s" : ""} logged</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {totalAvg !== null && (
             <div className="text-right">
               <p className="text-gray-500 text-xs">Avg Score</p>
               <p className="text-[#c9a050] text-2xl font-bold">{totalAvg.toFixed(1)}</p>
             </div>
           )}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="bg-[#242424] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 cursor-pointer"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
           <button
             onClick={() => { setEditLog(null); setShowForm(true); }}
             className="flex items-center gap-2 bg-[#c9a050] text-[#1a1a1a] font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-[#d4aa60] transition-colors"

@@ -5,10 +5,10 @@ import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
-// Mirrored from mobile shave-store
+// Fallback defaults (used if preferences haven't been saved yet)
 const DEFAULT_RESULT_OPTIONS = [
   "DFS", "DFS+/DFS", "DFS+", "BBS-/DFS+", "BBS-", "BBS/BBS-", "BBS", "BBS+/BBS", "BBS+",
-] as const;
+];
 
 const DEFAULT_SCORE_PARAMETERS = [
   { id: "efficiency",  name: "Efficiency",  shortName: "Eff"  },
@@ -63,11 +63,13 @@ function groupByMonth(logs: ShaveLog[]): [string, ShaveLog[]][] {
   }
   return Array.from(groups.entries());
 }
-function resultColor(result: string): string {
-  const idx = DEFAULT_RESULT_OPTIONS.indexOf(result as typeof DEFAULT_RESULT_OPTIONS[number]);
+function resultColor(result: string, options: string[]): string {
+  const idx = options.indexOf(result);
   if (idx < 0) return "#6b7280";
-  const colors = ["#b45309","#d97706","#f59e0b","#fbbf24","#bbf7d0","#86efac","#4ade80","#22c55e","#16a34a"];
-  return colors[idx] ?? "#6b7280";
+  // Interpolate from red-ish (worst) to green (best) across however many options exist
+  const colors = ["#b45309","#d97706","#f59e0b","#fbbf24","#a3e635","#86efac","#4ade80","#22c55e","#16a34a"];
+  const step = (colors.length - 1) / Math.max(options.length - 1, 1);
+  return colors[Math.round(idx * step)] ?? "#6b7280";
 }
 function toDateInputValue(ts: number): string {
   const d = new Date(ts);
@@ -96,12 +98,16 @@ function RatingRow({ label, value, onChange }: { label: string; value: number; o
   );
 }
 
+type ScoreParameter = { id: string; name: string; shortName: string };
+
 // ── Add/Edit form modal ──────────────────────────────────────────────────────
 function LogForm({
-  initial, inventory, onSave, onClose,
+  initial, inventory, resultOptions, scoreParameters, onSave, onClose,
 }: {
   initial: ShaveLog | null;
   inventory: InventoryItem[];
+  resultOptions: string[];
+  scoreParameters: ScoreParameter[];
   onSave: (log: ShaveLog) => void;
   onClose: () => void;
 }) {
@@ -111,7 +117,7 @@ function LogForm({
   const [result, setResult] = useState(initial?.result ?? "BBS");
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const s: Record<string, number> = {};
-    for (const p of DEFAULT_SCORE_PARAMETERS) {
+    for (const p of scoreParameters) {
       const raw = initial?.scores[p.id];
       s[p.id] = raw !== undefined ? getScoreValue(raw) : 0;
     }
@@ -152,9 +158,9 @@ function LogForm({
     if (!result) { setError("Result is required"); return; }
     setError(null); setSaving(true);
 
-    const resultRank = DEFAULT_RESULT_OPTIONS.indexOf(result as typeof DEFAULT_RESULT_OPTIONS[number]) + 1;
+    const resultRank = resultOptions.indexOf(result) + 1;
     const builtScores: Record<string, ScoreEntry> = {};
-    for (const p of DEFAULT_SCORE_PARAMETERS) {
+    for (const p of scoreParameters) {
       const v = scores[p.id] ?? 0;
       if (v > 0) builtScores[p.id] = { value: v, shortName: p.shortName };
     }
@@ -164,7 +170,7 @@ function LogForm({
       date: dateInputToTs(dateVal),
       result,
       resultRank: resultRank > 0 ? resultRank : undefined,
-      resultOptionsCount: DEFAULT_RESULT_OPTIONS.length,
+      resultOptionsCount: resultOptions.length,
       scores: builtScores,
       selectedItems,
       notes: notes.trim() || undefined,
@@ -205,13 +211,13 @@ function LogForm({
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Result</label>
             <div className="flex flex-wrap gap-1.5">
-              {[...DEFAULT_RESULT_OPTIONS].reverse().map((r) => (
+              {[...resultOptions].reverse().map((r) => (
                 <button key={r} type="button" onClick={() => setResult(r)}
                   className="px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors"
                   style={{
-                    backgroundColor: result === r ? resultColor(r) + "33" : "transparent",
-                    borderColor: result === r ? resultColor(r) : "rgba(255,255,255,0.1)",
-                    color: result === r ? resultColor(r) : "#9ca3af",
+                    backgroundColor: result === r ? resultColor(r, resultOptions) + "33" : "transparent",
+                    borderColor: result === r ? resultColor(r, resultOptions) : "rgba(255,255,255,0.1)",
+                    color: result === r ? resultColor(r, resultOptions) : "#9ca3af",
                   }}>
                   {r}
                 </button>
@@ -223,7 +229,7 @@ function LogForm({
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-3">Scores</label>
             <div className="space-y-2.5">
-              {DEFAULT_SCORE_PARAMETERS.map((p) => (
+              {scoreParameters.map((p) => (
                 <RatingRow key={p.id} label={p.name} value={scores[p.id] ?? 0}
                   onChange={(v) => setScores((prev) => ({ ...prev, [p.id]: v }))} />
               ))}
@@ -344,6 +350,8 @@ export default function LogsPage() {
 function LogsContent() {
   const [logs, setLogs] = useState<ShaveLog[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [resultOptions, setResultOptions]     = useState<string[]>(DEFAULT_RESULT_OPTIONS);
+  const [scoreParameters, setScoreParameters] = useState<ScoreParameter[]>(DEFAULT_SCORE_PARAMETERS);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -355,9 +363,13 @@ function LogsContent() {
     Promise.all([
       api.get<{ logs: ShaveLog[] }>("/api/logs").then((d) => d.logs).catch(() => [] as ShaveLog[]),
       api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
-    ]).then(([l, inv]) => {
+      api.get<{ resultOptions: string[]; scoreParameters: ScoreParameter[] }>("/api/preferences")
+        .catch(() => ({ resultOptions: DEFAULT_RESULT_OPTIONS, scoreParameters: DEFAULT_SCORE_PARAMETERS })),
+    ]).then(([l, inv, prefs]) => {
       setLogs(l.sort((a, b) => b.date - a.date));
       setInventory(inv);
+      setResultOptions(prefs.resultOptions);
+      setScoreParameters(prefs.scoreParameters);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -424,6 +436,8 @@ function LogsContent() {
         <LogForm
           initial={editLog}
           inventory={inventory}
+          resultOptions={resultOptions}
+          scoreParameters={scoreParameters}
           onSave={handleSaved}
           onClose={() => { setShowForm(false); setEditLog(null); }}
         />
@@ -468,7 +482,7 @@ function LogsContent() {
                 {monthLogs.map((log) => {
                   const avg = avgScore(log.scores);
                   const isExpanded = expanded === log.id;
-                  const color = resultColor(log.result);
+                  const color = resultColor(log.result, resultOptions);
                   const usedItems = Object.entries(log.selectedItems)
                     .filter(([, s]) => s.itemName)
                     .sort(([a], [b]) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b));
@@ -523,7 +537,7 @@ function LogsContent() {
                             <div>
                               <p className="text-gray-600 text-xs uppercase tracking-wider mb-2">Scores</p>
                               <div className="flex flex-wrap gap-4">
-                                {DEFAULT_SCORE_PARAMETERS.map((p) => {
+                                {scoreParameters.map((p) => {
                                   const raw = log.scores[p.id];
                                   if (raw === undefined) return null;
                                   const val = getScoreValue(raw);

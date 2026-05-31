@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/den", label: "Den" },
   { href: "/logs", label: "History" },
   { href: "/bst", label: "Marketplace" },
+  { href: "/preferences", label: "Preferences" },
 ];
 
 export default function AppNav() {

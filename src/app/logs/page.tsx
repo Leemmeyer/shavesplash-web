@@ -110,7 +110,7 @@ function LogsContent() {
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">
-            Shave Journal
+            Shave History
           </h1>
           <p className="text-gray-500 text-sm">{logs.length} shaves logged</p>
         </div>
@@ -127,7 +127,7 @@ function LogsContent() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#242424] rounded-2xl border border-white/10 p-6 max-w-sm w-full">
             <h2 className="text-[#f5f2eb] font-bold text-lg mb-2">Delete this shave?</h2>
-            <p className="text-gray-400 text-sm mb-6">This entry will be removed from your journal.</p>
+            <p className="text-gray-400 text-sm mb-6">This entry will be removed from your history.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}

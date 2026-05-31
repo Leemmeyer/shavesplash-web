@@ -64,7 +64,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           <Feature
             icon="📔"
-            title="Shave Journal"
+            title="Shave History"
             description="Log every shave with razor, blade, soap, aftershave, scores, and notes. Track your streak and history."
           />
           <Feature

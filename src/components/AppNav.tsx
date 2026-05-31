@@ -7,7 +7,7 @@ import { useSession } from "@/lib/session-context";
 
 const NAV_LINKS = [
   { href: "/den", label: "Den" },
-  { href: "/logs", label: "Journal" },
+  { href: "/logs", label: "History" },
   { href: "/bst", label: "Marketplace" },
 ];
 

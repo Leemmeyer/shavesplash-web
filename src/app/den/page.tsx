@@ -17,7 +17,6 @@ const DEFAULT_CATEGORIES = [
   { id: "edpedt",      label: "EDP/EDT",       icon: "🌸" },
 ];
 
-const BST_ELIGIBLE = new Set(["razors", "brushes", "soaps", "aftershaves"]);
 
 const SORT_OPTIONS = [
   { value: "name-asc",    label: "A → Z" },
@@ -219,11 +218,6 @@ function ItemCard({ item }: { item: InventoryItem }) {
               <span className="text-3xl opacity-15">
                 {DEFAULT_CATEGORIES.find((c) => c.id === item.categoryId)?.icon ?? "📦"}
               </span>
-            </div>
-          )}
-          {BST_ELIGIBLE.has(item.categoryId) && (
-            <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm border border-[#c9a050]/30 rounded-lg px-1.5 py-0.5">
-              <span className="text-[#c9a050] text-[9px] font-bold">BST</span>
             </div>
           )}
         </div>

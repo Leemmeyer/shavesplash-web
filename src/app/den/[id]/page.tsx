@@ -141,6 +141,14 @@ function ItemDetailContent({ id }: { id: string }) {
   // Edit form — preshave
   const [editPreshaveType, setEditPreshaveType] = useState<string | undefined>(undefined);
 
+  // Edit form — plates (razors)
+  const [editPlates, setEditPlates] = useState<RazorPlate[]>([]);
+  const [editingPlateIdx, setEditingPlateIdx] = useState<number | null>(null); // null = no form, -1 = add new
+  const [plateFormName, setPlateFormName] = useState("");
+  const [plateFormType, setPlateFormType] = useState<string>("SB");
+  const [plateFormGap, setPlateFormGap] = useState("");
+  const [plateFormExposure, setPlateFormExposure] = useState("");
+
   useEffect(() => {
     api.get<{ items: InventoryItem[] }>("/api/inventory")
       .then((d) => { setItem(d.items.find((i) => i.id === id) ?? null); })
@@ -178,6 +186,8 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditAftershaveScentStrength(item.aftershaveScentStrength ?? 0);
     setEditEdpedtScentStrength(item.edpedtScentStrength ?? 0);
     setEditPreshaveType(item.preshaveType);
+    setEditPlates(item.plates ? item.plates.map(p => ({ ...p })) : []);
+    setEditingPlateIdx(null);
     setEditError(null);
     setShowEdit(true);
     setShowBST(false);
@@ -209,6 +219,7 @@ function ItemDetailContent({ id }: { id: string }) {
       if (editWeight.trim()) data.weight = parseInt(editWeight, 10);
       if (editMetal) data.metal = editMetal;
       if (editFinish) data.finish = editFinish;
+      data.plates = editPlates;
       if (isStraight) {
         if (editStraightWidth) data.straightWidth = editStraightWidth;
         if (editStraightPoint) data.straightPoint = editStraightPoint;
@@ -520,6 +531,81 @@ function ItemDetailContent({ id }: { id: string }) {
                     </Field>
                   </div>
                 )}
+
+                {/* Plates */}
+                <Field label="Plates">
+                  <div className="space-y-2">
+                    {editPlates.map((plate, idx) => (
+                      <div key={idx}>
+                        {editingPlateIdx === idx ? (
+                          <PlateForm
+                            name={plateFormName} setName={setPlateFormName}
+                            type={plateFormType} setType={setPlateFormType}
+                            gap={plateFormGap} setGap={setPlateFormGap}
+                            exposure={plateFormExposure} setExposure={setPlateFormExposure}
+                            onSave={() => {
+                              if (!plateFormName.trim()) return;
+                              const updated = [...editPlates];
+                              updated[idx] = {
+                                name: plateFormName.trim(),
+                                type: plateFormType as "SB" | "OC" | "DC",
+                                bladeGap: plateFormGap.trim() ? parseFloat(plateFormGap) : undefined,
+                                exposure: plateFormExposure.trim() ? parseFloat(plateFormExposure) : undefined,
+                              };
+                              setEditPlates(updated);
+                              setEditingPlateIdx(null);
+                            }}
+                            onCancel={() => setEditingPlateIdx(null)}
+                          />
+                        ) : (
+                          <div className="flex items-center gap-3 bg-[#1e1e1e] rounded-xl px-3 py-2.5 border border-white/10">
+                            <span className="text-[#c9a050] text-xs font-bold w-8 text-center bg-[#c9a050]/10 rounded px-1 py-0.5">{plate.type}</span>
+                            <span className="text-[#f5f2eb] text-sm font-medium flex-1">{plate.name}</span>
+                            {plate.bladeGap != null && <span className="text-gray-500 text-xs">Gap: {plate.bladeGap}mm</span>}
+                            {plate.exposure != null && <span className="text-gray-500 text-xs">Exp: {plate.exposure}mm</span>}
+                            <button
+                              onClick={() => { setPlateFormName(plate.name); setPlateFormType(plate.type); setPlateFormGap(plate.bladeGap?.toString() ?? ""); setPlateFormExposure(plate.exposure?.toString() ?? ""); setEditingPlateIdx(idx); }}
+                              className="text-gray-500 hover:text-[#c9a050] text-xs px-1.5 py-0.5 transition-colors"
+                            >Edit</button>
+                            <button
+                              onClick={() => setEditPlates(editPlates.filter((_, i) => i !== idx))}
+                              className="text-gray-600 hover:text-red-400 text-xs px-1 transition-colors"
+                            >✕</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Add plate form */}
+                    {editingPlateIdx === -1 ? (
+                      <PlateForm
+                        name={plateFormName} setName={setPlateFormName}
+                        type={plateFormType} setType={setPlateFormType}
+                        gap={plateFormGap} setGap={setPlateFormGap}
+                        exposure={plateFormExposure} setExposure={setPlateFormExposure}
+                        onSave={() => {
+                          if (!plateFormName.trim()) return;
+                          setEditPlates([...editPlates, {
+                            name: plateFormName.trim(),
+                            type: plateFormType as "SB" | "OC" | "DC",
+                            bladeGap: plateFormGap.trim() ? parseFloat(plateFormGap) : undefined,
+                            exposure: plateFormExposure.trim() ? parseFloat(plateFormExposure) : undefined,
+                          }]);
+                          setPlateFormName(""); setPlateFormType("SB"); setPlateFormGap(""); setPlateFormExposure("");
+                          setEditingPlateIdx(null);
+                        }}
+                        onCancel={() => setEditingPlateIdx(null)}
+                      />
+                    ) : editingPlateIdx === null && (
+                      <button
+                        onClick={() => { setPlateFormName(""); setPlateFormType("SB"); setPlateFormGap(""); setPlateFormExposure(""); setEditingPlateIdx(-1); }}
+                        className="w-full py-2 rounded-xl border border-dashed border-white/15 text-gray-500 hover:text-[#c9a050] hover:border-[#c9a050]/30 text-sm transition-colors"
+                      >
+                        + Add Plate
+                      </button>
+                    )}
+                  </div>
+                </Field>
               </>
             )}
 
@@ -752,6 +838,60 @@ function ToggleField({ options, value, onChange }: {
           {opt}
         </button>
       ))}
+    </div>
+  );
+}
+
+function PlateForm({ name, setName, type, setType, gap, setGap, exposure, setExposure, onSave, onCancel }: {
+  name: string; setName: (v: string) => void;
+  type: string; setType: (v: string) => void;
+  gap: string; setGap: (v: string) => void;
+  exposure: string; setExposure: (v: string) => void;
+  onSave: () => void; onCancel: () => void;
+}) {
+  return (
+    <div className="bg-[#1a1a1a] rounded-xl border border-[#c9a050]/25 p-3 space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Plate Name</label>
+          <input
+            value={name} onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. .84, Open Comb…"
+            autoFocus
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+          <div className="flex bg-[#111] rounded-lg p-0.5 border border-white/10">
+            {["SB", "OC", "DC"].map((opt) => (
+              <button key={opt} onClick={() => setType(opt)}
+                className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${type === opt ? "bg-[#c9a050] text-black" : "text-gray-400 hover:text-[#f5f2eb]"}`}
+              >{opt}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Blade Gap (mm)</label>
+          <input type="number" step="0.01" value={gap} onChange={(e) => setGap(e.target.value)}
+            placeholder="e.g. 0.45"
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Exposure (mm)</label>
+          <input type="number" step="0.01" value={exposure} onChange={(e) => setExposure(e.target.value)}
+            placeholder="e.g. 0.02"
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={onCancel} className="flex-1 py-1.5 rounded-lg border border-white/10 text-gray-400 text-xs hover:text-[#f5f2eb] transition-colors">Cancel</button>
+        <button onClick={onSave} disabled={!name.trim()} className="flex-1 py-1.5 rounded-lg bg-[#c9a050] text-black text-xs font-bold disabled:opacity-40 transition-colors">Save Plate</button>
+      </div>
     </div>
   );
 }

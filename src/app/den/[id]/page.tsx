@@ -50,6 +50,7 @@ type InventoryItem = {
   // Razor
   edgeType?: string; construction?: string; metal?: string; finish?: string;
   weight?: number; bladeGap?: number; exposure?: number; plates?: RazorPlate[];
+  handleModel?: string;
   straightWidth?: string; straightPoint?: string; straightHollow?: string;
   // Blade
   bladeFormat?: string; bladeCountryOfOrigin?: string; bladeCoating?: string;
@@ -66,6 +67,9 @@ type InventoryItem = {
   edpedtScentStrength?: number;
   // Preshave
   preshaveType?: string;
+  // Scent info (soap & aftershave)
+  topNotes?: string; heartNotes?: string; baseNotes?: string;
+  scentDescription?: string; inspiration?: string; scentFamily?: string; familySubtype?: string;
 };
 
 export default function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -109,6 +113,7 @@ function ItemDetailContent({ id }: { id: string }) {
   const [editWeight, setEditWeight] = useState("");
   const [editMetal, setEditMetal] = useState<string | undefined>(undefined);
   const [editFinish, setEditFinish] = useState<string | undefined>(undefined);
+  const [editHandleModel, setEditHandleModel] = useState("");
   const [editStraightWidth, setEditStraightWidth] = useState<string | undefined>(undefined);
   const [editStraightPoint, setEditStraightPoint] = useState<string | undefined>(undefined);
   const [editStraightHollow, setEditStraightHollow] = useState<string | undefined>(undefined);
@@ -141,6 +146,16 @@ function ItemDetailContent({ id }: { id: string }) {
   // Edit form — preshave
   const [editPreshaveType, setEditPreshaveType] = useState<string | undefined>(undefined);
 
+  // Edit form — scent info (soap & aftershave)
+  const [editShaveSplashUrl, setEditShaveSplashUrl] = useState("");
+  const [editTopNotes, setEditTopNotes] = useState("");
+  const [editHeartNotes, setEditHeartNotes] = useState("");
+  const [editBaseNotes, setEditBaseNotes] = useState("");
+  const [editScentDescription, setEditScentDescription] = useState("");
+  const [editInspiration, setEditInspiration] = useState("");
+  const [editScentFamily, setEditScentFamily] = useState("");
+  const [editFamilySubtype, setEditFamilySubtype] = useState("");
+
   // Edit form — plates (razors)
   const [editPlates, setEditPlates] = useState<RazorPlate[]>([]);
   const [editingPlateIdx, setEditingPlateIdx] = useState<number | null>(null); // null = no form, -1 = add new
@@ -167,6 +182,7 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditWeight(item.weight?.toString() ?? "");
     setEditMetal(item.metal);
     setEditFinish(item.finish);
+    setEditHandleModel(item.handleModel ?? "");
     setEditStraightWidth(item.straightWidth);
     setEditStraightPoint(item.straightPoint);
     setEditStraightHollow(item.straightHollow);
@@ -186,6 +202,14 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditAftershaveScentStrength(item.aftershaveScentStrength ?? 0);
     setEditEdpedtScentStrength(item.edpedtScentStrength ?? 0);
     setEditPreshaveType(item.preshaveType);
+    setEditShaveSplashUrl(item.shaveSplashUrl ?? "");
+    setEditTopNotes(item.topNotes ?? "");
+    setEditHeartNotes(item.heartNotes ?? "");
+    setEditBaseNotes(item.baseNotes ?? "");
+    setEditScentDescription(item.scentDescription ?? "");
+    setEditInspiration(item.inspiration ?? "");
+    setEditScentFamily(item.scentFamily ?? "");
+    setEditFamilySubtype(item.familySubtype ?? "");
     setEditPlates(item.plates ? item.plates.map(p => ({ ...p })) : []);
     setEditingPlateIdx(null);
     setEditError(null);
@@ -219,6 +243,7 @@ function ItemDetailContent({ id }: { id: string }) {
       if (editWeight.trim()) data.weight = parseInt(editWeight, 10);
       if (editMetal) data.metal = editMetal;
       if (editFinish) data.finish = editFinish;
+      if (editHandleModel.trim()) data.handleModel = editHandleModel.trim();
       data.plates = editPlates;
       if (isStraight) {
         if (editStraightWidth) data.straightWidth = editStraightWidth;
@@ -247,6 +272,16 @@ function ItemDetailContent({ id }: { id: string }) {
     }
     if (isAftershave) {
       if (editAftershaveScentStrength > 0) data.aftershaveScentStrength = editAftershaveScentStrength;
+    }
+    if (isSoap || isAftershave) {
+      if (editShaveSplashUrl.trim()) data.shaveSplashUrl = editShaveSplashUrl.trim();
+      if (editTopNotes.trim()) data.topNotes = editTopNotes.trim();
+      if (editHeartNotes.trim()) data.heartNotes = editHeartNotes.trim();
+      if (editBaseNotes.trim()) data.baseNotes = editBaseNotes.trim();
+      if (editScentDescription.trim()) data.scentDescription = editScentDescription.trim();
+      if (editInspiration.trim()) data.inspiration = editInspiration.trim();
+      if (editScentFamily.trim()) data.scentFamily = editScentFamily.trim();
+      if (editFamilySubtype.trim()) data.familySubtype = editFamilySubtype.trim();
     }
     if (isEdpEdt) {
       if (editEdpedtScentStrength > 0) data.edpedtScentStrength = editEdpedtScentStrength;
@@ -517,6 +552,11 @@ function ItemDetailContent({ id }: { id: string }) {
                     placeholder="Select finish"
                   />
                 </Field>
+                <Field label="Handle Model">
+                  <input value={editHandleModel} onChange={(e) => setEditHandleModel(e.target.value)}
+                    placeholder="e.g. Fatip Grande"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
                 {/* Straight razor extras */}
                 {editIsStraight && (
                   <div className="grid grid-cols-3 gap-3">
@@ -674,6 +714,52 @@ function ItemDetailContent({ id }: { id: string }) {
             {/* Aftershave fields */}
             {isAftershave && (
               <Field label="Scent Strength"><RatingField value={editAftershaveScentStrength} onChange={setEditAftershaveScentStrength} /></Field>
+            )}
+
+            {/* Scent profile (soap & aftershave) */}
+            {(isSoap || isAftershave) && (
+              <>
+                <Field label="ShaveSplash URL">
+                  <input value={editShaveSplashUrl} onChange={(e) => setEditShaveSplashUrl(e.target.value)}
+                    placeholder={isSoap ? "https://www.shavesplash.com/soap-items/..." : "https://www.shavesplash.com/aftershave-items/..."}
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Scent Family">
+                  <input value={editScentFamily} onChange={(e) => setEditScentFamily(e.target.value)}
+                    placeholder="e.g. Fougère, Citrus, Woody"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Subtype">
+                  <input value={editFamilySubtype} onChange={(e) => setEditFamilySubtype(e.target.value)}
+                    placeholder="e.g. Classic, Modern"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Top Notes">
+                  <input value={editTopNotes} onChange={(e) => setEditTopNotes(e.target.value)}
+                    placeholder="e.g. Bergamot, Lemon"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Heart Notes">
+                  <input value={editHeartNotes} onChange={(e) => setEditHeartNotes(e.target.value)}
+                    placeholder="e.g. Lavender, Geranium"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Base Notes">
+                  <input value={editBaseNotes} onChange={(e) => setEditBaseNotes(e.target.value)}
+                    placeholder="e.g. Oakmoss, Musk"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Scent Description">
+                  <textarea value={editScentDescription} onChange={(e) => setEditScentDescription(e.target.value)} rows={3}
+                    placeholder="Describe the scent..."
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
+                </Field>
+                <Field label="Inspiration">
+                  <input value={editInspiration} onChange={(e) => setEditInspiration(e.target.value)}
+                    placeholder="e.g. Classic barbershop"
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+              </>
             )}
 
             {/* EDP/EDT fields */}

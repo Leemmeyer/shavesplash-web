@@ -204,12 +204,25 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   const [soapHasMenthol, setSoapHasMenthol] = useState<boolean | undefined>(undefined);
   const [soapIsTallow, setSoapIsTallow] = useState<boolean | undefined>(undefined);
 
+  // Razor handle
+  const [handleModel, setHandleModel] = useState("");
+
   // Aftershave / EDP/EDT
   const [aftershaveScentStrength, setAftershaveScentStrength] = useState(0);
   const [edpedtScentStrength, setEdpedtScentStrength] = useState(0);
 
   // Preshave
   const [preshaveType, setPreshaveType] = useState<string>("");
+
+  // Scent info (soap & aftershave)
+  const [shaveSplashUrl, setShaveSplashUrl] = useState("");
+  const [topNotes, setTopNotes] = useState("");
+  const [heartNotes, setHeartNotes] = useState("");
+  const [baseNotes, setBaseNotes] = useState("");
+  const [scentDescription, setScentDescription] = useState("");
+  const [inspiration, setInspiration] = useState("");
+  const [scentFamily, setScentFamily] = useState("");
+  const [familySubtype, setFamilySubtype] = useState("");
 
   const isRazor = categoryId === "razors";
   const isBlade = categoryId === "blades";
@@ -261,6 +274,7 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
       if (weight.trim()) data.weight = parseInt(weight, 10);
       if (metal) data.metal = metal;
       if (finish) data.finish = finish;
+      if (handleModel.trim()) data.handleModel = handleModel.trim();
       data.plates = plates;
       if (isStraight) {
         if (straightWidth) data.straightWidth = straightWidth;
@@ -286,6 +300,16 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
       if (soapScentStrength > 0) data.soapScentStrength = soapScentStrength;
       if (soapHasMenthol !== undefined) data.soapHasMenthol = soapHasMenthol;
       if (soapIsTallow !== undefined) data.soapIsTallow = soapIsTallow;
+    }
+    if (isSoap || isAftershave) {
+      if (shaveSplashUrl.trim()) data.shaveSplashUrl = shaveSplashUrl.trim();
+      if (topNotes.trim()) data.topNotes = topNotes.trim();
+      if (heartNotes.trim()) data.heartNotes = heartNotes.trim();
+      if (baseNotes.trim()) data.baseNotes = baseNotes.trim();
+      if (scentDescription.trim()) data.scentDescription = scentDescription.trim();
+      if (inspiration.trim()) data.inspiration = inspiration.trim();
+      if (scentFamily.trim()) data.scentFamily = scentFamily.trim();
+      if (familySubtype.trim()) data.familySubtype = familySubtype.trim();
     }
     if (isAftershave && aftershaveScentStrength > 0) data.aftershaveScentStrength = aftershaveScentStrength;
     if (isEdpEdt && edpedtScentStrength > 0) data.edpedtScentStrength = edpedtScentStrength;
@@ -372,6 +396,11 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
             <SelectField label="Construction" value={construction} options={CONSTRUCTION_OPTIONS} onChange={setConstruction} />
             <SelectField label="Metal" value={metal} options={METAL_OPTIONS} onChange={setMetal} />
             <SelectField label="Finish" value={finish} options={FINISH_OPTIONS} onChange={setFinish} />
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Handle Model</label>
+              <input value={handleModel} onChange={(e) => setHandleModel(e.target.value)} placeholder="e.g. Fatip Grande"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Blade Gap (mm)</label>
@@ -480,6 +509,54 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
           <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
             <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Aftershave Ratings</h2>
             <RatingField label="Scent Strength" value={aftershaveScentStrength} onChange={setAftershaveScentStrength} />
+          </div>
+        )}
+
+        {(isSoap || isAftershave) && (
+          <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
+            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Scent Profile</h2>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">ShaveSplash URL <span className="normal-case text-gray-600">(optional)</span></label>
+              <input value={shaveSplashUrl} onChange={(e) => setShaveSplashUrl(e.target.value)}
+                placeholder={isSoap ? "https://www.shavesplash.com/soap-items/..." : "https://www.shavesplash.com/aftershave-items/..."}
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Scent Family</label>
+              <input value={scentFamily} onChange={(e) => setScentFamily(e.target.value)} placeholder="e.g. Fougère, Citrus, Woody"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Subtype</label>
+              <input value={familySubtype} onChange={(e) => setFamilySubtype(e.target.value)} placeholder="e.g. Classic, Modern"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Top Notes</label>
+              <input value={topNotes} onChange={(e) => setTopNotes(e.target.value)} placeholder="e.g. Bergamot, Lemon"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Heart Notes</label>
+              <input value={heartNotes} onChange={(e) => setHeartNotes(e.target.value)} placeholder="e.g. Lavender, Geranium"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Base Notes</label>
+              <input value={baseNotes} onChange={(e) => setBaseNotes(e.target.value)} placeholder="e.g. Oakmoss, Musk"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Scent Description</label>
+              <textarea value={scentDescription} onChange={(e) => setScentDescription(e.target.value)} rows={3}
+                placeholder="Describe the scent..."
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Inspiration</label>
+              <input value={inspiration} onChange={(e) => setInspiration(e.target.value)} placeholder="e.g. Classic barbershop"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
           </div>
         )}
 

@@ -32,6 +32,10 @@ const CATEGORY_LABELS: Record<string,string> = {
   razors:"Razors", blades:"Blades", brushes:"Brushes", soaps:"Shave Soaps",
   aftershaves:"Aftershaves", balms:"Balms", preshaves:"Preshaves", edpedt:"EDP/EDT",
 };
+const CATEGORY_ICONS: Record<string,string> = {
+  razors:"🪒", blades:"⚡", brushes:"🖌️", soaps:"🫧",
+  aftershaves:"💧", balms:"🧴", preshaves:"✨", edpedt:"🌸",
+};
 const CATEGORY_ORDER = ["razors","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -42,7 +46,7 @@ function avgScoreOf(scores: Record<string,ScoreEntry>): number | null {
   const vals = Object.values(scores).map(getScoreValue).filter(v => v > 0);
   return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
 }
-// 0 = worst, 1 = best — uses stored rank when available to handle varying option counts
+// 0 = worst, 1 = best
 function resultNorm(log: ShaveLog, opts: string[]): number | null {
   if (log.resultRank != null && log.resultOptionsCount != null && log.resultOptionsCount > 1) {
     return (log.resultRank - 1) / (log.resultOptionsCount - 1);
@@ -51,7 +55,7 @@ function resultNorm(log: ShaveLog, opts: string[]): number | null {
   if (idx < 0) return null;
   return opts.length > 1 ? idx / (opts.length - 1) : 1;
 }
-// 1-based position in current resultOptions (Y-axis of scatter)
+// 1-based position in resultOptions (for scatter Y-axis)
 function resultPos(log: ShaveLog, opts: string[]): number | null {
   const n = resultNorm(log, opts);
   return n !== null ? n * (opts.length - 1) + 1 : null;
@@ -162,15 +166,18 @@ function AnalyticsContent() {
           <CorrelationSection
             logs={logs} resultOptions={resultOptions} scoreParameters={scoreParameters}
           />
+          <PersonalRecordsSection
+            logs={logs} inventory={inventory}
+            resultOptions={resultOptions} scoreParameters={scoreParameters}
+          />
         </div>
       )}
     </div>
   );
 }
 
-// ── Section 1: Shave Calendar Heatmap ─────────────────────────────────────
+// ── Section 1: Shave Heat Map ──────────────────────────────────────────────
 function HeatmapSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptions: string[] }) {
-  const [colorMode, setColorMode] = useState<"result" | "activity">("result");
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{ key: string; x: number; y: number } | null>(null);
 
@@ -233,7 +240,6 @@ function HeatmapSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptio
     if (day > today) return "transparent";
     const d = dayData[k];
     if (!d) return "#1a1a1a";
-    if (colorMode === "activity") return "#c9a050";
     return d.avgResult !== null ? normColor(d.avgResult) : "#c9a050";
   };
 
@@ -242,21 +248,9 @@ function HeatmapSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptio
 
   return (
     <section>
-      <div className="flex items-end justify-between mb-4">
-        <div>
-          <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Shave Calendar</h2>
-          <p className="text-gray-500 text-xs">Past 52 weeks · each cell = one day</p>
-        </div>
-        <div className="flex gap-1 bg-[#1e1e1e] rounded-lg p-1 border border-white/10">
-          {(["result","activity"] as const).map(m => (
-            <button key={m} onClick={() => setColorMode(m)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                colorMode === m ? "bg-[#c9a050] text-[#1a1a1a]" : "text-gray-400 hover:text-[#f5f2eb]"
-              }`}>
-              {m === "result" ? "Result Quality" : "Activity"}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4">
+        <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Shave Heat Map</h2>
+        <p className="text-gray-500 text-xs">Past 52 weeks · each cell = one day · color = result quality</p>
       </div>
 
       <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5 overflow-x-auto">
@@ -321,7 +315,8 @@ function HeatmapSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptio
               </p>
               <p className="text-gray-400">{ttData.count} shave{ttData.count !== 1 ? "s" : ""}</p>
               {ttData.results.length > 0 && (
-                <p className="mt-0.5 font-medium" style={{ color: ttData.avgResult !== null ? normColor(ttData.avgResult) : "#c9a050" }}>
+                <p className="mt-0.5 font-medium"
+                  style={{ color: ttData.avgResult !== null ? normColor(ttData.avgResult) : "#c9a050" }}>
                   {ttData.results.join(", ")}
                 </p>
               )}
@@ -334,16 +329,11 @@ function HeatmapSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptio
 
         {/* Legend */}
         <div className="flex items-center gap-2 mt-5 flex-wrap">
-          <span className="text-gray-600 text-[10px]">{colorMode === "result" ? "Worst" : "Less"}</span>
-          {colorMode === "result"
-            ? ["#b45309","#d97706","#f59e0b","#fbbf24","#a3e635","#4ade80","#22c55e"].map(c => (
-                <div key={c} style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: c }} />
-              ))
-            : [0.25, 0.5, 0.75, 1].map(o => (
-                <div key={o} style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: `rgba(201,160,80,${o})` }} />
-              ))
-          }
-          <span className="text-gray-600 text-[10px]">{colorMode === "result" ? "Best" : "More"}</span>
+          <span className="text-gray-600 text-[10px]">Worst</span>
+          {["#b45309","#d97706","#f59e0b","#fbbf24","#a3e635","#4ade80","#22c55e"].map(c => (
+            <div key={c} style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: c }} />
+          ))}
+          <span className="text-gray-600 text-[10px]">Best</span>
           <div className="ml-3 flex items-center gap-1.5">
             <div style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }} />
             <span className="text-gray-600 text-[10px]">No shave</span>
@@ -420,7 +410,6 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
     });
   };
 
-  // Bar widths relative to highest value per parameter
   const maxPerParam = useMemo(() => {
     const m: Record<string, number> = {};
     for (const p of scoreParameters) {
@@ -436,7 +425,6 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
         <p className="text-gray-500 text-xs">Select up to 5 items from any category to compare performance</p>
       </div>
 
-      {/* Category tabs */}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {categories.map(cat => (
           <button key={cat} onClick={() => { setCategory(cat); setSelectedIds(new Set()); }}
@@ -450,7 +438,6 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
         ))}
       </div>
 
-      {/* Item pills */}
       <div className="flex flex-wrap gap-2 mb-6 min-h-[2.5rem]">
         {categoryItems.map(item => {
           const sel = selectedIds.has(item.id);
@@ -468,12 +455,9 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
             </button>
           );
         })}
-        {categoryItems.length === 0 && (
-          <p className="text-gray-600 text-sm">No items in this category</p>
-        )}
+        {categoryItems.length === 0 && <p className="text-gray-600 text-sm">No items in this category</p>}
       </div>
 
-      {/* Comparison table */}
       {stats.length > 0 ? (
         <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 overflow-x-auto">
           <table className="w-full min-w-[520px]">
@@ -483,9 +467,7 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
                 <th className="text-center px-3 py-3 text-gray-500 text-xs font-medium w-16">Uses</th>
                 <th className="text-center px-3 py-3 text-gray-500 text-xs font-medium w-28">Avg Result</th>
                 {scoreParameters.map(p => (
-                  <th key={p.id} className="text-center px-3 py-3 text-gray-500 text-xs font-medium w-20">
-                    {p.shortName}
-                  </th>
+                  <th key={p.id} className="text-center px-3 py-3 text-gray-500 text-xs font-medium w-20">{p.shortName}</th>
                 ))}
               </tr>
             </thead>
@@ -501,8 +483,7 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
                   <td className="text-center px-3 py-4">
                     {s.resultLabel !== null
                       ? <span className="text-sm font-bold" style={{ color: normColor(s.avgResult!) }}>{s.resultLabel}</span>
-                      : <span className="text-gray-600 text-sm">—</span>
-                    }
+                      : <span className="text-gray-600 text-sm">—</span>}
                   </td>
                   {scoreParameters.map(p => {
                     const v = s.scoreStats[p.id];
@@ -510,17 +491,13 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
                       <td key={p.id} className="px-3 py-4">
                         {v !== null ? (
                           <div className="flex flex-col items-center gap-1">
-                            <span className="text-sm font-semibold" style={{ color: scoreColor(v) }}>
-                              {v.toFixed(1)}
-                            </span>
+                            <span className="text-sm font-semibold" style={{ color: scoreColor(v) }}>{v.toFixed(1)}</span>
                             <div className="w-14 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all duration-300"
                                 style={{ width: `${((v / maxPerParam[p.id]) * 100).toFixed(0)}%`, backgroundColor: scoreColor(v) }} />
                             </div>
                           </div>
-                        ) : (
-                          <span className="text-gray-600 text-sm block text-center">—</span>
-                        )}
+                        ) : <span className="text-gray-600 text-sm block text-center">—</span>}
                       </td>
                     );
                   })}
@@ -538,7 +515,7 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
   );
 }
 
-// ── Section 3: Score Correlation ───────────────────────────────────────────
+// ── Section 3: Result Correlation ──────────────────────────────────────────
 function CorrelationSection({ logs, resultOptions, scoreParameters }: {
   logs: ShaveLog[]; resultOptions: string[]; scoreParameters: ScoreParameter[];
 }) {
@@ -570,10 +547,14 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
   const xLabel = scoreParameters.find(p => p.id === xParam)?.name ?? xParam;
   const N = Math.max(resultOptions.length, 2);
 
-  // SVG coordinate space
-  const W = 680, H = 300;
-  const PL = 62, PR = 20, PT = 15, PB = 45;
-  const PW = W - PL - PR, PH = H - PT - PB;
+  // SVG layout — explicit plot height + label space below
+  const W = 680;
+  const PL = 62, PR = 20, PT = 15;
+  const PH = 240; // fixed plot area height
+  const LABEL_SPACE = 58; // room for tick labels + axis title below plot
+  const H = PT + PH + LABEL_SPACE;
+  const PW = W - PL - PR;
+
   const sx = (v: number) => PL + ((v - 1) / 9) * PW;
   const sy = (pos: number) => PT + PH - ((Math.max(1, Math.min(N, pos)) - 1) / (N - 1)) * PH;
 
@@ -592,11 +573,14 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
 
   if (!scoreParameters.length) return null;
 
+  const TICK_Y = PT + PH + 18;   // tick labels 18px below plot bottom
+  const TITLE_Y = PT + PH + 42;  // axis title 42px below plot bottom
+
   return (
     <section>
       <div className="flex items-end justify-between mb-4">
         <div>
-          <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Score Correlation</h2>
+          <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Result Correlation</h2>
           <p className="text-gray-500 text-xs">How individual score parameters relate to your shave result</p>
         </div>
         <select value={xParam} onChange={e => setXParam(e.target.value)}
@@ -608,13 +592,10 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
       <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
         {points.length < 3 ? (
           <div className="py-12 text-center">
-            <p className="text-gray-600 text-sm">
-              Not enough data — log more shaves with {xLabel} scored.
-            </p>
+            <p className="text-gray-600 text-sm">Not enough data — log more shaves with {xLabel} scored.</p>
           </div>
         ) : (
           <>
-            {/* Correlation badge row */}
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               {r !== null && (
                 <>
@@ -622,9 +603,7 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
                     <span className="text-gray-500 text-xs">r =</span>
                     <span className="text-sm font-bold" style={{
                       color: Math.abs(r) >= 0.4 ? "#c9a050" : Math.abs(r) >= 0.1 ? "#f97316" : "#6b7280"
-                    }}>
-                      {r.toFixed(2)}
-                    </span>
+                    }}>{r.toFixed(2)}</span>
                   </div>
                   <span className="text-gray-400 text-sm">{corrLabel(r)}</span>
                 </>
@@ -632,18 +611,14 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
               <span className="text-gray-600 text-xs ml-auto">{points.length} shaves plotted</span>
             </div>
 
-            {/* SVG scatter plot */}
             <div className="relative">
               <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 360 }}>
-                {/* Vertical grid lines */}
+                {/* Grid */}
                 {[1,2,3,4,5,6,7,8,9,10].map(x => (
-                  <line key={x} x1={sx(x)} y1={PT} x2={sx(x)} y2={PT+PH}
-                    stroke="#252525" strokeWidth={1} />
+                  <line key={x} x1={sx(x)} y1={PT} x2={sx(x)} y2={PT+PH} stroke="#252525" strokeWidth={1} />
                 ))}
-                {/* Horizontal grid lines */}
                 {yLabels.map(({ i }) => (
-                  <line key={i} x1={PL} y1={sy(i+1)} x2={PL+PW} y2={sy(i+1)}
-                    stroke="#252525" strokeWidth={1} />
+                  <line key={i} x1={PL} y1={sy(i+1)} x2={PL+PW} y2={sy(i+1)} stroke="#252525" strokeWidth={1} />
                 ))}
 
                 {/* Trend line */}
@@ -669,7 +644,7 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
 
                 {/* X-axis tick labels */}
                 {[1,2,3,4,5,6,7,8,9,10].map(x => (
-                  <text key={x} x={sx(x)} y={H-10} textAnchor="middle" fontSize={10} fill="#6b7280">{x}</text>
+                  <text key={x} x={sx(x)} y={TICK_Y} textAnchor="middle" fontSize={10} fill="#6b7280">{x}</text>
                 ))}
 
                 {/* Y-axis labels */}
@@ -679,17 +654,15 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
                 ))}
 
                 {/* Axis names */}
-                <text x={PL + PW/2} y={H-1} textAnchor="middle" fontSize={11} fill="#9ca3af">
+                <text x={PL + PW/2} y={TITLE_Y} textAnchor="middle" fontSize={11} fill="#9ca3af">
                   {xLabel} Score →
                 </text>
                 <text x={10} y={PT + PH/2} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={11} fill="#9ca3af"
-                  transform={`rotate(-90, 10, ${PT + PH/2})`}>
+                  fontSize={11} fill="#9ca3af" transform={`rotate(-90, 10, ${PT + PH/2})`}>
                   Result →
                 </text>
               </svg>
 
-              {/* Hover card */}
               {hovLog && (
                 <div className="absolute top-2 right-2 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 text-xs pointer-events-none shadow-lg min-w-[150px]">
                   <p className="text-[#f5f2eb] font-semibold mb-1">
@@ -705,6 +678,174 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
             </div>
           </>
         )}
+      </div>
+    </section>
+  );
+}
+
+// ── Section 4: Personal Records ────────────────────────────────────────────
+function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameters }: {
+  logs: ShaveLog[]; inventory: InventoryItem[];
+  resultOptions: string[]; scoreParameters: ScoreParameter[];
+}) {
+  // Shave with the highest result (tiebreak: highest avg score)
+  const bestResultShave = useMemo(() => {
+    return logs.reduce<ShaveLog | null>((best, log) => {
+      const n = resultNorm(log, resultOptions);
+      if (n === null) return best;
+      if (!best) return log;
+      const bn = resultNorm(best, resultOptions);
+      if (bn === null || n > bn) return log;
+      if (n === bn && (avgScoreOf(log.scores) ?? 0) > (avgScoreOf(best.scores) ?? 0)) return log;
+      return best;
+    }, null);
+  }, [logs, resultOptions]);
+
+  // Shave with the highest avg score (tiebreak: highest result)
+  const bestScoreShave = useMemo(() => {
+    return logs.reduce<ShaveLog | null>((best, log) => {
+      const s = avgScoreOf(log.scores);
+      if (s === null) return best;
+      if (!best) return log;
+      const bs = avgScoreOf(best.scores);
+      if (bs === null || s > bs) return log;
+      if (s === bs && (resultNorm(log, resultOptions) ?? 0) > (resultNorm(best, resultOptions) ?? 0)) return log;
+      return best;
+    }, null);
+  }, [logs, resultOptions]);
+
+  // Top 5 most-used items per category + "Other"
+  const categoryUsage = useMemo(() => {
+    return CATEGORY_ORDER.map(catId => {
+      const itemMap: Record<string, { name: string; count: number }> = {};
+      let total = 0;
+      for (const log of logs) {
+        const sel = log.selectedItems[catId];
+        if (!sel?.itemId) continue;
+        const item = inventory.find(i => i.id === sel.itemId);
+        const name = item ? `${item.brand} ${item.name}` : (sel.itemName ?? "Unknown");
+        if (!itemMap[sel.itemId]) itemMap[sel.itemId] = { name, count: 0 };
+        itemMap[sel.itemId].count++;
+        total++;
+      }
+      if (total === 0) return null;
+      const sorted = Object.values(itemMap).sort((a, b) => b.count - a.count);
+      const top = sorted.slice(0, 5).map(e => ({ name: e.name, count: e.count, pct: (e.count / total) * 100 }));
+      const otherCount = sorted.slice(5).reduce((s, e) => s + e.count, 0);
+      return { catId, total, top, otherCount, otherPct: (otherCount / total) * 100 };
+    }).filter((c): c is NonNullable<typeof c> => c !== null);
+  }, [logs, inventory]);
+
+  const renderGear = (log: ShaveLog) => {
+    const gear = CATEGORY_ORDER.map(catId => {
+      const sel = log.selectedItems[catId];
+      if (!sel?.itemId) return null;
+      const item = inventory.find(i => i.id === sel.itemId);
+      const name = item ? `${item.brand} ${item.name}` : sel.itemName;
+      if (!name) return null;
+      return { catId, name };
+    }).filter((g): g is { catId: string; name: string } => g !== null);
+
+    if (!gear.length) return <p className="text-gray-600 text-sm italic">No gear recorded</p>;
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {gear.map(({ catId, name }) => (
+          <div key={catId} className="flex items-center gap-2 bg-[#242424] rounded-lg px-3 py-2 border border-white/5">
+            <span className="text-sm">{CATEGORY_ICONS[catId] ?? "📦"}</span>
+            <div>
+              <p className="text-gray-500 text-[10px] leading-none mb-0.5">{CATEGORY_LABELS[catId] ?? catId}</p>
+              <p className="text-[#f5f2eb] text-xs font-medium leading-none">{name}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <section>
+      <div className="mb-6">
+        <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Personal Records</h2>
+        <p className="text-gray-500 text-xs">Your best setups and most-used gear</p>
+      </div>
+
+      {/* Best result + best score side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
+          <p className="text-gray-500 text-[11px] uppercase tracking-wider mb-3">Highest Result Setup</p>
+          {bestResultShave ? (
+            <>
+              <div className="flex items-baseline gap-3 mb-4">
+                <span className="font-bold text-3xl leading-none"
+                  style={{ color: normColor(resultNorm(bestResultShave, resultOptions) ?? 0) }}>
+                  {bestResultShave.result}
+                </span>
+                <span className="text-gray-600 text-xs">
+                  {new Date(bestResultShave.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              </div>
+              {renderGear(bestResultShave)}
+            </>
+          ) : <p className="text-gray-600 text-sm">No data</p>}
+        </div>
+
+        <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
+          <p className="text-gray-500 text-[11px] uppercase tracking-wider mb-3">Highest Scoring Setup</p>
+          {bestScoreShave ? (
+            <>
+              <div className="flex items-baseline gap-3 mb-4">
+                <span className="font-bold text-3xl leading-none"
+                  style={{ color: scoreColor(avgScoreOf(bestScoreShave.scores) ?? 0) }}>
+                  {(avgScoreOf(bestScoreShave.scores) ?? 0).toFixed(1)}
+                </span>
+                <span className="text-gray-500 text-sm">avg score</span>
+                <span className="text-gray-600 text-xs ml-auto">
+                  {new Date(bestScoreShave.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              </div>
+              {renderGear(bestScoreShave)}
+            </>
+          ) : <p className="text-gray-600 text-sm">No data</p>}
+        </div>
+      </div>
+
+      {/* Most used per category */}
+      <h3 className="text-[#f5f2eb] font-semibold text-base mb-4">Most Used Gear</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {categoryUsage.map(({ catId, total, top, otherCount, otherPct }) => (
+          <div key={catId} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span>{CATEGORY_ICONS[catId] ?? "📦"}</span>
+              <p className="text-[#f5f2eb] text-sm font-semibold flex-1">{CATEGORY_LABELS[catId] ?? catId}</p>
+              <span className="text-gray-600 text-xs">{total} uses</span>
+            </div>
+            <div className="space-y-2.5">
+              {top.map((e, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[#f5f2eb] text-xs truncate flex-1 pr-2" title={e.name}>{e.name}</span>
+                    <span className="text-[#c9a050] text-xs font-semibold shrink-0">{e.pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+                    <div className="h-full bg-[#c9a050] rounded-full" style={{ width: `${e.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+              {otherCount > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-gray-500 text-xs">Other</span>
+                    <span className="text-gray-500 text-xs font-semibold">{otherPct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+                    <div className="h-full bg-[#4b5563] rounded-full" style={{ width: `${otherPct}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

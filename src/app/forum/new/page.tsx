@@ -1,0 +1,108 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { useSession } from "@/lib/session-context";
+
+const CATEGORIES = [
+  { value: "general", label: "General Discussion" },
+  { value: "soap-reviews", label: "Soap Reviews" },
+  { value: "razor-reviews", label: "Razor Reviews" },
+  { value: "brush-reviews", label: "Brush Reviews" },
+  { value: "technique", label: "Technique & Advice" },
+  { value: "show-and-tell", label: "Show & Tell" },
+];
+
+export default function NewThreadPage() {
+  const { session, loading } = useSession();
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [category, setCategory] = useState("general");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!loading && !session) router.push("/sign-in");
+  }, [session, loading, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const { thread } = await api.post<{ thread: { id: string } }>("/api/forum/threads", {
+        title: title.trim(),
+        body: body.trim(),
+        category,
+      });
+      router.push(`/forum/${thread.id}`);
+    } catch {
+      setError("Failed to post. Please try again.");
+      setSubmitting(false);
+    }
+  };
+
+  if (loading || !session) return null;
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-10">
+      <div className="flex items-center gap-3 mb-8">
+        <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-300 text-sm">
+          ← Back
+        </button>
+        <h1 className="font-[family-name:var(--font-fredericka)] text-2xl text-[#c9a050]">New Thread</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div>
+          <label className="block text-sm text-gray-400 mb-2">Category</label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/40"
+          >
+            {CATEGORIES.map((cat) => (
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-2">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What's on your mind?"
+            maxLength={200}
+            className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-2">Body</label>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Share your thoughts, questions, or experience…"
+            rows={8}
+            className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-y focus:outline-none focus:border-[#c9a050]/40"
+          />
+        </div>
+
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={!title.trim() || !body.trim() || submitting}
+          className="bg-[#c9a050] text-black font-bold py-3 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors"
+        >
+          {submitting ? "Posting…" : "Post Thread"}
+        </button>
+      </form>
+    </div>
+  );
+}

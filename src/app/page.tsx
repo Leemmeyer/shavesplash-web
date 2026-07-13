@@ -2,43 +2,21 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <span className="font-[family-name:var(--font-fredericka)] text-2xl text-[#c9a050]">
-          ShaveSplash
-        </span>
-        <div className="flex items-center gap-6">
-          <Link href="/bst" className="text-sm text-gray-400 hover:text-[#c9a050] transition-colors">
-            Marketplace
-          </Link>
-          <Link href="/den" className="text-sm text-gray-400 hover:text-[#c9a050] transition-colors">
-            My Den
-          </Link>
-          <Link
-            href="https://shavesplash.com"
-            target="_blank"
-            className="text-sm text-gray-400 hover:text-[#c9a050] transition-colors"
-          >
-            About
-          </Link>
-        </div>
-      </nav>
-
+    <div className="flex flex-col">
       {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24">
+      <section className="flex flex-col items-center justify-center text-center px-6 py-24 min-h-[calc(100vh-57px)]">
         <div className="inline-flex items-center gap-2 bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-4 py-1.5 text-sm text-[#c9a050] mb-8">
           <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] animate-pulse" />
-          Now with Buy · Sell · Trade
+          Cloud sync · Forum · Marketplace
         </div>
 
         <h1 className="font-[family-name:var(--font-fredericka)] text-5xl md:text-7xl text-[#c9a050] mb-6 leading-tight">
-          The Wetshaving<br />Community App
+          The Wetshaving<br />Community
         </h1>
 
         <p className="text-gray-400 text-lg md:text-xl max-w-xl mb-12 leading-relaxed">
-          Log every shave, manage your den, get AI-powered insights, and trade gear
-          with shavers around the world.
+          Log every shave, manage your den, discuss with fellow shavers,
+          and trade gear — all in one place.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -51,71 +29,56 @@ export default function Home() {
             Download on iOS
           </Link>
           <Link
-            href="/bst"
+            href="/forum"
             className="flex items-center gap-3 border border-[#c9a050]/30 text-[#c9a050] px-8 py-4 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-base"
+          >
+            Join the Discussion
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="border-t border-white/5 px-6 py-20 bg-[#1e1e1e]">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Feature icon="📔" title="Shave History" description="Log every shave with razor, blade, soap, aftershave, scores, and notes." />
+          <Feature icon="🪒" title="Your Den" description="Catalog your entire collection. Track performance stats and usage history per item." />
+          <Feature icon="☁️" title="Cloud Sync" description="Your data syncs automatically across devices via ShaveSplash Cloud." />
+          <Feature icon="💬" title="Forum" description="Discuss technique, share finds, and get advice from the wetshaving community." />
+          <Feature icon="🛒" title="Buy · Sell · Trade" description="A dedicated marketplace for the wetshaving community. List gear from your den in seconds." />
+          <Feature icon="🤖" title="AI Coach" description="Get personalized recommendations based on your shave history." />
+        </div>
+      </section>
+
+      {/* Forum CTA */}
+      <section className="border-t border-white/5 px-6 py-16 text-center">
+        <h2 className="font-[family-name:var(--font-fredericka)] text-3xl md:text-4xl text-[#c9a050] mb-4">
+          Join the conversation
+        </h2>
+        <p className="text-gray-400 mb-8 max-w-md mx-auto">
+          Share your latest shave, ask for advice, or review a new soap — the ShaveSplash community is here.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            href="/forum"
+            className="inline-block bg-[#c9a050] text-black font-bold px-8 py-4 rounded-2xl hover:bg-[#b8903f] transition-colors"
+          >
+            Browse Forum
+          </Link>
+          <Link
+            href="/bst"
+            className="inline-block border border-[#c9a050]/30 text-[#c9a050] px-8 py-4 rounded-2xl hover:bg-[#c9a050]/10 transition-colors"
           >
             Browse Marketplace
           </Link>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="border-t border-white/5 px-6 py-20">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Feature
-            icon="📔"
-            title="Shave History"
-            description="Log every shave with razor, blade, soap, aftershave, scores, and notes. Track your streak and history."
-          />
-          <Feature
-            icon="🪒"
-            title="Your Den"
-            description="Catalog your entire collection. Track performance stats, best blade pairings, and usage history per item."
-          />
-          <Feature
-            icon="🤖"
-            title="AI Coach"
-            description="Get personalized recommendations based on your shave history. Discover what works best for your face."
-          />
-          <Feature
-            icon="🛒"
-            title="Buy · Sell · Trade"
-            description="A dedicated marketplace for the wetshaving community. List gear from your den in seconds."
-          />
-          <Feature
-            icon="📰"
-            title="Community News"
-            description="Stay up to date with the latest from the wetshaving world — new releases, reviews, and forum highlights."
-          />
-          <Feature
-            icon="🌍"
-            title="Multilingual"
-            description="Available in English, Italian, German, French, Spanish, and Polish."
-          />
-        </div>
-      </section>
-
-      {/* BST CTA */}
-      <section className="bg-[#242424] border-t border-white/5 px-6 py-16 text-center">
-        <h2 className="font-[family-name:var(--font-fredericka)] text-3xl md:text-4xl text-[#c9a050] mb-4">
-          Ready to trade?
-        </h2>
-        <p className="text-gray-400 mb-8 max-w-md mx-auto">
-          Browse hundreds of listings from shavers worldwide. Razors, soaps, brushes, aftershaves — all in one place.
-        </p>
-        <Link
-          href="/bst"
-          className="inline-block bg-[#c9a050] text-black font-bold px-8 py-4 rounded-2xl hover:bg-[#b8903f] transition-colors"
-        >
-          Browse Marketplace
-        </Link>
-      </section>
-
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600">
-        <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050]/60">ShaveSplash</span>
+        <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050]/60">ShaveSplash Cloud</span>
         <div className="flex gap-6">
           <Link href="https://shavesplash.com" target="_blank" className="hover:text-gray-400 transition-colors">shavesplash.com</Link>
+          <Link href="/forum" className="hover:text-gray-400 transition-colors">Forum</Link>
           <Link href="/bst" className="hover:text-gray-400 transition-colors">Marketplace</Link>
         </div>
       </footer>

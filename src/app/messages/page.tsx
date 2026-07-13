@@ -9,8 +9,8 @@ import { useSession } from "@/lib/session-context";
 interface Conversation {
   id: string;
   listing: { id: string; title: string; brand?: string; photos: { data: string }[] };
-  buyer: { id: string; name: string; email: string };
-  seller: { id: string; name: string; email: string };
+  buyer: { id: string; name: string; email: string; profile?: { displayName?: string } | null };
+  seller: { id: string; name: string; email: string; profile?: { displayName?: string } | null };
   messages: { id: string; body: string; createdAt: string; readAt?: string | null; senderId: string }[];
   updatedAt: string;
 }
@@ -54,7 +54,8 @@ export default function MessagesPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {conversations.map((conv) => {
-            const other = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
+            const otherUser = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
+            const other = { ...otherUser, displayName: otherUser.profile?.displayName ?? otherUser.name };
             const last = conv.messages[0];
             const isUnread = last && !last.readAt && last.senderId !== session.user.id;
 
@@ -80,7 +81,7 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <span className={`text-sm font-semibold truncate ${isUnread ? "text-[#f5f2eb]" : "text-gray-300"}`}>
-                      {other.name}
+                      {other.displayName}
                     </span>
                     <span className="text-xs text-gray-600 shrink-0">
                       {new Date(conv.updatedAt).toLocaleDateString()}

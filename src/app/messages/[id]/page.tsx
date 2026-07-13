@@ -18,8 +18,8 @@ interface Message {
 interface ConversationDetail {
   id: string;
   listing: { id: string; title: string; brand?: string };
-  buyer: { id: string; name: string; email: string };
-  seller: { id: string; name: string; email: string };
+  buyer: { id: string; name: string; email: string; profile?: { displayName?: string } | null };
+  seller: { id: string; name: string; email: string; profile?: { displayName?: string } | null };
   messages: Message[];
 }
 
@@ -71,7 +71,8 @@ export default function ConversationPage() {
 
   if (loading || !session || !conv) return null;
 
-  const other = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
+  const otherUser = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
+  const other = { ...otherUser, displayName: otherUser.profile?.displayName ?? otherUser.name };
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col" style={{ height: "calc(100vh - 57px)" }}>
@@ -79,7 +80,7 @@ export default function ConversationPage() {
       <div className="flex items-center gap-3 mb-6">
         <Link href="/messages" className="text-gray-500 hover:text-gray-300 text-sm">← Back</Link>
         <div className="flex-1">
-          <h1 className="text-[#f5f2eb] font-semibold">{other.name}</h1>
+          <h1 className="text-[#f5f2eb] font-semibold">{other.displayName}</h1>
           <Link href={`/bst/${conv.listing.id}`} className="text-xs text-[#c9a050] hover:underline">
             {conv.listing.title}
           </Link>

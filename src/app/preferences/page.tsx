@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import { useSession } from "@/lib/session-context";
 
 type ScoreParameter = { id: string; name: string; shortName: string };
 
@@ -15,10 +16,16 @@ export default function PreferencesPage() {
 }
 
 function PreferencesContent() {
+  const { session } = useSession();
   const [loading, setLoading] = useState(true);
   const [resultOptions, setResultOptions] = useState<string[]>([]);
   const [scoreParameters, setScoreParameters] = useState<ScoreParameter[]>([]);
   const [synced, setSynced] = useState(false);
+
+  // Display name
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
 
   useEffect(() => {
     api.get<{ resultOptions: string[]; scoreParameters: ScoreParameter[] }>("/api/preferences")
@@ -30,6 +37,24 @@ function PreferencesContent() {
       .catch(() => setSynced(false))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    api.get<{ profile: { displayName?: string | null } }>("/api/bst/profile")
+      .then((d) => { if (d.profile?.displayName) setDisplayName(d.profile.displayName); })
+      .catch(() => {});
+  }, [session]);
+
+  const handleSaveName = async () => {
+    if (!displayName.trim() || savingName) return;
+    setSavingName(true);
+    try {
+      await api.patch("/api/bst/profile", { displayName: displayName.trim() });
+      setNameSaved(true);
+      setTimeout(() => setNameSaved(false), 2000);
+    } catch {}
+    finally { setSavingName(false); }
+  };
 
   if (loading) {
     return (
@@ -58,6 +83,34 @@ function PreferencesContent() {
       </div>
 
       <div className="space-y-6">
+        {/* Display Name */}
+        <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+          <h2 className="text-[#f5f2eb] font-semibold text-base mb-1">Public Username</h2>
+          <p className="text-gray-500 text-xs mb-4">Shown on forum posts, messages, and marketplace listings. Syncs instantly with the mobile app.</p>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); }}
+              placeholder="Choose a username"
+              maxLength={40}
+              className="flex-1 bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
+            />
+            <button
+              onClick={handleSaveName}
+              disabled={!displayName.trim() || savingName}
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40 ${
+                nameSaved
+                  ? "bg-green-500 text-white"
+                  : "bg-[#c9a050] text-black hover:bg-[#b8903f]"
+              }`}
+            >
+              {nameSaved ? "✓ Saved" : savingName ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+
         {/* Result Options */}
         <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
           <h2 className="text-[#f5f2eb] font-semibold text-base mb-1">Result Options</h2>

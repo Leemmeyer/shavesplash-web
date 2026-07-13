@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -607,7 +606,6 @@ function NewItemPageContent() {
 export default function NewItemPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <AppNav />
       <AuthGuard>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center">

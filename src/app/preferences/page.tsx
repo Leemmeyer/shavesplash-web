@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -10,7 +9,6 @@ type ScoreParameter = { id: string; name: string; shortName: string };
 export default function PreferencesPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <AppNav />
       <AuthGuard><PreferencesContent /></AuthGuard>
     </div>
   );

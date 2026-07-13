@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -380,7 +379,6 @@ function LogForm({
 export default function LogsPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <AppNav />
       <AuthGuard><LogsContent /></AuthGuard>
     </div>
   );

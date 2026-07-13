@@ -3,7 +3,6 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -76,7 +75,6 @@ export default function ItemDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   return (
     <div className="min-h-screen flex flex-col">
-      <AppNav />
       <AuthGuard><ItemDetailContent id={id} /></AuthGuard>
     </div>
   );

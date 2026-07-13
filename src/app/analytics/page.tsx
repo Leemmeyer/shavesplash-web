@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
-import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -108,7 +107,6 @@ function corrLabel(r: number): string {
 export default function AnalyticsPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <AppNav />
       <AuthGuard><AnalyticsContent /></AuthGuard>
     </div>
   );

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import AppNav from "@/components/AppNav";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -48,7 +47,6 @@ function sortItems(items: InventoryItem[], sort: string, usageCounts: Record<str
 export default function DenPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <AppNav />
       <AuthGuard>
         <DenContent />
       </AuthGuard>

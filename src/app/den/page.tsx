@@ -60,7 +60,17 @@ function DenContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("name");
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<Set<string>>(
+    new Set(DEFAULT_CATEGORIES.map((c) => c.id))
+  );
+
+  useEffect(() => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      for (const cat of categories) next.add(cat.id);
+      return next;
+    });
+  }, [categories]);
 
   useEffect(() => {
     Promise.all([

@@ -65,14 +65,6 @@ function DenContent() {
   );
 
   useEffect(() => {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      for (const cat of categories) next.add(cat.id);
-      return next;
-    });
-  }, [categories]);
-
-  useEffect(() => {
     Promise.all([
       api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
       api.get<{ logs: Array<{ selectedItems: Record<string, { itemId?: string }> }> }>("/api/logs").then((d) => d.logs).catch(() => []),
@@ -95,6 +87,15 @@ function DenContent() {
     const customs = customIds.map((id) => ({ id, label: id, icon: "📦" }));
     return [...DEFAULT_CATEGORIES, ...customs];
   }, [items]);
+
+  // Collapse any custom categories discovered after load
+  useEffect(() => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      for (const cat of categories) next.add(cat.id);
+      return next;
+    });
+  }, [categories]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {

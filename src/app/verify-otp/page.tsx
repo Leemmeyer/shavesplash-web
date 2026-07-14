@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyOTP } from "@/lib/auth";
@@ -11,12 +11,22 @@ const NUM_DIGITS = 6;
 function VerifyOTPForm() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
+  const autoOtp = searchParams.get("otp") ?? "";
+  const isAuto = searchParams.get("auto") === "1";
   const [digits, setDigits] = useState<string[]>(Array(NUM_DIGITS).fill(""));
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(isAuto);
   const [error, setError] = useState<string | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>(Array(NUM_DIGITS).fill(null));
   const router = useRouter();
   const { refresh } = useSession();
+
+  // Magic link: auto-verify on mount if otp + auto params are present
+  useEffect(() => {
+    if (isAuto && autoOtp && email) {
+      handleVerify(autoOtp);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (value: string, index: number) => {
     // Handle paste
@@ -74,13 +84,21 @@ function VerifyOTPForm() {
     <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-2 text-center">
-          Check Your Email
+          {isAuto && loading ? "Signing you in…" : "Check Your Email"}
         </h1>
         <p className="text-gray-500 text-sm text-center mb-8">
-          We sent a 6-digit code to <span className="text-[#f5f2eb]">{email}</span>
+          {isAuto && loading
+            ? "Please wait a moment."
+            : <>We sent a sign-in link and 6-digit code to <span className="text-[#f5f2eb]">{email}</span></>}
         </p>
 
-        <div className="flex gap-2 justify-center mb-6">
+        {isAuto && loading ? (
+          <div className="flex justify-center mb-6">
+            <div className="w-8 h-8 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+          </div>
+        ) : null}
+
+        <div className={`flex gap-2 justify-center mb-6 ${isAuto && loading ? "hidden" : ""}`}>
           {digits.map((digit, i) => (
             <input
               key={i}

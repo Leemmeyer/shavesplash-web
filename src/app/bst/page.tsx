@@ -23,6 +23,7 @@ type Listing = {
   condition: string;
   category: string;
   status: string;
+  isExpertListing: boolean;
   createdAt: string;
   photos: Photo[];
   seller: Seller;
@@ -155,6 +156,11 @@ function ListingCard({ listing }: { listing: Listing }) {
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-gray-300">
             {listing.condition}
           </div>
+          {listing.isExpertListing && (
+            <div className="absolute top-2 left-2 bg-[#c9a050] text-black rounded-lg px-2 py-0.5 text-[10px] font-bold tracking-wide">
+              ★ EXPERT
+            </div>
+          )}
         </div>
 
         {/* Info */}

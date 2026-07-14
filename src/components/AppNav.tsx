@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
 import { useSession } from "@/lib/session-context";
 
-const NAV_LINKS = [
+const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/den", label: "Den" },
   { href: "/logs", label: "History" },
   { href: "/analytics", label: "Analytics" },
@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/messages", label: "Messages" },
   { href: "/forum", label: "Forum" },
   { href: "/preferences", label: "Preferences" },
+  { href: "/subscribe", label: "★ Expert", gold: true },
 ];
 
 export default function AppNav() {
@@ -47,6 +48,8 @@ export default function AppNav() {
                 className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                   pathname.startsWith(link.href)
                     ? "text-[#c9a050] bg-[#c9a050]/10"
+                    : link.gold
+                    ? "text-[#c9a050]/70 hover:text-[#c9a050]"
                     : "text-gray-400 hover:text-[#f5f2eb]"
                 }`}
               >

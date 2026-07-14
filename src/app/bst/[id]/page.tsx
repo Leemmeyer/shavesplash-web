@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 const BACKEND = "https://api.shavesplash.app";
 
 type Photo = { id: string; data: string; order: number };
-type Seller = { id: string; name: string; email: string; profile: { displayName?: string; paypalHandle?: string } | null };
+type Seller = { id: string; name: string; email: string; profile: { displayName?: string; paypalHandle?: string; isExpert?: boolean } | null };
 type Listing = {
   id: string;
   title: string;
@@ -14,6 +14,7 @@ type Listing = {
   condition: string;
   category: string;
   status: string;
+  isExpertListing: boolean;
   createdAt: string;
   photos: Photo[];
   seller: Seller;
@@ -122,7 +123,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   {sellerName[0]?.toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-[#f5f2eb] font-semibold">{sellerName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[#f5f2eb] font-semibold">{sellerName}</p>
+                    {listing.isExpertListing && (
+                      <span className="bg-[#c9a050] text-black text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wide">★ EXPERT</span>
+                    )}
+                  </div>
                   <p className="text-gray-500 text-xs">Listed {listedDate}</p>
                 </div>
               </div>

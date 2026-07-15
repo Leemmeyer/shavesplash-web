@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import WatchlistSection from "@/components/WatchlistSection";
 
 const BACKEND = "https://api.shavesplash.app";
 
@@ -9,6 +10,7 @@ const CATEGORIES = [
   { value: "brush", label: "Brushes" },
   { value: "soap", label: "Soaps" },
   { value: "aftershave", label: "Aftershaves" },
+  { value: "edp", label: "Fragrance" },
   { value: "misc", label: "Misc" },
 ];
 
@@ -18,6 +20,8 @@ type Listing = {
   id: string;
   title: string;
   brand: string | null;
+  model: string | null;
+  material: string | null;
   description: string;
   price: number;
   condition: string;
@@ -82,6 +86,11 @@ export default async function BSTPage({
             {listings.length} active listing{listings.length !== 1 ? "s" : ""} from the wetshaving community
           </p>
         </div>
+
+        {/* Watchlist alerts */}
+        <Suspense fallback={null}>
+          <WatchlistSection />
+        </Suspense>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -165,8 +174,10 @@ function ListingCard({ listing }: { listing: Listing }) {
 
         {/* Info */}
         <div className="p-3">
-          {listing.brand && (
-            <p className="text-[#c9a050] text-xs font-medium mb-0.5">{listing.brand}</p>
+          {(listing.brand || listing.model) && (
+            <p className="text-[#c9a050] text-xs font-medium mb-0.5">
+              {[listing.brand, listing.model].filter(Boolean).join(" · ")}
+            </p>
           )}
           <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
             {listing.title}

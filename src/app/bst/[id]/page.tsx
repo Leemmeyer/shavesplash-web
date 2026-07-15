@@ -9,6 +9,8 @@ type Listing = {
   id: string;
   title: string;
   brand: string | null;
+  model: string | null;
+  material: string | null;
   description: string;
   price: number;
   condition: string;
@@ -95,8 +97,13 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* Details */}
           <div>
-            {listing.brand && (
-              <p className="text-[#c9a050] text-sm font-medium mb-1">{listing.brand}</p>
+            {(listing.brand || listing.model) && (
+              <p className="text-[#c9a050] text-sm font-medium mb-1">
+                {[listing.brand, listing.model].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {listing.material && (
+              <p className="text-gray-500 text-xs mb-1">{listing.material}</p>
             )}
             <h1 className="text-[#f5f2eb] text-2xl font-bold mb-2">{listing.title}</h1>
 

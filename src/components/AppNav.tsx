@@ -13,7 +13,7 @@ const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/messages", label: "Messages" },
   { href: "/forum", label: "Forum" },
   { href: "/preferences", label: "Preferences" },
-  { href: "/subscribe", label: "★ Expert", gold: true },
+  { href: "/subscribe", label: "★ Upgrade", gold: true },
 ];
 
 export default function AppNav() {

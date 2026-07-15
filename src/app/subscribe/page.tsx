@@ -14,10 +14,16 @@ const FEATURES = [
   { icon: "★", label: "Expert Seller badge", sub: "Builds trust with buyers in the community" },
 ];
 
+const PLANS = [
+  { id: "monthly" as const, label: "Monthly", price: "$2.99", period: "/month", badge: null },
+  { id: "annual" as const, label: "Annual", price: "$24.99", period: "/year", badge: "Save 30%" },
+];
+
 export default function SubscribePage() {
   const { session, loading } = useSession();
   const [isExpert, setIsExpert] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +40,7 @@ export default function SubscribePage() {
     setCheckoutLoading(true);
     setError(null);
     try {
-      const { url } = await api.post<{ url: string }>("/api/subscriptions/checkout");
+      const { url } = await api.post<{ url: string }>("/api/subscriptions/checkout", { plan: selectedPlan });
       if (url) window.location.href = url;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -53,6 +59,7 @@ export default function SubscribePage() {
   };
 
   const isLoading = loading || statusLoading;
+  const activePlan = PLANS.find((p) => p.id === selectedPlan)!;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -70,14 +77,45 @@ export default function SubscribePage() {
           </p>
         </div>
 
-        {/* Price card */}
-        <div className="bg-[#1e1e1e] border border-[#c9a050]/30 rounded-3xl p-8 mb-6">
-          <div className="flex items-end gap-1 mb-1">
-            <span className="font-[family-name:var(--font-fredericka)] text-5xl text-[#c9a050]">$2.99</span>
-            <span className="text-gray-500 mb-2">/month</span>
+        {/* Plan selector */}
+        {!isExpert && !isLoading && (
+          <div className="flex gap-3 mb-6">
+            {PLANS.map((plan) => (
+              <button
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={`flex-1 rounded-2xl border-2 p-4 text-left transition-all ${
+                  selectedPlan === plan.id
+                    ? "border-[#c9a050] bg-[#c9a050]/10"
+                    : "border-white/10 bg-[#1e1e1e] hover:border-white/20"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-sm font-semibold ${selectedPlan === plan.id ? "text-[#c9a050]" : "text-gray-400"}`}>
+                    {plan.label}
+                  </span>
+                  {plan.badge && (
+                    <span className="bg-[#c9a050] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {plan.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-end gap-1">
+                  <span className={`text-2xl font-bold ${selectedPlan === plan.id ? "text-[#f5f2eb]" : "text-gray-500"}`}>
+                    {plan.price}
+                  </span>
+                  <span className="text-gray-600 text-sm mb-0.5">{plan.period}</span>
+                </div>
+                {plan.id === "annual" && (
+                  <p className="text-gray-600 text-xs mt-1">~$2.08/month</p>
+                )}
+              </button>
+            ))}
           </div>
-          <p className="text-gray-500 text-sm mb-8">Cancel anytime. No commitment.</p>
+        )}
 
+        {/* Main card */}
+        <div className="bg-[#1e1e1e] border border-[#c9a050]/30 rounded-3xl p-8 mb-6">
           <div className="space-y-4 mb-8">
             {FEATURES.map((f) => (
               <div key={f.label} className="flex items-start gap-3">
@@ -123,8 +161,11 @@ export default function SubscribePage() {
                 disabled={checkoutLoading}
                 className="w-full bg-[#c9a050] text-black font-bold py-4 rounded-xl hover:bg-[#b8903f] transition-colors disabled:opacity-50 text-base"
               >
-                {checkoutLoading ? "Redirecting to checkout…" : "Subscribe — $2.99/month"}
+                {checkoutLoading
+                  ? "Redirecting to checkout…"
+                  : `Subscribe — ${activePlan.price}${activePlan.period}`}
               </button>
+              <p className="text-gray-600 text-xs text-center mt-3">Cancel anytime. No commitment.</p>
             </div>
           )}
         </div>

@@ -7,6 +7,14 @@ import { useSession } from "@/lib/session-context";
 
 type RazorBrand = { name: string; models: string[]; materials: string[] };
 
+const CUSTOM_BRAND_KEY = "__custom__";
+
+const STANDARD_METALS = [
+  "Aluminum", "Brass", "Bronze", "Chrome Plated", "Chrome Plated Zinc",
+  "Copper", "Gold Plated", "Rosegold", "Silver Plated",
+  "Stainless Steel", "Titanium", "Zamak",
+];
+
 const CATEGORIES = [
   { value: "aftershave", label: "Aftershaves" },
   { value: "brush", label: "Brushes" },
@@ -54,6 +62,8 @@ export default function WatchlistSection() {
   const [formMaterial, setFormMaterial] = useState("");
   const [formKeyword, setFormKeyword] = useState("");
   const [formMaxPrice, setFormMaxPrice] = useState("");
+  const [customBrandInput, setCustomBrandInput] = useState("");
+  const [customModelInput, setCustomModelInput] = useState("");
 
   useEffect(() => {
     if (!session) {
@@ -87,9 +97,12 @@ export default function WatchlistSection() {
 
   // Derived brand/model/material options for razor category
   const brandOptions = razorBrands.map((b) => b.name).sort((a, b) => a.localeCompare(b));
+  const isCustomBrand = formBrand === CUSTOM_BRAND_KEY;
   const selectedBrandData = razorBrands.find((b) => b.name === formBrand);
   const modelOptions = (selectedBrandData?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
-  const materialOptions = (selectedBrandData?.materials ?? []).slice().sort((a, b) => a.localeCompare(b));
+  const materialOptions = isCustomBrand
+    ? STANDARD_METALS
+    : (selectedBrandData?.materials ?? []).slice().sort((a, b) => a.localeCompare(b));
 
   const resetForm = () => {
     setFormCategory("razor");
@@ -98,6 +111,8 @@ export default function WatchlistSection() {
     setFormMaterial("");
     setFormKeyword("");
     setFormMaxPrice("");
+    setCustomBrandInput("");
+    setCustomModelInput("");
     setError(null);
     setShowForm(false);
   };
@@ -106,11 +121,14 @@ export default function WatchlistSection() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const isCustomBrand = formBrand === CUSTOM_BRAND_KEY;
+    const resolvedBrand = isCustomBrand ? customBrandInput.trim() : formBrand;
+    const resolvedModel = isCustomBrand ? (customModelInput.trim() || undefined) : (formModel || undefined);
     try {
       await api.post("/api/bst/alerts", {
         category: formCategory,
-        brand: formBrand || undefined,
-        model: formModel || undefined,
+        brand: resolvedBrand || undefined,
+        model: resolvedModel,
         material: formMaterial || undefined,
         keyword: formKeyword || undefined,
         maxPrice: formMaxPrice ? parseFloat(formMaxPrice) : undefined,
@@ -211,24 +229,45 @@ export default function WatchlistSection() {
                 <label className="text-xs text-gray-500 block mb-1">Brand <span className="text-gray-600">(optional)</span></label>
                 <select
                   value={formBrand}
-                  onChange={(e) => { setFormBrand(e.target.value); setFormModel(""); setFormMaterial(""); }}
+                  onChange={(e) => { setFormBrand(e.target.value); setFormModel(""); setFormMaterial(""); setCustomBrandInput(""); setCustomModelInput(""); }}
                   className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
                 >
                   <option value="">Any brand</option>
                   {brandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                  <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
                 </select>
+                {isCustomBrand && (
+                  <input
+                    type="text"
+                    value={customBrandInput}
+                    onChange={(e) => setCustomBrandInput(e.target.value)}
+                    placeholder="Brand name…"
+                    autoFocus
+                    className="mt-2 w-full bg-[#1e1e1e] border border-[#c9a050]/40 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/70"
+                  />
+                )}
               </div>
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Model <span className="text-gray-600">(optional)</span></label>
-                <select
-                  value={formModel}
-                  onChange={(e) => setFormModel(e.target.value)}
-                  disabled={!formBrand}
-                  className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 disabled:opacity-40"
-                >
-                  <option value="">Any model</option>
-                  {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
+                {isCustomBrand ? (
+                  <input
+                    type="text"
+                    value={customModelInput}
+                    onChange={(e) => setCustomModelInput(e.target.value)}
+                    placeholder="Model name…"
+                    className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                  />
+                ) : (
+                  <select
+                    value={formModel}
+                    onChange={(e) => setFormModel(e.target.value)}
+                    disabled={!formBrand}
+                    className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 disabled:opacity-40"
+                  >
+                    <option value="">Any model</option>
+                    {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Metal <span className="text-gray-600">(optional)</span></label>

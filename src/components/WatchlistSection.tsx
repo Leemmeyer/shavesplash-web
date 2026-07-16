@@ -12,7 +12,7 @@ const CATEGORIES = [
   { value: "brush", label: "Brushes" },
   { value: "soap", label: "Soaps" },
   { value: "aftershave", label: "Aftershaves" },
-  { value: "edp", label: "Fragrance" },
+  { value: "edp", label: "EDP/EDT" },
   { value: "misc", label: "Misc" },
 ];
 
@@ -32,7 +32,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   brush: "Brushes",
   soap: "Soaps",
   aftershave: "Aftershaves",
-  edp: "Fragrance",
+  edp: "EDP/EDT",
   misc: "Misc",
 };
 

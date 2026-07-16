@@ -10,7 +10,7 @@ const CATEGORIES = [
   { value: "brush", label: "Brushes" },
   { value: "soap", label: "Soaps" },
   { value: "aftershave", label: "Aftershaves" },
-  { value: "edp", label: "Fragrance" },
+  { value: "edp", label: "EDP/EDT" },
   { value: "misc", label: "Misc" },
 ];
 

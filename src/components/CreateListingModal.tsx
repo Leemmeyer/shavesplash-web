@@ -6,6 +6,7 @@ import { useSession } from "@/lib/session-context";
 import { api } from "@/lib/api";
 
 const CUSTOM_BRAND_KEY = "__custom__";
+const CUSTOM_MODEL_KEY = "__custom_model__";
 
 const STANDARD_METALS = [
   "Aluminum", "Brass", "Bronze", "Chrome Plated", "Chrome Plated Zinc",
@@ -82,9 +83,9 @@ export default function CreateListingModal() {
   const isCustomBrand = brand === CUSTOM_BRAND_KEY;
   const selectedBrandData = brands.find((b) => b.name === brand);
   const modelOptions = (selectedBrandData?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
-  const materialOptions = isCustomBrand
-    ? STANDARD_METALS
-    : (selectedBrandData?.materials ?? []).slice().sort((a, b) => a.localeCompare(b));
+  const allMaterials = Array.from(
+    new Set([...STANDARD_METALS, ...(selectedBrandData?.materials ?? [])])
+  ).sort((a, b) => a.localeCompare(b));
 
   useEffect(() => {
     if (!open || !session) return;
@@ -136,7 +137,9 @@ export default function CreateListingModal() {
 
     try {
       const resolvedBrand = isCustomBrand ? customBrandInput.trim() : (brand || undefined);
-      const resolvedModel = isCustomBrand ? (customModelInput.trim() || undefined) : (model || undefined);
+      const resolvedModel = isCustomBrand || model === CUSTOM_MODEL_KEY
+        ? (customModelInput.trim() || undefined)
+        : (model || undefined);
 
       await api.post("/api/bst/listings", {
         title: title.trim(),
@@ -291,15 +294,28 @@ export default function CreateListingModal() {
                         className={inputCls}
                       />
                     ) : (
-                      <select
-                        value={model}
-                        onChange={(e) => setModel(e.target.value)}
-                        disabled={!brand}
-                        className={`${selectCls} disabled:opacity-40`}
-                      >
-                        <option value="">Any model</option>
-                        {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
-                      </select>
+                      <>
+                        <select
+                          value={model}
+                          onChange={(e) => { setModel(e.target.value); if (e.target.value !== CUSTOM_MODEL_KEY) setCustomModelInput(""); }}
+                          disabled={!brand}
+                          className={`${selectCls} disabled:opacity-40`}
+                        >
+                          <option value="">Any model</option>
+                          {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+                          {brand && <option value={CUSTOM_MODEL_KEY}>Other / Enter my own</option>}
+                        </select>
+                        {model === CUSTOM_MODEL_KEY && (
+                          <input
+                            type="text"
+                            value={customModelInput}
+                            onChange={(e) => setCustomModelInput(e.target.value)}
+                            placeholder="Model name (optional)"
+                            autoFocus
+                            className={`mt-2 w-full bg-[#161616] border border-[#c9a050]/40 rounded-lg px-3 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/70`}
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                   <div>
@@ -311,7 +327,7 @@ export default function CreateListingModal() {
                       className={`${selectCls} disabled:opacity-40`}
                     >
                       <option value="">Any metal</option>
-                      {materialOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+                      {allMaterials.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                 </div>

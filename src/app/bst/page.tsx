@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import WatchlistSection from "@/components/WatchlistSection";
+import CreateListingModal from "@/components/CreateListingModal";
 
 const BACKEND = "https://api.shavesplash.app";
 
@@ -78,13 +79,18 @@ export default async function BSTPage({
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="mb-8">
-          <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-2">
-            Marketplace
-          </h1>
-          <p className="text-gray-500 text-sm">
-            {listings.length} active listing{listings.length !== 1 ? "s" : ""} from the wetshaving community
-          </p>
+        <div className="flex items-start justify-between mb-8 gap-4">
+          <div>
+            <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-2">
+              Marketplace
+            </h1>
+            <p className="text-gray-500 text-sm">
+              {listings.length} active listing{listings.length !== 1 ? "s" : ""} from the wetshaving community
+            </p>
+          </div>
+          <div className="shrink-0 pt-1">
+            <CreateListingModal />
+          </div>
         </div>
 
         {/* Watchlist alerts */}

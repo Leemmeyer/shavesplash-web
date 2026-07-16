@@ -5,11 +5,16 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
-type CategoryBrands = {
-  category: string;
-  label: string;
-  brands: { name: string; models: string[]; materials: string[] }[];
-};
+type RazorBrand = { name: string; models: string[]; materials: string[] };
+
+const CATEGORIES = [
+  { value: "razor", label: "Razors" },
+  { value: "brush", label: "Brushes" },
+  { value: "soap", label: "Soaps" },
+  { value: "aftershave", label: "Aftershaves" },
+  { value: "edp", label: "Fragrance" },
+  { value: "misc", label: "Misc" },
+];
 
 type WatchlistAlert = {
   id: string;
@@ -35,7 +40,7 @@ export default function WatchlistSection() {
   const { session, loading: sessionLoading } = useSession();
   const [isExpert, setIsExpert] = useState(false);
   const [expertLoading, setExpertLoading] = useState(true);
-  const [brandsData, setBrandsData] = useState<CategoryBrands[]>([]);
+  const [razorBrands, setRazorBrands] = useState<RazorBrand[]>([]);
   const [alerts, setAlerts] = useState<WatchlistAlert[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -62,8 +67,8 @@ export default function WatchlistSection() {
   }, [session]);
 
   useEffect(() => {
-    api.get<{ brands: CategoryBrands[] }>("/api/bst/brands")
-      .then((d) => setBrandsData(d.brands))
+    api.get<{ brands: RazorBrand[] }>("/api/bst/brands")
+      .then((d) => setRazorBrands(d.brands))
       .catch(() => {});
   }, []);
 
@@ -80,10 +85,9 @@ export default function WatchlistSection() {
     loadAlerts();
   }, [loadAlerts]);
 
-  // Derived brand/model/material options from selected category
-  const categoryData = brandsData.find((c) => c.category === formCategory);
-  const brandOptions = categoryData?.brands.map((b) => b.name) ?? [];
-  const selectedBrandData = categoryData?.brands.find((b) => b.name === formBrand);
+  // Derived brand/model/material options for razor category
+  const brandOptions = razorBrands.map((b) => b.name);
+  const selectedBrandData = razorBrands.find((b) => b.name === formBrand);
   const modelOptions = selectedBrandData?.models ?? [];
   const materialOptions = selectedBrandData?.materials ?? [];
 
@@ -194,8 +198,8 @@ export default function WatchlistSection() {
 
               className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
             >
-              {brandsData.map((c) => (
-                <option key={c.category} value={c.category}>{c.label}</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
           </div>

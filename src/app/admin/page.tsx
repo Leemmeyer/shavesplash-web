@@ -191,7 +191,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAdmin) return;
     api.get<{ brands: Brand[] }>("/api/admin/brands")
-      .then((d) => setBrands(d.brands))
+      .then((d) => setBrands(d.brands.slice().sort((a, b) => a.name.localeCompare(b.name))))
       .catch(() => {})
       .finally(() => setFetching(false));
   }, [isAdmin]);
@@ -212,7 +212,7 @@ export default function AdminPage() {
     setAdding(true);
     try {
       const res = await api.post<{ brand: Brand }>("/api/admin/brands", { name: newName.trim(), models: [], materials: [] });
-      setBrands((prev) => [...prev, res.brand]);
+      setBrands((prev) => [...prev, res.brand].sort((a, b) => a.name.localeCompare(b.name)));
       setNewName("");
       setShowAdd(false);
     } finally {

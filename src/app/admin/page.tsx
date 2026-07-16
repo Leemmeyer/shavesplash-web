@@ -13,6 +13,7 @@ type Brand = {
   models: string[];
   materials: string[];
   sortOrder: number;
+  pending: boolean;
 };
 
 const STANDARD_METALS = [
@@ -206,6 +207,11 @@ export default function AdminPage() {
     setBrands((prev) => prev.filter((b) => b.id !== id));
   };
 
+  const handleApprove = async (id: string) => {
+    const updated = await api.patch<{ brand: Brand }>(`/api/admin/brands/${id}/approve`, {});
+    setBrands((prev) => prev.map((b) => b.id === id ? updated.brand : b).sort((a, b) => a.name.localeCompare(b.name)));
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -285,16 +291,55 @@ export default function AdminPage() {
         {fetching ? (
           <p className="text-gray-600 text-sm">Loading…</p>
         ) : (
-          <div className="space-y-2">
-            {brands.map((brand) => (
-              <BrandCard
-                key={brand.id}
-                brand={brand}
-                onSave={handleSave}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+          <>
+            {/* Pending review section */}
+            {brands.some((b) => b.pending) && (
+              <div className="mb-8">
+                <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-3">
+                  ⏳ Pending Review ({brands.filter((b) => b.pending).length})
+                </h2>
+                <div className="space-y-2">
+                  {brands.filter((b) => b.pending).map((brand) => (
+                    <div key={brand.id} className="bg-[#242424] rounded-2xl border border-amber-400/20 px-5 py-4 flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[#f5f2eb] font-semibold">{brand.name}</p>
+                        {brand.models.length > 0 && (
+                          <p className="text-gray-500 text-xs mt-1">Models: {brand.models.join(", ")}</p>
+                        )}
+                        <p className="text-gray-600 text-xs mt-0.5 italic">User-submitted</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => handleApprove(brand.id)}
+                          className="text-sm bg-[#c9a050] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-[#b8903f] transition-colors"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleDelete(brand.id)}
+                          className="text-sm text-gray-500 hover:text-red-400 transition-colors px-2"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Approved brands */}
+            <div className="space-y-2">
+              {brands.filter((b) => !b.pending).map((brand) => (
+                <BrandCard
+                  key={brand.id}
+                  brand={brand}
+                  onSave={handleSave}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

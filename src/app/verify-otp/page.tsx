@@ -13,6 +13,7 @@ function VerifyOTPForm() {
   const email = searchParams.get("email") ?? "";
   const autoOtp = searchParams.get("otp") ?? "";
   const isAuto = searchParams.get("auto") === "1";
+  const redirect = searchParams.get("redirect") ?? "";
   const [digits, setDigits] = useState<string[]>(Array(NUM_DIGITS).fill(""));
   const [loading, setLoading] = useState(isAuto);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +75,7 @@ function VerifyOTPForm() {
       setLoading(false);
     } else {
       refresh();
-      router.replace("/den");
+      router.replace(redirect || "/den");
     }
   };
 

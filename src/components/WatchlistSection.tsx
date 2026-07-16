@@ -8,12 +8,12 @@ import { useSession } from "@/lib/session-context";
 type RazorBrand = { name: string; models: string[]; materials: string[] };
 
 const CATEGORIES = [
-  { value: "razor", label: "Razors" },
-  { value: "brush", label: "Brushes" },
-  { value: "soap", label: "Soaps" },
   { value: "aftershave", label: "Aftershaves" },
+  { value: "brush", label: "Brushes" },
   { value: "edp", label: "EDP/EDT" },
   { value: "misc", label: "Misc" },
+  { value: "razor", label: "Razors" },
+  { value: "soap", label: "Soaps" },
 ];
 
 type WatchlistAlert = {
@@ -86,10 +86,10 @@ export default function WatchlistSection() {
   }, [loadAlerts]);
 
   // Derived brand/model/material options for razor category
-  const brandOptions = razorBrands.map((b) => b.name);
+  const brandOptions = razorBrands.map((b) => b.name).sort((a, b) => a.localeCompare(b));
   const selectedBrandData = razorBrands.find((b) => b.name === formBrand);
-  const modelOptions = selectedBrandData?.models ?? [];
-  const materialOptions = selectedBrandData?.materials ?? [];
+  const modelOptions = (selectedBrandData?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
+  const materialOptions = (selectedBrandData?.materials ?? []).slice().sort((a, b) => a.localeCompare(b));
 
   const resetForm = () => {
     setFormCategory("razor");

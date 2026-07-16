@@ -17,9 +17,9 @@ type Brand = {
 };
 
 const STANDARD_METALS = [
-  "Stainless Steel", "Titanium", "Aluminum", "Brass", "Copper",
-  "Chrome Plated", "Chrome Plated Zinc", "Gold Plated", "Silver Plated",
-  "Rosegold", "Zamak",
+  "Aluminum", "Brass", "Bronze", "Chrome Plated", "Chrome Plated Zinc",
+  "Copper", "Gold Plated", "Rosegold", "Silver Plated",
+  "Stainless Steel", "Titanium", "Zamak",
 ];
 
 function ChipEditor({

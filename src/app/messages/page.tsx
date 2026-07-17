@@ -90,7 +90,10 @@ export default function MessagesPage() {
                   <p className="text-xs text-[#c9a050] truncate mb-1">{conv.listing.title}</p>
                   {last && (
                     <p className={`text-sm truncate ${isUnread ? "text-gray-200 font-medium" : "text-gray-500"}`}>
-                      {last.senderId === session.user.id ? "You: " : ""}{last.body}
+                      <span className="font-semibold">
+                        {last.senderId === session.user.id ? "You" : other.displayName}:
+                      </span>{" "}
+                      {last.body}
                     </p>
                   )}
                 </div>

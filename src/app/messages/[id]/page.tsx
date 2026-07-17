@@ -73,6 +73,9 @@ export default function ConversationPage() {
 
   const otherUser = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
   const other = { ...otherUser, displayName: otherUser.profile?.displayName ?? otherUser.name };
+  const meUser = conv.buyer.id === session.user.id ? conv.buyer : conv.seller;
+  const myDisplayName = meUser.profile?.displayName ?? meUser.name ?? "You";
+  const senderName = (senderId: string) => senderId === session.user.id ? myDisplayName : other.displayName;
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col" style={{ height: "calc(100vh - 57px)" }}>
@@ -92,7 +95,8 @@ export default function ConversationPage() {
         {messages.map((msg) => {
           const isMe = msg.senderId === session.user.id;
           return (
-            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+            <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+              <span className="text-xs text-gray-500 mb-1 px-2">{senderName(msg.senderId)}</span>
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                   isMe
@@ -126,7 +130,7 @@ export default function ConversationPage() {
           disabled={!body.trim() || sending}
           className="bg-[#c9a050] text-black font-semibold px-5 py-3 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors text-sm whitespace-nowrap"
         >
-          {sending ? "…" : "Send"}
+          {sending ? "…" : "Reply"}
         </button>
       </div>
     </div>

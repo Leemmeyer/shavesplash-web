@@ -23,6 +23,11 @@ interface ConversationDetail {
   messages: Message[];
 }
 
+function safeDisplayName(profile: { displayName?: string | null } | null | undefined, fallback = "User"): string {
+  const dn = profile?.displayName;
+  return dn && !dn.includes("@") ? dn : fallback;
+}
+
 export default function ConversationPage() {
   const { id } = useParams<{ id: string }>();
   const { session, loading } = useSession();
@@ -31,6 +36,9 @@ export default function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [deletingMsg, setDeletingMsg] = useState<string | null>(null);
+  const [confirmDeleteConv, setConfirmDeleteConv] = useState(false);
+  const [deletingConv, setDeletingConv] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,13 +77,37 @@ export default function ConversationPage() {
     }
   };
 
+  const handleDeleteMessage = async (msgId: string) => {
+    setDeletingMsg(msgId);
+    try {
+      await api.delete(`/api/bst/conversations/${id}/messages/${msgId}`);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch {
+      // ignore
+    } finally {
+      setDeletingMsg(null);
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    setDeletingConv(true);
+    try {
+      await api.delete(`/api/bst/conversations/${id}`);
+      router.push("/messages");
+    } catch {
+      setDeletingConv(false);
+      setConfirmDeleteConv(false);
+    }
+  };
+
   if (loading || !session || !conv) return null;
 
   const otherUser = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
-  const other = { ...otherUser, displayName: otherUser.profile?.displayName ?? otherUser.name };
   const meUser = conv.buyer.id === session.user.id ? conv.buyer : conv.seller;
-  const myDisplayName = meUser.profile?.displayName ?? meUser.name ?? "You";
-  const senderName = (senderId: string) => senderId === session.user.id ? myDisplayName : other.displayName;
+  const otherName = safeDisplayName(otherUser.profile, "User");
+  const myName = safeDisplayName(meUser.profile, "You");
+
+  const senderName = (senderId: string) => senderId === session.user.id ? myName : otherName;
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col" style={{ height: "calc(100vh - 57px)" }}>
@@ -83,31 +115,82 @@ export default function ConversationPage() {
       <div className="flex items-center gap-3 mb-6">
         <Link href="/messages" className="text-gray-500 hover:text-gray-300 text-sm">← Back</Link>
         <div className="flex-1">
-          <h1 className="text-[#f5f2eb] font-semibold">{other.displayName}</h1>
+          <h1 className="text-[#f5f2eb] font-semibold">{otherName}</h1>
           <Link href={`/bst/${conv.listing.id}`} className="text-xs text-[#c9a050] hover:underline">
             {conv.listing.title}
           </Link>
         </div>
+        <button
+          onClick={() => setConfirmDeleteConv(true)}
+          className="text-xs text-gray-600 hover:text-red-400 transition-colors px-2 py-1"
+        >
+          Delete conversation
+        </button>
       </div>
 
+      {/* Delete conversation confirm */}
+      {confirmDeleteConv && (
+        <div className="mb-4 bg-[#2a2a2a] border border-red-400/20 rounded-xl p-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-gray-300">Delete this entire conversation? This cannot be undone.</p>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleDeleteConversation}
+              disabled={deletingConv}
+              className="text-sm bg-red-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+            >
+              {deletingConv ? "Deleting…" : "Delete"}
+            </button>
+            <button
+              onClick={() => setConfirmDeleteConv(false)}
+              className="text-sm text-gray-500 hover:text-gray-300 px-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3 mb-4">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-4 mb-4">
+        {messages.length === 0 && (
+          <p className="text-gray-600 text-sm text-center mt-8">No messages yet. Say hello!</p>
+        )}
         {messages.map((msg) => {
           const isMe = msg.senderId === session.user.id;
           return (
-            <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-              <span className="text-xs text-gray-500 mb-1 px-2">{senderName(msg.senderId)}</span>
-              <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  isMe
-                    ? "bg-[#c9a050] text-black rounded-br-sm"
-                    : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
-                }`}
-              >
-                <p>{msg.body}</p>
-                <p className={`text-xs mt-1 ${isMe ? "text-black/50" : "text-gray-600"}`}>
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </p>
+            <div key={msg.id} className={`flex flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
+              <span className="text-xs text-gray-500 px-2">{senderName(msg.senderId)}</span>
+              <div className="flex items-end gap-2">
+                {isMe && (
+                  <button
+                    onClick={() => handleDeleteMessage(msg.id)}
+                    disabled={deletingMsg === msg.id}
+                    className="text-[10px] text-gray-700 hover:text-red-400 transition-colors pb-1 opacity-0 group-hover:opacity-100 shrink-0"
+                    title="Delete message"
+                  >
+                    {deletingMsg === msg.id ? "…" : "✕"}
+                  </button>
+                )}
+                <div className={`group relative max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                  isMe ? "bg-[#c9a050] text-black rounded-br-sm" : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
+                }`}>
+                  <p>{msg.body}</p>
+                  <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                    <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    {isMe && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        disabled={deletingMsg === msg.id}
+                        className="text-[10px] text-black/30 hover:text-red-600 transition-colors"
+                        title="Delete message"
+                      >
+                        {deletingMsg === msg.id ? "…" : "✕"}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           );

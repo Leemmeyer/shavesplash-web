@@ -55,7 +55,9 @@ export default function MessagesPage() {
         <div className="flex flex-col gap-2">
           {conversations.map((conv) => {
             const otherUser = conv.buyer.id === session.user.id ? conv.seller : conv.buyer;
-            const other = { ...otherUser, displayName: otherUser.profile?.displayName ?? otherUser.name };
+            const rawDn = otherUser.profile?.displayName;
+            const otherDisplayName = rawDn && !rawDn.includes("@") ? rawDn : "User";
+            const other = { ...otherUser, displayName: otherDisplayName };
             const last = conv.messages[0];
             const isUnread = last && !last.readAt && last.senderId !== session.user.id;
 

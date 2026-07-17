@@ -122,13 +122,16 @@ export default function CreateListingModal() {
     e.target.value = "";
   };
 
+  const cleanDisplayName = displayName.trim();
+  const displayNameValid = cleanDisplayName.length > 0 && !cleanDisplayName.includes("@");
   const canSubmit =
-    category && title.trim() && price.trim() && condition && displayName.trim() && !submitting &&
+    category && title.trim() && price.trim() && condition && displayNameValid && !submitting &&
     (category !== "razor" || !isCustomBrand || customBrandInput.trim().length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+    if (cleanDisplayName.includes("@")) { setError("Display name cannot be an email address"); return; }
     const priceNum = parseFloat(price);
     if (isNaN(priceNum) || priceNum <= 0) { setError("Enter a valid price"); return; }
 
@@ -136,6 +139,12 @@ export default function CreateListingModal() {
     setError(null);
 
     try {
+      // Save display name to profile if changed
+      const savedDn = (await api.get<{ profile: { displayName?: string | null } }>("/api/bst/profile")).profile?.displayName ?? "";
+      if (cleanDisplayName !== savedDn) {
+        await api.patch("/api/bst/profile", { displayName: cleanDisplayName });
+      }
+
       const resolvedBrand = isCustomBrand ? customBrandInput.trim() : (brand || undefined);
       const resolvedModel = isCustomBrand || model === CUSTOM_MODEL_KEY
         ? (customModelInput.trim() || undefined)
@@ -193,7 +202,8 @@ export default function CreateListingModal() {
                   maxLength={60}
                   className={inputCls}
                 />
-                <p className="text-gray-600 text-xs mt-1">Shown on your listing · saved to your profile</p>
+                <p className="text-gray-600 text-xs mt-1">Public username shown to buyers — your email is never shared</p>
+                {cleanDisplayName.includes("@") && <p className="text-red-400 text-xs mt-0.5">Cannot use an email address as your display name</p>}
               </div>
 
               {/* Photos */}

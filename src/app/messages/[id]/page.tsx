@@ -17,7 +17,8 @@ interface Message {
 
 interface ConversationDetail {
   id: string;
-  listing: { id: string; title: string; brand?: string };
+  isDirect: boolean;
+  listing: { id: string; title: string; brand?: string } | null;
   buyer: { id: string; name: string; email: string; profile?: { displayName?: string } | null };
   seller: { id: string; name: string; email: string; profile?: { displayName?: string } | null };
   messages: Message[];
@@ -108,6 +109,7 @@ export default function ConversationPage() {
   const myName = safeDisplayName(meUser.profile, "You");
 
   const senderName = (senderId: string) => senderId === session.user.id ? myName : otherName;
+  const sendLabel = sending ? "…" : messages.length === 0 ? "Send" : "Reply";
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col" style={{ height: "calc(100vh - 57px)" }}>
@@ -116,9 +118,13 @@ export default function ConversationPage() {
         <Link href="/messages" className="text-gray-500 hover:text-gray-300 text-sm">← Back</Link>
         <div className="flex-1">
           <h1 className="text-[#f5f2eb] font-semibold">{otherName}</h1>
-          <Link href={`/bst/${conv.listing.id}`} className="text-xs text-[#c9a050] hover:underline">
-            {conv.listing.title}
-          </Link>
+          {conv.listing ? (
+            <Link href={`/bst/${conv.listing.id}`} className="text-xs text-[#c9a050] hover:underline">
+              {conv.listing.title}
+            </Link>
+          ) : (
+            <span className="text-xs text-gray-600">Direct message</span>
+          )}
         </div>
         <button
           onClick={() => setConfirmDeleteConv(true)}
@@ -160,36 +166,24 @@ export default function ConversationPage() {
           return (
             <div key={msg.id} className={`flex flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
               <span className="text-xs text-gray-500 px-2">{senderName(msg.senderId)}</span>
-              <div className="flex items-end gap-2">
-                {isMe && (
-                  <button
-                    onClick={() => handleDeleteMessage(msg.id)}
-                    disabled={deletingMsg === msg.id}
-                    className="text-[10px] text-gray-700 hover:text-red-400 transition-colors pb-1 opacity-0 group-hover:opacity-100 shrink-0"
-                    title="Delete message"
-                  >
-                    {deletingMsg === msg.id ? "…" : "✕"}
-                  </button>
-                )}
-                <div className={`group relative max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  isMe ? "bg-[#c9a050] text-black rounded-br-sm" : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
-                }`}>
-                  <p>{msg.body}</p>
-                  <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                    <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                    {isMe && (
-                      <button
-                        onClick={() => handleDeleteMessage(msg.id)}
-                        disabled={deletingMsg === msg.id}
-                        className="text-[10px] text-black/30 hover:text-red-600 transition-colors"
-                        title="Delete message"
-                      >
-                        {deletingMsg === msg.id ? "…" : "✕"}
-                      </button>
-                    )}
-                  </div>
+              <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                isMe ? "bg-[#c9a050] text-black rounded-br-sm" : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
+              }`}>
+                <p>{msg.body}</p>
+                <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                  <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
+                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  {isMe && (
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      disabled={deletingMsg === msg.id}
+                      className="text-[10px] text-black/60 hover:text-red-700 transition-colors"
+                      title="Delete message"
+                    >
+                      {deletingMsg === msg.id ? "…" : "✕"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -213,7 +207,7 @@ export default function ConversationPage() {
           disabled={!body.trim() || sending}
           className="bg-[#c9a050] text-black font-semibold px-5 py-3 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors text-sm whitespace-nowrap"
         >
-          {sending ? "…" : "Reply"}
+          {sendLabel}
         </button>
       </div>
     </div>

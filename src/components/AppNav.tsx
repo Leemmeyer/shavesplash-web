@@ -41,7 +41,7 @@ export default function AppNav() {
 
         {/* Nav links — only show when signed in */}
         {session && (
-          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide min-w-0">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

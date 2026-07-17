@@ -19,6 +19,8 @@ type Listing = {
   status: string;
   isExpertListing: boolean;
   createdAt: string;
+  expiresAt: string | null;
+  views: number;
   photos: Photo[];
   seller: Seller;
 };
@@ -48,6 +50,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     day: "numeric",
     year: "numeric",
   });
+  const daysListed = Math.floor((Date.now() - new Date(listing.createdAt).getTime()) / 86400000);
+  const expiresDate = listing.expiresAt
+    ? new Date(listing.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
   return (
     <div className="min-h-screen">
@@ -142,7 +148,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                       <span className="bg-[#c9a050] text-black text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wide">★ EXPERT</span>
                     )}
                   </div>
-                  <p className="text-gray-500 text-xs">Listed {listedDate}</p>
+                  <p className="text-gray-500 text-xs">
+                    Listed {listedDate} · {daysListed === 0 ? "today" : `${daysListed}d ago`} · {listing.views} {listing.views === 1 ? "view" : "views"}
+                  </p>
+                  {expiresDate && (
+                    <p className="text-gray-600 text-xs">Expires {expiresDate}</p>
+                  )}
                 </div>
               </div>
             </div>

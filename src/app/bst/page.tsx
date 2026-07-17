@@ -30,6 +30,8 @@ type Listing = {
   status: string;
   isExpertListing: boolean;
   createdAt: string;
+  expiresAt: string | null;
+  views: number;
   photos: Photo[];
   seller: Seller;
 };
@@ -150,6 +152,11 @@ export default async function BSTPage({
 function ListingCard({ listing }: { listing: Listing }) {
   const photo = listing.photos[0];
   const sellerName = listing.seller.profile?.displayName ?? listing.seller.name ?? "Seller";
+  const daysListed = Math.floor((Date.now() - new Date(listing.createdAt).getTime()) / 86400000);
+  const daysUntilExpiry = listing.expiresAt
+    ? Math.ceil((new Date(listing.expiresAt).getTime() - Date.now()) / 86400000)
+    : null;
+  const expiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 2;
 
   return (
     <Link href={`/bst/${listing.id}`} className="group block">
@@ -176,6 +183,11 @@ function ListingCard({ listing }: { listing: Listing }) {
               ★ EXPERT
             </div>
           )}
+          {expiringSoon && (
+            <div className="absolute bottom-2 left-2 bg-red-500/90 text-white rounded-lg px-2 py-0.5 text-[10px] font-bold">
+              Expires in {daysUntilExpiry}d
+            </div>
+          )}
         </div>
 
         {/* Info */}
@@ -193,6 +205,14 @@ function ListingCard({ listing }: { listing: Listing }) {
               ${listing.price.toFixed(2)}
             </span>
             <span className="text-gray-600 text-xs">{sellerName}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="text-gray-600 text-[10px]">
+              {daysListed === 0 ? "Listed today" : `Listed ${daysListed}d ago`}
+            </span>
+            <span className="text-gray-600 text-[10px]">
+              {listing.views} {listing.views === 1 ? "view" : "views"}
+            </span>
           </div>
         </div>
       </div>

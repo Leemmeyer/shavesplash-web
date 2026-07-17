@@ -31,6 +31,7 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const searchRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -64,10 +65,12 @@ export default function MessagesPage() {
   const handleStartDM = async (userId: string) => {
     if (creating) return;
     setCreating(true);
+    setCreateError(null);
     try {
       const { conversation } = await api.post<{ conversation: { id: string } }>("/api/bst/conversations/direct", { recipientId: userId });
       router.push(`/messages/${conversation.id}`);
-    } catch {
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Something went wrong. Try again.");
       setCreating(false);
     }
   };
@@ -113,11 +116,12 @@ export default function MessagesPage() {
                   disabled={creating}
                   className="text-left px-3 py-2.5 rounded-lg text-sm text-[#f5f2eb] hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
                 >
-                  {u.displayName}
+                  {creating ? "Opening…" : u.displayName}
                 </button>
               ))}
             </div>
           )}
+          {createError && <p className="text-red-400 text-xs mt-2">{createError}</p>}
         </div>
       )}
 

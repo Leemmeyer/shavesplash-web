@@ -42,7 +42,7 @@ export default function ConversationPage() {
     api.get<{ conversation: ConversationDetail }>(`/api/bst/conversations/${id}`)
       .then((d) => {
         setConv(d.conversation);
-        setMessages(d.conversation.messages);
+        setMessages(d.conversation.messages ?? []);
       })
       .catch(() => router.push("/messages"));
     api.patch(`/api/bst/conversations/${id}/read`).catch(() => {});

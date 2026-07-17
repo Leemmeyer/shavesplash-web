@@ -1,0 +1,435 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import { useSession } from "@/lib/session-context";
+
+const SOTD_EMOJIS = ["👍", "❤️", "🔥", "🪒"];
+const CATEGORY_ICONS: Record<string, string> = {
+  razors: "🪒", blades: "⚡", brushes: "🖌️", soaps: "🫧",
+  aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
+};
+const CATEGORY_ORDER = ["razors", "blades", "brushes", "soaps", "aftershaves", "balms", "preshaves", "edpedt"];
+const STATS_LABELS: Record<string, string> = {
+  razors: "Razors", blades: "Blades", soaps: "Soaps", aftershaves: "Aftershaves",
+};
+
+type ScoreEntry = { value: number; shortName: string } | number;
+type SelectedItem = { itemName?: string; plate?: string; bladeUses?: number };
+type ReactionGroup = { count: number; reacted: boolean };
+
+interface Comment {
+  id: string;
+  body: string;
+  createdAt: string;
+  authorName: string;
+  isOwn: boolean;
+}
+
+interface SotdPost {
+  id: string;
+  date: number;
+  result: string;
+  resultRank?: number;
+  resultOptionsCount?: number;
+  scores: Record<string, ScoreEntry>;
+  selectedItems: Record<string, SelectedItem>;
+  notes?: string;
+  photoUrl?: string;
+  isAnonymous: boolean;
+  authorName: string | null;
+  reactions: Record<string, ReactionGroup>;
+  commentCount: number;
+  comments: Comment[];
+}
+
+function getScoreValue(s: ScoreEntry): number {
+  return typeof s === "number" ? s : s.value;
+}
+function avgScore(scores: Record<string, ScoreEntry>): number | null {
+  const vals = Object.values(scores).map(getScoreValue).filter((v) => v > 0);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+function formatDate(ts: number): string {
+  return new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+}
+function resultColor(rank?: number, total?: number): string {
+  if (!rank || !total) return "#6b7280";
+  const colors = ["#b45309", "#d97706", "#f59e0b", "#fbbf24", "#a3e635", "#86efac", "#4ade80", "#22c55e", "#16a34a"];
+  const idx = rank - 1;
+  const step = (colors.length - 1) / Math.max(total - 1, 1);
+  return colors[Math.round(idx * step)] ?? "#6b7280";
+}
+
+// ── SOTD Card ────────────────────────────────────────────────────────────────
+function SotdCard({ post, onReact, session }: {
+  post: SotdPost;
+  onReact: (logId: string, emoji: string) => void;
+  session: { user: { id: string } } | null;
+}) {
+  const [showComments, setShowComments] = useState(false);
+  const [commentBody, setCommentBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [comments, setComments] = useState<Comment[]>(post.comments);
+  const [deletingComment, setDeletingComment] = useState<string | null>(null);
+
+  const color = resultColor(post.resultRank, post.resultOptionsCount);
+  const avg = avgScore(post.scores);
+  const usedItems = Object.entries(post.selectedItems)
+    .filter(([, s]) => s.itemName)
+    .sort(([a], [b]) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b));
+
+  const scoreEntries = Object.entries(post.scores)
+    .map(([, v]) => getScoreValue(v))
+    .filter((v) => v > 0);
+
+  const handleComment = async () => {
+    if (!commentBody.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const { comment } = await api.post<{ comment: Comment }>(`/api/sotd/${post.id}/comments`, { body: commentBody.trim() });
+      setComments((prev) => [...prev, comment]);
+      setCommentBody("");
+    } catch { /* ignore */ } finally { setSubmitting(false); }
+  };
+
+  const handleDeleteComment = async (id: string) => {
+    setDeletingComment(id);
+    try {
+      await api.delete(`/api/sotd/${post.id}/comments/${id}`);
+      setComments((prev) => prev.filter((c) => c.id !== id));
+    } catch { /* ignore */ } finally { setDeletingComment(null); }
+  };
+
+  return (
+    <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+        <div>
+          <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
+          <p className="text-gray-600 text-xs">{formatDate(post.date)}</p>
+        </div>
+        <span
+          className="px-2.5 py-1 rounded-lg text-xs font-bold border"
+          style={{ color, borderColor: color + "66", backgroundColor: color + "1a" }}
+        >
+          {post.result}
+        </span>
+      </div>
+
+      {/* Photo */}
+      {post.photoUrl && (
+        <div className="w-full aspect-video bg-[#242424] overflow-hidden">
+          <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      <div className="px-4 pb-4 space-y-3 pt-1">
+        {/* Gear */}
+        {usedItems.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {usedItems.map(([catId, s]) => (
+              <span key={catId} className="bg-[#242424] border border-white/5 rounded-lg px-2 py-1 text-xs text-gray-300 flex items-center gap-1">
+                <span>{CATEGORY_ICONS[catId]}</span>
+                <span>{s.itemName}</span>
+                {s.plate && <span className="text-gray-600">· {s.plate}</span>}
+                {s.bladeUses != null && <span className="text-gray-600">· {s.bladeUses}×</span>}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Scores */}
+        {scoreEntries.length > 0 && (
+          <div className="flex items-center gap-3">
+            {Object.entries(post.scores).map(([key, v]) => {
+              const val = getScoreValue(v);
+              if (!val) return null;
+              const label = typeof v === "number" ? key.slice(0, 4) : v.shortName;
+              return (
+                <div key={key} className="text-center">
+                  <p className="text-[#c9a050] text-sm font-bold">{val}</p>
+                  <p className="text-gray-600 text-[10px]">{label}</p>
+                </div>
+              );
+            })}
+            {avg !== null && (
+              <div className="ml-auto text-right">
+                <p className="text-[#c9a050] text-lg font-bold">{avg.toFixed(1)}</p>
+                <p className="text-gray-600 text-[10px]">avg</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Notes */}
+        {post.notes && (
+          <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-white/10 pl-3">{post.notes}</p>
+        )}
+
+        {/* Reactions */}
+        <div className="flex items-center gap-2 pt-1">
+          {SOTD_EMOJIS.map((emoji) => {
+            const g = post.reactions[emoji];
+            const reacted = g?.reacted ?? false;
+            return (
+              <button
+                key={emoji}
+                onClick={() => session ? onReact(post.id, emoji) : undefined}
+                disabled={!session}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
+                  reacted
+                    ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
+                    : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
+                }`}
+              >
+                <span>{emoji}</span>
+                {(g?.count ?? 0) > 0 && <span className="text-xs font-medium">{g.count}</span>}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setShowComments((v) => !v)}
+            className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <span>💬</span>
+            <span>{comments.length} comment{comments.length !== 1 ? "s" : ""}</span>
+          </button>
+        </div>
+
+        {/* Comments */}
+        {showComments && (
+          <div className="border-t border-white/5 pt-3 space-y-3">
+            {comments.length === 0 && (
+              <p className="text-gray-600 text-xs text-center">No comments yet.</p>
+            )}
+            {comments.map((cm) => (
+              <div key={cm.id} className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <span className="text-[#c9a050] text-xs font-semibold mr-1.5">{cm.authorName}</span>
+                  <span className="text-gray-300 text-sm">{cm.body}</span>
+                </div>
+                {cm.isOwn && (
+                  <button
+                    onClick={() => handleDeleteComment(cm.id)}
+                    disabled={deletingComment === cm.id}
+                    className="text-gray-700 hover:text-red-400 text-xs shrink-0 transition-colors"
+                  >
+                    {deletingComment === cm.id ? "…" : "✕"}
+                  </button>
+                )}
+              </div>
+            ))}
+            {session ? (
+              <div className="flex gap-2 items-end">
+                <textarea
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
+                  placeholder="Add a comment…"
+                  rows={1}
+                  className="flex-1 bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 resize-none focus:outline-none focus:border-[#c9a050]/40"
+                />
+                <button
+                  onClick={handleComment}
+                  disabled={!commentBody.trim() || submitting}
+                  className="bg-[#c9a050] text-black font-semibold px-3 py-2 rounded-lg text-xs hover:bg-[#b8903f] disabled:opacity-40 transition-colors whitespace-nowrap"
+                >
+                  {submitting ? "…" : "Post"}
+                </button>
+              </div>
+            ) : (
+              <p className="text-gray-600 text-xs">
+                <Link href="/sign-in" className="text-[#c9a050] hover:underline">Sign in</Link> to comment.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Stats Sidebar ─────────────────────────────────────────────────────────────
+function StatsSidebar() {
+  const [period, setPeriod] = useState<"today" | "week" | "month">("week");
+  const [stats, setStats] = useState<Record<string, { name: string; count: number }[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api.get<{ stats: Record<string, { name: string; count: number }[]> }>(`/api/sotd/stats?period=${period}`)
+      .then((d) => setStats(d.stats))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [period]);
+
+  const PERIODS: { key: "today" | "week" | "month"; label: string }[] = [
+    { key: "today", label: "Today" },
+    { key: "week", label: "This Week" },
+    { key: "month", label: "This Month" },
+  ];
+
+  const STAT_CATS = ["razors", "blades", "soaps", "aftershaves"];
+
+  return (
+    <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl p-4 sticky top-20">
+      <h2 className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-lg mb-3">Community Stats</h2>
+
+      {/* Period tabs */}
+      <div className="flex gap-1 mb-4 bg-[#242424] rounded-xl p-1">
+        {PERIODS.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              period === p.key ? "bg-[#c9a050] text-black" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {STAT_CATS.map((cat) => {
+            const items = stats[cat] ?? [];
+            if (!items.length) return null;
+            const icon = CATEGORY_ICONS[cat];
+            return (
+              <div key={cat}>
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">
+                  {icon} {STATS_LABELS[cat]}
+                </p>
+                <div className="space-y-1.5">
+                  {items.map((item, i) => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <span className="text-gray-600 text-xs w-4">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="text-gray-300 text-xs truncate">{item.name}</span>
+                          <span className="text-gray-600 text-xs shrink-0">{item.count}</span>
+                        </div>
+                        <div className="h-1 bg-[#242424] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#c9a050]/60 rounded-full"
+                            style={{ width: `${(item.count / (items[0]?.count || 1)) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+export default function SotdPage() {
+  const { session } = useSession();
+  const [posts, setPosts] = useState<SotdPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const LIMIT = 20;
+
+  const fetchPosts = useCallback(async (off: number, append = false) => {
+    if (off === 0) setLoading(true); else setLoadingMore(true);
+    try {
+      const d = await api.get<{ posts: SotdPost[]; hasMore: boolean }>(`/api/sotd?limit=${LIMIT}&offset=${off}`);
+      setPosts((prev) => append ? [...prev, ...d.posts] : d.posts);
+      setHasMore(d.hasMore);
+      setOffset(off + d.posts.length);
+    } catch { /* ignore */ } finally { setLoading(false); setLoadingMore(false); }
+  }, []);
+
+  useEffect(() => { fetchPosts(0); }, [fetchPosts]);
+
+  const handleReact = async (logId: string, emoji: string) => {
+    try {
+      const { reactions } = await api.post<{ reactions: Record<string, ReactionGroup> }>(`/api/sotd/${logId}/reactions`, { emoji });
+      setPosts((prev) => prev.map((p) => p.id === logId ? { ...p, reactions } : p));
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      {/* Header */}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">
+            Shave of the Day
+          </h1>
+          <p className="text-gray-500 text-sm">What the community shaved with today</p>
+        </div>
+        {session && (
+          <Link
+            href="/logs"
+            className="text-sm bg-[#c9a050] text-black font-bold px-4 py-2.5 rounded-xl hover:bg-[#b8903f] transition-colors"
+          >
+            Share My Shave
+          </Link>
+        )}
+      </div>
+
+      <div className="flex gap-6 items-start">
+        {/* Feed */}
+        <div className="flex-1 min-w-0">
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="w-8 h-8 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-20 text-gray-600">
+              <p className="text-5xl mb-4">🪒</p>
+              <p className="text-lg mb-2">No shaves shared yet</p>
+              <p className="text-sm mb-6">Be the first — share a shave from your History page.</p>
+              {session ? (
+                <Link href="/logs" className="inline-block bg-[#c9a050] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#b8903f] transition-colors text-sm">
+                  Go to History
+                </Link>
+              ) : (
+                <Link href="/sign-in" className="inline-block bg-[#c9a050] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#b8903f] transition-colors text-sm">
+                  Sign in to share
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <SotdCard key={post.id} post={post} onReact={handleReact} session={session} />
+              ))}
+              {hasMore && (
+                <button
+                  onClick={() => fetchPosts(offset, true)}
+                  disabled={loadingMore}
+                  className="w-full py-3 text-sm text-gray-500 hover:text-gray-300 border border-white/5 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {loadingMore ? "Loading…" : "Load more"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="hidden lg:block w-72 shrink-0">
+          <StatsSidebar />
+        </div>
+      </div>
+    </div>
+  );
+}

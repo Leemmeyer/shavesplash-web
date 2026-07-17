@@ -46,6 +46,7 @@ type ShaveLog = {
   scores: Record<string, ScoreEntry>;
   selectedItems: Record<string, SelectedItem>;
   notes?: string; photoUrl?: string;
+  isPublic?: boolean; isAnonymous?: boolean;
 };
 
 function getScoreValue(score: ScoreEntry): number {
@@ -396,6 +397,9 @@ function LogsContent() {
   const [showForm, setShowForm] = useState(false);
   const [editLog, setEditLog] = useState<ShaveLog | null>(null);
   const [sort, setSort] = useState("newest");
+  const [autoShareSotd, setAutoShareSotd] = useState(false);
+  const [autoShareLoading, setAutoShareLoading] = useState(false);
+  const [sotdUpdating, setSotdUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -403,11 +407,13 @@ function LogsContent() {
       api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
       api.get<{ resultOptions: string[]; scoreParameters: ScoreParameter[] }>("/api/preferences")
         .catch(() => ({ resultOptions: DEFAULT_RESULT_OPTIONS, scoreParameters: DEFAULT_SCORE_PARAMETERS })),
-    ]).then(([l, inv, prefs]) => {
+      api.get<{ autoShareSotd?: boolean }>("/api/bst/profile").catch(() => ({ autoShareSotd: false })),
+    ]).then(([l, inv, prefs, profile]) => {
       setLogs(l.sort((a, b) => b.date - a.date));
       setInventory(inv);
       setResultOptions(prefs.resultOptions);
       setScoreParameters(prefs.scoreParameters);
+      setAutoShareSotd(profile.autoShareSotd ?? false);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -430,6 +436,30 @@ function LogsContent() {
     });
     setShowForm(false);
     setEditLog(null);
+  };
+
+  const handleAutoShareToggle = async (val: boolean) => {
+    setAutoShareLoading(true);
+    try {
+      await api.patch("/api/bst/profile", { autoShareSotd: val });
+      setAutoShareSotd(val);
+    } catch { /* ignore */ } finally { setAutoShareLoading(false); }
+  };
+
+  const handleSotdToggle = async (log: ShaveLog, isPublic: boolean) => {
+    setSotdUpdating(log.id);
+    try {
+      await api.patch(`/api/logs/${log.id}/sotd`, { isPublic, isAnonymous: log.isAnonymous ?? false });
+      setLogs((prev) => prev.map((l) => l.id === log.id ? { ...l, isPublic } : l));
+    } catch { /* ignore */ } finally { setSotdUpdating(null); }
+  };
+
+  const handleAnonToggle = async (log: ShaveLog, isAnonymous: boolean) => {
+    setSotdUpdating(log.id);
+    try {
+      await api.patch(`/api/logs/${log.id}/sotd`, { isPublic: log.isPublic ?? false, isAnonymous });
+      setLogs((prev) => prev.map((l) => l.id === log.id ? { ...l, isAnonymous } : l));
+    } catch { /* ignore */ } finally { setSotdUpdating(null); }
   };
 
   if (loading) {
@@ -476,6 +506,22 @@ function LogsContent() {
             + New Entry
           </button>
         </div>
+      </div>
+
+      {/* Auto-share SOTD toggle */}
+      <div className="mb-6 bg-[#1e1e1e] rounded-xl border border-white/5 px-4 py-3 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-[#f5f2eb] font-medium">Auto-share new shaves to SOTD</p>
+          <p className="text-xs text-gray-500 mt-0.5">All future shave entries will appear in the public community feed</p>
+        </div>
+        <button
+          onClick={() => handleAutoShareToggle(!autoShareSotd)}
+          disabled={autoShareLoading}
+          aria-label="Toggle auto-share"
+          className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${autoShareSotd ? "bg-[#c9a050]" : "bg-white/10"}`}
+        >
+          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${autoShareSotd ? "left-5" : "left-0.5"}`} />
+        </button>
       </div>
 
       {/* Modals */}
@@ -608,6 +654,33 @@ function LogsContent() {
                               <p className="text-[#f5f2eb] text-sm leading-relaxed">{log.notes}</p>
                             </div>
                           )}
+
+                          {/* SOTD sharing */}
+                          <div className="pt-1 border-t border-white/5 flex items-center justify-between gap-3">
+                            <p className="text-gray-600 text-xs uppercase tracking-wider">Share to SOTD feed</p>
+                            <div className="flex items-center gap-3">
+                              {log.isPublic && (
+                                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={log.isAnonymous ?? false}
+                                    onChange={(e) => handleAnonToggle(log, e.target.checked)}
+                                    disabled={sotdUpdating === log.id}
+                                    className="accent-[#c9a050] w-3.5 h-3.5"
+                                  />
+                                  <span className="text-xs text-gray-500">Anonymous</span>
+                                </label>
+                              )}
+                              <button
+                                onClick={() => handleSotdToggle(log, !log.isPublic)}
+                                disabled={sotdUpdating === log.id}
+                                aria-label="Toggle SOTD sharing"
+                                className={`relative flex-shrink-0 w-10 h-5 rounded-full transition-colors disabled:opacity-50 ${log.isPublic ? "bg-[#c9a050]" : "bg-white/10"}`}
+                              >
+                                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${log.isPublic ? "left-5" : "left-0.5"}`} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

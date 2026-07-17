@@ -12,6 +12,7 @@ const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/bst", label: "Marketplace" },
   { href: "/messages", label: "Messages" },
   { href: "/forum", label: "Forum" },
+  { href: "/sotd", label: "SOTD" },
   { href: "/preferences", label: "Preferences" },
   { href: "/subscribe", label: "★ Upgrade", gold: true },
 ];

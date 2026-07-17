@@ -192,14 +192,22 @@ function ListingCard({ listing }: { listing: Listing }) {
 
         {/* Info */}
         <div className="p-3">
-          {(listing.brand || listing.model) && (
-            <p className="text-[#c9a050] text-xs font-medium mb-0.5">
-              {[listing.brand, listing.model].filter(Boolean).join(" · ")}
+          {listing.category === "razor" ? (
+            <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
+              {[listing.brand, listing.model].filter(Boolean).join(" ")}
             </p>
+          ) : (
+            <>
+              {(listing.brand || listing.model) && (
+                <p className="text-[#c9a050] text-xs font-medium mb-0.5">
+                  {[listing.brand, listing.model].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
+                {listing.title}
+              </p>
+            </>
           )}
-          <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
-            {listing.title}
-          </p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[#c9a050] font-bold text-base">
               ${listing.price.toFixed(2)}

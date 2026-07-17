@@ -124,9 +124,12 @@ export default function CreateListingModal() {
 
   const cleanDisplayName = displayName.trim();
   const displayNameValid = cleanDisplayName.length > 0 && !cleanDisplayName.includes("@");
+  const isRazor = category === "razor";
+
   const canSubmit =
-    category && title.trim() && price.trim() && condition && displayNameValid && !submitting &&
-    (category !== "razor" || !isCustomBrand || customBrandInput.trim().length > 0);
+    category && price.trim() && condition && displayNameValid && !submitting &&
+    (isRazor || title.trim()) &&
+    (!isRazor || !isCustomBrand || customBrandInput.trim().length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,8 +153,12 @@ export default function CreateListingModal() {
         ? (customModelInput.trim() || undefined)
         : (model || undefined);
 
+      const resolvedTitle = isRazor
+        ? ([resolvedBrand, resolvedModel].filter(Boolean).join(" ") || "Razor")
+        : title.trim();
+
       await api.post("/api/bst/listings", {
-        title: title.trim(),
+        title: resolvedTitle,
         brand: resolvedBrand,
         model: resolvedModel,
         material: material || undefined,
@@ -343,18 +350,20 @@ export default function CreateListingModal() {
                 </div>
               )}
 
-              {/* Item Name */}
-              <div>
-                <label className={labelCls}>Item Name <span className="text-[#c9a050]">*</span></label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Merkur 34C Heavy Duty Safety Razor"
-                  maxLength={120}
-                  className={inputCls}
-                />
-              </div>
+              {/* Item Name — hidden for razors (title auto-generated from brand + model) */}
+              {!isRazor && (
+                <div>
+                  <label className={labelCls}>Item Name <span className="text-[#c9a050]">*</span></label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Simpson Chubby 2 Best Badger Brush"
+                    maxLength={120}
+                    className={inputCls}
+                  />
+                </div>
+              )}
 
               {/* Description */}
               <div>

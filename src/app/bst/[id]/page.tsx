@@ -104,15 +104,28 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* Details */}
           <div>
-            {(listing.brand || listing.model) && (
-              <p className="text-[#c9a050] text-sm font-medium mb-1">
-                {[listing.brand, listing.model].filter(Boolean).join(" · ")}
-              </p>
+            {listing.category === "razor" ? (
+              <>
+                <h1 className="text-[#c9a050] text-2xl font-bold mb-1">
+                  {[listing.brand, listing.model].filter(Boolean).join(" ") || "Razor"}
+                </h1>
+                {listing.material && (
+                  <p className="text-gray-500 text-sm mb-2">{listing.material}</p>
+                )}
+              </>
+            ) : (
+              <>
+                {(listing.brand || listing.model) && (
+                  <p className="text-[#c9a050] text-sm font-medium mb-1">
+                    {[listing.brand, listing.model].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {listing.material && (
+                  <p className="text-gray-500 text-xs mb-1">{listing.material}</p>
+                )}
+                <h1 className="text-[#f5f2eb] text-2xl font-bold mb-2">{listing.title}</h1>
+              </>
             )}
-            {listing.material && (
-              <p className="text-gray-500 text-xs mb-1">{listing.material}</p>
-            )}
-            <h1 className="text-[#f5f2eb] text-2xl font-bold mb-2">{listing.title}</h1>
 
             <div className="flex items-center gap-3 mb-6">
               <span className="text-[#c9a050] text-3xl font-bold">${listing.price.toFixed(2)}</span>

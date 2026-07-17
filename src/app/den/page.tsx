@@ -129,7 +129,7 @@ function DenContent() {
       <div className="flex items-end justify-between mb-8">
         <div>
           <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">
-            Your Den
+            My Den
           </h1>
           <p className="text-gray-500 text-sm">{totalItems} item{totalItems !== 1 ? "s" : ""} in your collection</p>
         </div>

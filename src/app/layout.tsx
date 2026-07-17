@@ -12,13 +12,13 @@ const fredericka = Fredericka_the_Great({
 });
 
 export const metadata: Metadata = {
-  title: "ShaveSplash Cloud — The Wetshaving Community",
+  title: "ShaveSplash Community — The Wetshaving Community",
   description: "Log your shaves, track your den, and connect with the wetshaving community.",
   openGraph: {
-    title: "ShaveSplash Cloud",
+    title: "ShaveSplash Community",
     description: "The wetshaving community. Log shaves, manage your den, and trade gear.",
     url: "https://shavesplash.app",
-    siteName: "ShaveSplash Cloud",
+    siteName: "ShaveSplash Community",
     locale: "en_US",
     type: "website",
   },

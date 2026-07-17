@@ -35,7 +35,7 @@ export default function AppNav() {
           href="/"
           className="font-[family-name:var(--font-fredericka)] text-xl text-[#c9a050] shrink-0 whitespace-nowrap"
         >
-          ShaveSplash Cloud
+          ShaveSplash Community
         </Link>
 
         {/* Nav links — only show when signed in */}

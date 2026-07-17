@@ -42,7 +42,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           <Feature icon="📔" title="Shave History" description="Log every shave with razor, blade, soap, aftershave, scores, and notes." />
           <Feature icon="🪒" title="Your Den" description="Catalog your entire collection. Track performance stats and usage history per item." />
-          <Feature icon="☁️" title="Cloud Sync" description="Your data syncs automatically across devices via ShaveSplash Cloud." />
+          <Feature icon="☁️" title="Cloud Sync" description="Your data syncs automatically across devices." />
           <Feature icon="💬" title="Forum" description="Discuss technique, share finds, and get advice from the wetshaving community." />
           <Feature icon="🛒" title="Buy · Sell · Trade" description="A dedicated marketplace for the wetshaving community. List gear from your den in seconds." />
           <Feature icon="🤖" title="AI Coach" description="Get personalized recommendations based on your shave history." />
@@ -75,7 +75,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600">
-        <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050]/60">ShaveSplash Cloud</span>
+        <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050]/60">ShaveSplash Community</span>
         <div className="flex gap-6">
           <Link href="https://shavesplash.com" target="_blank" className="hover:text-gray-400 transition-colors">shavesplash.com</Link>
           <Link href="/forum" className="hover:text-gray-400 transition-colors">Forum</Link>

@@ -6,7 +6,7 @@ import { signOut } from "@/lib/auth";
 import { useSession } from "@/lib/session-context";
 
 const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
-  { href: "/den", label: "Den" },
+  { href: "/den", label: "My Den" },
   { href: "/logs", label: "History" },
   { href: "/analytics", label: "Analytics" },
   { href: "/bst", label: "Marketplace" },

@@ -397,7 +397,7 @@ function LogsContent() {
   const [showForm, setShowForm] = useState(false);
   const [editLog, setEditLog] = useState<ShaveLog | null>(null);
   const [sort, setSort] = useState("newest");
-  const [autoShareSotd, setAutoShareSotd] = useState(false);
+  const [autoShareSotd, setAutoShareSotd] = useState(true);
   const [autoShareLoading, setAutoShareLoading] = useState(false);
   const [sotdUpdating, setSotdUpdating] = useState<string | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -414,7 +414,7 @@ function LogsContent() {
       setInventory(inv);
       setResultOptions(prefs.resultOptions);
       setScoreParameters(prefs.scoreParameters);
-      setAutoShareSotd(profile.autoShareSotd ?? false);
+      setAutoShareSotd(profile.autoShareSotd ?? true);
     }).finally(() => setLoading(false));
   }, []);
 

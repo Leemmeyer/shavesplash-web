@@ -74,6 +74,7 @@ function SotdCard({ post, onReact, session }: {
   const [submitting, setSubmitting] = useState(false);
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const color = resultColor(post.resultRank, post.resultOptionsCount);
   const avg = avgScore(post.scores);
@@ -104,27 +105,49 @@ function SotdCard({ post, onReact, session }: {
   };
 
   return (
+    <>
+    {/* Lightbox */}
+    {lightboxOpen && post.photoUrl && (
+      <div
+        className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6 cursor-pointer"
+        onClick={() => setLightboxOpen(false)}
+      >
+        <button
+          className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl leading-none transition-colors"
+          onClick={() => setLightboxOpen(false)}
+        >✕</button>
+        <img
+          src={post.photoUrl}
+          alt="SOTD"
+          className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
+
     <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <div>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        {post.photoUrl && (
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className="shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors"
+            title="Click to expand"
+          >
+            <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />
+          </button>
+        )}
+        <div className="flex-1 min-w-0">
           <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
           <p className="text-gray-600 text-xs">{formatDate(post.date)}</p>
         </div>
         <span
-          className="px-2.5 py-1 rounded-lg text-xs font-bold border"
+          className="px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0"
           style={{ color, borderColor: color + "66", backgroundColor: color + "1a" }}
         >
           {post.result}
         </span>
       </div>
-
-      {/* Photo */}
-      {post.photoUrl && (
-        <div className="w-full aspect-video bg-[#242424] overflow-hidden">
-          <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />
-        </div>
-      )}
 
       <div className="px-4 pb-4 space-y-3 pt-1">
         {/* Gear */}
@@ -249,6 +272,7 @@ function SotdCard({ post, onReact, session }: {
         )}
       </div>
     </div>
+    </>
   );
 }
 

@@ -7,8 +7,12 @@ import { useSession } from "@/lib/session-context";
 
 const SOTD_EMOJIS = ["👍", "❤️", "🔥", "🪒"];
 const CATEGORY_ICONS: Record<string, string> = {
-  razors: "🪒", blades: "⚡", brushes: "🖌️", soaps: "🫧",
+  razors: "🪒", blades: "🔪", brushes: "🪥", soaps: "🫧",
   aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
+};
+const CATEGORY_LABELS: Record<string, string> = {
+  razors: "Razor", blades: "Blade", brushes: "Brush", soaps: "Soap",
+  aftershaves: "Aftershave", balms: "Balm", preshaves: "Pre-Shave", edpedt: "EDP/EDT",
 };
 const CATEGORY_ORDER = ["razors", "blades", "brushes", "soaps", "aftershaves", "balms", "preshaves", "edpedt"];
 const STATS_LABELS: Record<string, string> = {
@@ -158,7 +162,7 @@ function SotdCard({ post, onReact, session }: {
             <div className="flex flex-col gap-1.5">
               {usedItems.map(([catId, s]) => (
                 <div key={catId} className="flex items-center gap-2 min-w-0">
-                  <span className="text-gray-600 text-xs w-20 shrink-0">{CATEGORY_ICONS[catId]} {catId.charAt(0).toUpperCase() + catId.slice(1)}</span>
+                  <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24">{CATEGORY_ICONS[catId]} {CATEGORY_LABELS[catId] ?? catId}</span>
                   <span className="text-gray-200 text-xs truncate">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
                 </div>
               ))}

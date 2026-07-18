@@ -182,7 +182,7 @@ function SotdCard({ post, onReact, session }: {
         {post.photoUrl && (
           <button
             onClick={() => setLightboxOpen(true)}
-            className="shrink-0 w-64 h-64 rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors"
+            className="shrink-0 w-[218px] h-[218px] rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors"
             title="Click to expand"
           >
             <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />

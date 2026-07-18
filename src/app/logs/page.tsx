@@ -592,6 +592,9 @@ function LogsContent() {
                         <span className="text-gray-500 text-sm truncate flex-1 hidden sm:block">
                           {usedItems.slice(0,3).map(([,s])=>s.itemName).join(" · ")}
                         </span>
+                        {log.photoUrl && (
+                          <img src={log.photoUrl} alt="" className="w-9 h-9 rounded-md object-cover flex-shrink-0 opacity-90" />
+                        )}
                         {avg !== null && (
                           <span className="text-[#c9a050] text-sm font-semibold w-10 text-right flex-shrink-0">{avg.toFixed(1)}</span>
                         )}

@@ -126,18 +126,9 @@ function SotdCard({ post, onReact, session }: {
     )}
 
     <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-        {post.photoUrl && (
-          <button
-            onClick={() => setLightboxOpen(true)}
-            className="shrink-0 w-64 h-64 rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors"
-            title="Click to expand"
-          >
-            <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />
-          </button>
-        )}
-        <div className="flex-1 min-w-0">
+      {/* Header: name + date + result */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+        <div>
           <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
           <p className="text-gray-600 text-xs">{formatDate(post.date)}</p>
         </div>
@@ -149,44 +140,59 @@ function SotdCard({ post, onReact, session }: {
         </span>
       </div>
 
-      <div className="px-4 pb-4 space-y-3 pt-1">
-        {/* Gear */}
-        {usedItems.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {usedItems.map(([catId, s]) => (
-              <span key={catId} className="bg-[#242424] border border-white/5 rounded-lg px-2 py-1 text-xs text-gray-300 flex items-center gap-1">
-                <span>{CATEGORY_ICONS[catId]}</span>
-                <span>{s.itemName}</span>
-                {s.plate && <span className="text-gray-600">· {s.plate}</span>}
-                {s.bladeUses != null && <span className="text-gray-600">· {s.bladeUses}×</span>}
-              </span>
-            ))}
-          </div>
+      {/* Body: photo left, gear + scores right */}
+      <div className="flex gap-4 px-4 pb-4">
+        {post.photoUrl && (
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className="shrink-0 w-64 h-64 rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors"
+            title="Click to expand"
+          >
+            <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />
+          </button>
         )}
 
-        {/* Scores */}
-        {scoreEntries.length > 0 && (
-          <div className="flex items-center gap-3">
-            {Object.entries(post.scores).map(([key, v]) => {
-              const val = getScoreValue(v);
-              if (!val) return null;
-              const label = typeof v === "number" ? key.slice(0, 4) : v.shortName;
-              return (
-                <div key={key} className="text-center">
-                  <p className="text-[#c9a050] text-sm font-bold">{val}</p>
-                  <p className="text-gray-600 text-[10px]">{label}</p>
+        <div className="flex-1 min-w-0 flex flex-col justify-between gap-3">
+          {/* Gear */}
+          {usedItems.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {usedItems.map(([catId, s]) => (
+                <div key={catId} className="flex items-center gap-2 min-w-0">
+                  <span className="text-gray-600 text-xs w-20 shrink-0">{CATEGORY_ICONS[catId]} {catId.charAt(0).toUpperCase() + catId.slice(1)}</span>
+                  <span className="text-gray-200 text-xs truncate">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
                 </div>
-              );
-            })}
-            {avg !== null && (
-              <div className="ml-auto text-right">
-                <p className="text-[#c9a050] text-lg font-bold">{avg.toFixed(1)}</p>
-                <p className="text-gray-600 text-[10px]">avg</p>
-              </div>
-            )}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
+          {/* Avg + scores */}
+          {scoreEntries.length > 0 && (
+            <div>
+              {avg !== null && (
+                <div className="mb-2">
+                  <span className="text-[#c9a050] text-2xl font-bold">{avg.toFixed(1)}</span>
+                  <span className="text-gray-600 text-xs ml-1">avg</span>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                {Object.entries(post.scores).map(([key, v]) => {
+                  const val = getScoreValue(v);
+                  if (!val) return null;
+                  const label = typeof v === "number" ? key.slice(0, 4) : v.shortName;
+                  return (
+                    <div key={key} className="text-center">
+                      <p className="text-[#c9a050] text-sm font-bold">{val}</p>
+                      <p className="text-gray-600 text-[10px]">{label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="px-4 pb-4 space-y-3">
         {/* Notes */}
         {post.notes && (
           <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-white/10 pl-3">{post.notes}</p>

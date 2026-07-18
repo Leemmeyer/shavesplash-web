@@ -622,27 +622,31 @@ function LogsContent() {
 
                       {isExpanded && (
                         <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-4">
-                          {/* Photo */}
-                          {log.photoUrl && (
-                            <button onClick={() => setLightboxUrl(log.photoUrl!)} className="w-full rounded-xl overflow-hidden bg-[#242424] block cursor-zoom-in">
-                              <img src={log.photoUrl} alt="Shave photo" className="w-full object-cover max-h-72" />
-                            </button>
-                          )}
-
-                          {/* Gear */}
-                          {usedItems.length > 0 && (
-                            <div>
-                              <p className="text-gray-600 text-xs uppercase tracking-wider mb-2">Gear Used</p>
-                              <div className="flex flex-wrap gap-2">
-                                {usedItems.map(([catId, s]) => (
-                                  <div key={catId} className="bg-[#242424] rounded-lg px-2.5 py-1.5 border border-white/5">
-                                    <span className="text-gray-600 text-[10px] mr-1">{CATEGORY_ICONS[catId]}</span>
-                                    <span className="text-gray-300 text-xs">{s.itemName}</span>
-                                    {s.plate && <span className="text-gray-500 text-xs ml-1">· {s.plate}</span>}
-                                    {s.bladeUses != null && <span className="text-gray-500 text-xs ml-1">· {s.bladeUses} uses</span>}
+                          {/* Photo + Gear side by side */}
+                          {(log.photoUrl || usedItems.length > 0) && (
+                            <div className="flex gap-3 items-start">
+                              {log.photoUrl && (
+                                <button onClick={() => setLightboxUrl(log.photoUrl!)} className="flex-shrink-0 w-1/2 rounded-xl overflow-hidden bg-[#242424] block cursor-zoom-in">
+                                  <img src={log.photoUrl} alt="Shave photo" className="w-full object-cover max-h-36" />
+                                </button>
+                              )}
+                              {usedItems.length > 0 && (
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-gray-600 text-xs uppercase tracking-wider mb-2">Gear Used</p>
+                                  <div className="space-y-1.5">
+                                    {usedItems.map(([catId, s]) => (
+                                      <div key={catId} className="flex items-start gap-1.5">
+                                        <span className="text-gray-600 text-[10px] mt-0.5 flex-shrink-0">{CATEGORY_ICONS[catId]}</span>
+                                        <span className="text-gray-300 text-xs leading-snug">
+                                          {s.itemName}
+                                          {s.plate && <span className="text-gray-500"> · {s.plate}</span>}
+                                          {s.bladeUses != null && <span className="text-gray-500"> · {s.bladeUses} uses</span>}
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           )}
 

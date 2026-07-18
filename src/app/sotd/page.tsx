@@ -112,6 +112,8 @@ function SotdCard({ post, onReact, session }: {
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [gearExpanded, setGearExpanded] = useState(false);
+  const GEAR_LIMIT = 5;
 
   const color = resultColor(post.resultRank, post.resultOptionsCount);
   const avg = avgScore(post.scores);
@@ -189,11 +191,11 @@ function SotdCard({ post, onReact, session }: {
           </button>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col justify-between gap-3">
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
           {/* Gear */}
           {usedItems.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {usedItems.map(([catId, s]) => (
+              {(gearExpanded ? usedItems : usedItems.slice(0, GEAR_LIMIT)).map(([catId, s]) => (
                 <div key={catId} className="flex items-center gap-2 min-w-0">
                   <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24 flex items-center gap-1">
                     <CategoryIcon catId={catId} />
@@ -202,6 +204,14 @@ function SotdCard({ post, onReact, session }: {
                   <span className="text-gray-200 text-xs truncate">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
                 </div>
               ))}
+              {usedItems.length > GEAR_LIMIT && (
+                <button
+                  onClick={() => setGearExpanded((v) => !v)}
+                  className="text-left text-[#c9a050] text-xs hover:text-[#d4aa60] transition-colors mt-0.5"
+                >
+                  {gearExpanded ? "Show less" : `+${usedItems.length - GEAR_LIMIT} more`}
+                </button>
+              )}
             </div>
           )}
 

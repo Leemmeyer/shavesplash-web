@@ -613,8 +613,8 @@ function LogsContent() {
                         <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-4">
                           {/* Photo */}
                           {log.photoUrl && (
-                            <div className="w-full rounded-xl overflow-hidden bg-[#242424]">
-                              <img src={log.photoUrl} alt="Shave photo" className="w-full object-cover max-h-72" />
+                            <div className="w-full rounded-xl overflow-hidden bg-[#242424] flex justify-center">
+                              <img src={log.photoUrl} alt="Shave photo" className="max-w-full max-h-96 object-contain" />
                             </div>
                           )}
 

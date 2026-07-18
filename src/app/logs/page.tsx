@@ -400,6 +400,7 @@ function LogsContent() {
   const [autoShareSotd, setAutoShareSotd] = useState(false);
   const [autoShareLoading, setAutoShareLoading] = useState(false);
   const [sotdUpdating, setSotdUpdating] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -536,6 +537,16 @@ function LogsContent() {
         />
       )}
 
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl leading-none">✕</button>
+          <img src={lightboxUrl} alt="Shave photo" className="max-w-full max-h-full object-contain rounded-xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#242424] rounded-2xl border border-white/10 p-6 max-w-sm w-full">
@@ -613,9 +624,9 @@ function LogsContent() {
                         <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-4">
                           {/* Photo */}
                           {log.photoUrl && (
-                            <div className="w-full rounded-xl overflow-hidden bg-[#242424] flex justify-center">
-                              <img src={log.photoUrl} alt="Shave photo" className="max-w-full max-h-96 object-contain" />
-                            </div>
+                            <button onClick={() => setLightboxUrl(log.photoUrl!)} className="w-full rounded-xl overflow-hidden bg-[#242424] block cursor-zoom-in">
+                              <img src={log.photoUrl} alt="Shave photo" className="w-full object-cover max-h-72" />
+                            </button>
                           )}
 
                           {/* Gear */}

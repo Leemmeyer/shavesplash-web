@@ -588,13 +588,13 @@ function LogsContent() {
                       >
                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                         <span className="text-[#f5f2eb] text-sm font-medium w-40 flex-shrink-0">{formatDate(log.date)}</span>
-                        {log.photoUrl && (
-                          <img src={log.photoUrl} alt="" className="w-9 h-9 rounded-md object-cover flex-shrink-0 opacity-90" />
-                        )}
                         <span className="text-sm font-bold w-20 flex-shrink-0" style={{ color }}>{log.result}</span>
                         <span className="text-gray-500 text-sm truncate flex-1 hidden sm:block">
                           {usedItems.slice(0,3).map(([,s])=>s.itemName).join(" · ")}
                         </span>
+                        {log.photoUrl && (
+                          <img src={log.photoUrl} alt="" className="w-9 h-9 rounded-md object-cover flex-shrink-0 opacity-90" />
+                        )}
                         {avg !== null && (
                           <span className="text-[#c9a050] text-sm font-semibold w-10 text-right flex-shrink-0">{avg.toFixed(1)}</span>
                         )}

@@ -32,9 +32,39 @@ const CATEGORY_LABELS: Record<string,string> = {
   aftershaves:"Aftershaves", balms:"Balms", preshaves:"Preshaves", edpedt:"EDP/EDT",
 };
 const CATEGORY_ICONS: Record<string,string> = {
-  razors:"🪒", blades:"⚡", brushes:"🖌️", soaps:"🫧",
-  aftershaves:"💧", balms:"🧴", preshaves:"✨", edpedt:"🌸",
+  razors:"🪒", soaps:"🫧", aftershaves:"💧", balms:"🧴", preshaves:"✨", edpedt:"🌸",
 };
+function BladeSvg() {
+  return (
+    <svg width="18" height="11" viewBox="0 0 20 12" fill="none" shapeRendering="crispEdges" style={{ display: 'inline', verticalAlign: 'middle' }}>
+      <rect x="1" y="1" width="18" height="10" rx="1.5" stroke="#8898a8" strokeWidth="1.5" fill="#c0c8cc" />
+      <ellipse cx="10" cy="6" rx="2.5" ry="2" fill="#111827" stroke="#7888a0" strokeWidth="1" />
+      <line x1="2" y1="3.5" x2="6.5" y2="3.5" stroke="#dce8ec" strokeWidth="0.75" />
+      <line x1="13.5" y1="3.5" x2="18" y2="3.5" stroke="#dce8ec" strokeWidth="0.75" />
+      <line x1="2" y1="8.5" x2="6.5" y2="8.5" stroke="#dce8ec" strokeWidth="0.75" />
+      <line x1="13.5" y1="8.5" x2="18" y2="8.5" stroke="#dce8ec" strokeWidth="0.75" />
+    </svg>
+  );
+}
+function BrushSvg() {
+  return (
+    <svg width="12" height="18" viewBox="0 0 14 20" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
+      <ellipse cx="7" cy="6" rx="5.5" ry="5" fill="#d4bc7a" />
+      <line x1="7" y1="2" x2="7" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="4.5" y1="2.5" x2="5.5" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="9.5" y1="2.5" x2="8.5" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="2.5" y1="5" x2="4" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="11.5" y1="5" x2="10" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <rect x="4.5" y="10" width="5" height="2" rx="0.3" fill="#9ca3af" />
+      <path d="M 5.2 12 C 3 13 2.5 16 4 19 Q 5.5 19.5 7 19.5 Q 8.5 19.5 10 19 C 11.5 16 11 13 8.8 12 Z" fill="#dc2626" />
+    </svg>
+  );
+}
+function CategoryIcon({ catId }: { catId: string }) {
+  if (catId === 'blades') return <BladeSvg />;
+  if (catId === 'brushes') return <BrushSvg />;
+  return <span>{CATEGORY_ICONS[catId] ?? '📦'}</span>;
+}
 const CATEGORY_ORDER = ["razors","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -750,7 +780,7 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
       <div className="flex flex-wrap gap-2">
         {gear.map(({ catId, name }) => (
           <div key={catId} className="flex items-center gap-2 bg-[#242424] rounded-lg px-3 py-2 border border-white/5">
-            <span className="text-sm">{CATEGORY_ICONS[catId] ?? "📦"}</span>
+            <span className="text-sm flex items-center"><CategoryIcon catId={catId} /></span>
             <div>
               <p className="text-gray-500 text-[10px] leading-none mb-0.5">{CATEGORY_LABELS[catId] ?? catId}</p>
               <p className="text-[#f5f2eb] text-xs font-medium leading-none">{name}</p>
@@ -814,7 +844,7 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
         {categoryUsage.map(({ catId, total, top, otherCount, otherPct }) => (
           <div key={catId} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-4">
             <div className="flex items-center gap-2 mb-3">
-              <span>{CATEGORY_ICONS[catId] ?? "📦"}</span>
+              <span className="flex items-center"><CategoryIcon catId={catId} /></span>
               <p className="text-[#f5f2eb] text-sm font-semibold flex-1">{CATEGORY_LABELS[catId] ?? catId}</p>
               <span className="text-gray-600 text-xs">{total} uses</span>
             </div>

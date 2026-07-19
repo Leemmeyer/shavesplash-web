@@ -29,10 +29,8 @@ export default function CatalogPicker({ category, onSelect, onClose }: CatalogPi
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const apiBase =
-    category === "soaps"
-      ? "https://www.shavesplash.com/_functions/soaps"
-      : "https://www.shavesplash.com/_functions/aftershaves";
+  const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://api.shavesplash.app";
+  const apiBase = `${backendBase}/api/catalog/${category}`;
 
   const fetchResults = useCallback(
     async (q: string) => {

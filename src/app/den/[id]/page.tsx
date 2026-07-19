@@ -229,7 +229,7 @@ function ItemDetailContent({ id }: { id: string }) {
     if (entry.topNotes) setEditTopNotes(entry.topNotes);
     if (entry.heartNotes) setEditHeartNotes(entry.heartNotes);
     if (entry.baseNotes) setEditBaseNotes(entry.baseNotes);
-    if (entry.description) setEditScentDescription(entry.description);
+    if (entry.description) setEditScentDescription(entry.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
     if (entry.inspiration) setEditInspiration(entry.inspiration);
     if (entry.scentFamily) setEditScentFamily(entry.scentFamily);
     if (entry.familySubtype) setEditFamilySubtype(entry.familySubtype);
@@ -479,7 +479,22 @@ function ItemDetailContent({ id }: { id: string }) {
             {item.shaveSplashUrl && (
               <div className="flex justify-between items-center gap-4">
                 <span className="text-gray-500 text-sm">ShaveSplash</span>
-                <a href={item.shaveSplashUrl} target="_blank" rel="noopener noreferrer" className="text-[#c9a050] text-sm hover:underline truncate flex-1 text-right">View ↗</a>
+                <a
+                  href={item.shaveSplashUrl.startsWith("http") ? item.shaveSplashUrl : `https://www.shavesplash.com${item.shaveSplashUrl}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-[#c9a050] text-sm hover:underline truncate flex-1 text-right"
+                >View ↗</a>
+              </div>
+            )}
+            {item.scentFamily && <Spec label="Scent Family" value={item.familySubtype ? `${item.scentFamily} · ${item.familySubtype}` : item.scentFamily} />}
+            {item.inspiration && <Spec label="Inspiration" value={item.inspiration} />}
+            {item.topNotes && <Spec label="Top Notes" value={item.topNotes} />}
+            {item.heartNotes && <Spec label="Heart Notes" value={item.heartNotes} />}
+            {item.baseNotes && <Spec label="Base Notes" value={item.baseNotes} />}
+            {item.scentDescription && (
+              <div className="pt-1 border-t border-white/5 mt-1">
+                <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Description</p>
+                <p className="text-[#f5f2eb] text-xs leading-relaxed">{item.scentDescription}</p>
               </div>
             )}
 

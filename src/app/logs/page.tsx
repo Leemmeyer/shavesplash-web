@@ -118,6 +118,14 @@ function dateInputToTs(val: string): number {
   const [y, m, d] = val.split("-").map(Number);
   return new Date(y, m-1, d, 12, 0, 0).getTime();
 }
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 // ── Score rating widget ──────────────────────────────────────────────────────
 function RatingRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
@@ -141,12 +149,13 @@ type ScoreParameter = { id: string; name: string; shortName: string };
 
 // ── Add/Edit form modal ──────────────────────────────────────────────────────
 function LogForm({
-  initial, inventory, resultOptions, scoreParameters, onSave, onClose,
+  initial, inventory, resultOptions, scoreParameters, autoShareSotd, onSave, onClose,
 }: {
   initial: ShaveLog | null;
   inventory: InventoryItem[];
   resultOptions: string[];
   scoreParameters: ScoreParameter[];
+  autoShareSotd: boolean;
   onSave: (log: ShaveLog) => void;
   onClose: () => void;
 }) {
@@ -164,6 +173,7 @@ function LogForm({
   });
   const [selectedItems, setSelectedItems] = useState<Record<string, SelectedItem>>(() => initial?.selectedItems ?? {});
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(initial?.photoUrl ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -197,6 +207,7 @@ function LogForm({
     if (!result) { setError("Result is required"); return; }
     setError(null); setSaving(true);
 
+    const logId = initial?.id ?? crypto.randomUUID();
     const resultRank = resultOptions.indexOf(result) + 1;
     const builtScores: Record<string, ScoreEntry> = {};
     for (const p of scoreParameters) {
@@ -204,8 +215,8 @@ function LogForm({
       if (v > 0) builtScores[p.id] = { value: v, shortName: p.shortName };
     }
 
-    const body: Omit<ShaveLog,"id"> & { id?: string } = {
-      id: initial?.id ?? crypto.randomUUID(),
+    const body = {
+      id: logId,
       date: dateInputToTs(dateVal),
       result,
       resultRank: resultRank > 0 ? resultRank : undefined,
@@ -213,6 +224,7 @@ function LogForm({
       scores: builtScores,
       selectedItems,
       notes: notes.trim() || undefined,
+      ...(!isEdit && { isPublic: autoShareSotd }),
     };
 
     try {
@@ -221,7 +233,15 @@ function LogForm({
       } else {
         await api.post("/api/logs", body);
       }
-      onSave(body as ShaveLog);
+      if (photoDataUrl && photoDataUrl !== initial?.photoUrl) {
+        await api.post(`/api/logs/${logId}/photo`, { data: photoDataUrl });
+      }
+      onSave({
+        ...body,
+        photoUrl: photoDataUrl ?? initial?.photoUrl ?? undefined,
+        isPublic: isEdit ? (initial?.isPublic ?? false) : autoShareSotd,
+        isAnonymous: initial?.isAnonymous ?? false,
+      } as ShaveLog);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");
       setSaving(false);
@@ -281,7 +301,9 @@ function LogForm({
               <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Gear Used</label>
               <div className="space-y-2">
                 {categories.map((catId) => {
-                  const items = itemsByCat[catId] ?? [];
+                  const items = (itemsByCat[catId] ?? []).slice().sort((a, b) =>
+                    `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`)
+                  );
                   const sel = selectedItems[catId];
                   const icon = CATEGORY_ICONS[catId] ?? "📦";
                   const label = CATEGORY_LABELS[catId] ?? catId;
@@ -356,6 +378,29 @@ function LogForm({
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
               placeholder="How did the shave go?"
               className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
+          </div>
+
+          {/* Photo */}
+          <div>
+            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Photo</label>
+            {photoDataUrl ? (
+              <div className="relative rounded-xl overflow-hidden bg-[#242424]">
+                <img src={photoDataUrl} alt="Shave photo" className="w-full object-cover max-h-48" />
+                <button
+                  type="button"
+                  onClick={() => setPhotoDataUrl(null)}
+                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm transition-colors"
+                >✕</button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#c9a050]/40 transition-colors bg-[#242424]/50">
+                <span className="text-gray-500 text-sm">Click to upload photo</span>
+                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setPhotoDataUrl(await fileToDataUrl(file));
+                }} />
+              </label>
+            )}
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -532,6 +577,7 @@ function LogsContent() {
           inventory={inventory}
           resultOptions={resultOptions}
           scoreParameters={scoreParameters}
+          autoShareSotd={autoShareSotd}
           onSave={handleSaved}
           onClose={() => { setShowForm(false); setEditLog(null); }}
         />
@@ -609,14 +655,14 @@ function LogsContent() {
                         {avg !== null && (
                           <span className="text-[#c9a050] text-sm font-semibold w-10 text-right flex-shrink-0">{avg.toFixed(1)}</span>
                         )}
-                        <span className="text-gray-600 ml-1 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                        <span className="text-gray-400 ml-1 text-xs">{isExpanded ? "▲" : "▼"}</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditLog(log); setShowForm(false); }}
-                          className="ml-1 text-gray-600 hover:text-[#c9a050] transition-colors text-xs px-1.5 py-0.5 rounded"
+                          className="ml-1 text-gray-400 hover:text-[#c9a050] transition-colors text-xs px-1.5 py-0.5 rounded"
                         >✎</button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setConfirmDelete(log.id); }}
-                          className="text-gray-600 hover:text-red-400 transition-colors text-xs px-1.5 py-0.5 rounded"
+                          className="text-gray-400 hover:text-red-400 transition-colors text-xs px-1.5 py-0.5 rounded"
                         >✕</button>
                       </button>
 

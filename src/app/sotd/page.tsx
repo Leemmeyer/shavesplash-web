@@ -16,28 +16,28 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function BladeSvg() {
   return (
-    <svg width="16" height="10" viewBox="0 0 20 12" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
-      <rect x="1" y="1" width="18" height="10" rx="1.5" stroke="#6b7280" strokeWidth="1.5" fill="#374151" />
-      <ellipse cx="10" cy="6" rx="2.5" ry="2" fill="#1a1a1a" stroke="#6b7280" strokeWidth="1" />
-      <line x1="2" y1="3.5" x2="6.5" y2="3.5" stroke="#9ca3af" strokeWidth="0.75" />
-      <line x1="13.5" y1="3.5" x2="18" y2="3.5" stroke="#9ca3af" strokeWidth="0.75" />
-      <line x1="2" y1="8.5" x2="6.5" y2="8.5" stroke="#9ca3af" strokeWidth="0.75" />
-      <line x1="13.5" y1="8.5" x2="18" y2="8.5" stroke="#9ca3af" strokeWidth="0.75" />
+    <svg width="18" height="11" viewBox="0 0 20 12" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
+      <rect x="1" y="1" width="18" height="10" rx="1.5" stroke="#8898a8" strokeWidth="1.5" fill="#c0c8cc" />
+      <ellipse cx="10" cy="6" rx="2.5" ry="2" fill="#111827" stroke="#7888a0" strokeWidth="1" />
+      <line x1="2" y1="3.5" x2="6.5" y2="3.5" stroke="#dce8ec" strokeWidth="0.75" />
+      <line x1="13.5" y1="3.5" x2="18" y2="3.5" stroke="#dce8ec" strokeWidth="0.75" />
+      <line x1="2" y1="8.5" x2="6.5" y2="8.5" stroke="#dce8ec" strokeWidth="0.75" />
+      <line x1="13.5" y1="8.5" x2="18" y2="8.5" stroke="#dce8ec" strokeWidth="0.75" />
     </svg>
   );
 }
 
 function BrushSvg() {
   return (
-    <svg width="11" height="16" viewBox="0 0 14 20" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
-      <ellipse cx="7" cy="6" rx="5.5" ry="5" fill="#6b7280" />
-      <line x1="7" y1="2" x2="7" y2="9" stroke="#d1d5db" strokeWidth="0.8" opacity="0.35" />
-      <line x1="4.5" y1="2.5" x2="5.5" y2="9" stroke="#d1d5db" strokeWidth="0.8" opacity="0.35" />
-      <line x1="9.5" y1="2.5" x2="8.5" y2="9" stroke="#d1d5db" strokeWidth="0.8" opacity="0.35" />
-      <line x1="2.5" y1="5" x2="4" y2="9" stroke="#d1d5db" strokeWidth="0.8" opacity="0.35" />
-      <line x1="11.5" y1="5" x2="10" y2="9" stroke="#d1d5db" strokeWidth="0.8" opacity="0.35" />
-      <rect x="5" y="10" width="4" height="1.5" rx="0.5" fill="#4b5563" />
-      <rect x="5.5" y="11" width="3" height="8" rx="1.5" fill="#4b5563" />
+    <svg width="12" height="18" viewBox="0 0 14 20" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
+      <ellipse cx="7" cy="6" rx="5.5" ry="5" fill="#d4bc7a" />
+      <line x1="7" y1="2" x2="7" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="4.5" y1="2.5" x2="5.5" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="9.5" y1="2.5" x2="8.5" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="2.5" y1="5" x2="4" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <line x1="11.5" y1="5" x2="10" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
+      <rect x="5" y="10" width="4" height="1.5" rx="0.5" fill="#b91c1c" />
+      <rect x="5.5" y="11" width="3" height="8" rx="1.5" fill="#dc2626" />
     </svg>
   );
 }

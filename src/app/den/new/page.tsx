@@ -272,7 +272,12 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
     if (entry.topNotes) setTopNotes(entry.topNotes);
     if (entry.heartNotes) setHeartNotes(entry.heartNotes);
     if (entry.baseNotes) setBaseNotes(entry.baseNotes);
-    if (entry.description) setScentDescription(entry.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+    if (entry.description) setScentDescription(
+      entry.description
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+        .replace(/\s+/g, " ").trim()
+    );
     if (entry.inspiration) setInspiration(entry.inspiration);
     if (entry.scentFamily) setScentFamily(entry.scentFamily);
     if (entry.familySubtype) setFamilySubtype(entry.familySubtype);

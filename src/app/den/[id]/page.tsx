@@ -229,7 +229,12 @@ function ItemDetailContent({ id }: { id: string }) {
     if (entry.topNotes) setEditTopNotes(entry.topNotes);
     if (entry.heartNotes) setEditHeartNotes(entry.heartNotes);
     if (entry.baseNotes) setEditBaseNotes(entry.baseNotes);
-    if (entry.description) setEditScentDescription(entry.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+    if (entry.description) setEditScentDescription(
+      entry.description
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+        .replace(/\s+/g, " ").trim()
+    );
     if (entry.inspiration) setEditInspiration(entry.inspiration);
     if (entry.scentFamily) setEditScentFamily(entry.scentFamily);
     if (entry.familySubtype) setEditFamilySubtype(entry.familySubtype);

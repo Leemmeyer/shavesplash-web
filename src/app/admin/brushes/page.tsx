@@ -93,7 +93,6 @@ function BrushBrandCard({
 export default function BrushesPage() {
   const [brands, setBrands] = useState<BrushBrand[]>([]);
   const [fetching, setFetching] = useState(true);
-  const [seeding, setSeeding] = useState(false);
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -104,16 +103,6 @@ export default function BrushesPage() {
       .catch(() => {})
       .finally(() => setFetching(false));
   }, []);
-
-  const handleSeed = async () => {
-    setSeeding(true);
-    try {
-      const res = await api.post<{ brands: BrushBrand[] }>("/api/admin/brush-brands/seed", {});
-      setBrands(res.brands);
-    } finally {
-      setSeeding(false);
-    }
-  };
 
   const handleSave = async (id: string, updates: { name?: string; description?: string }) => {
     const updated = await api.patch<{ brand: BrushBrand }>(`/api/admin/brush-brands/${id}`, updates);
@@ -147,15 +136,6 @@ export default function BrushesPage() {
           <p className="text-gray-500 text-sm mt-0.5">{brands.length} brands</p>
         </div>
         <div className="flex gap-2">
-          {brands.length === 0 && !fetching && (
-            <button
-              onClick={handleSeed}
-              disabled={seeding}
-              className="px-4 py-2 bg-white/5 text-gray-300 text-sm font-semibold rounded-xl hover:bg-white/10 transition-colors disabled:opacity-40"
-            >
-              {seeding ? "Seeding…" : "Seed defaults"}
-            </button>
-          )}
           <button
             onClick={() => setShowAdd((s) => !s)}
             className="px-4 py-2 bg-[#c9a050]/10 text-[#c9a050] text-sm font-semibold rounded-xl hover:bg-[#c9a050]/20 transition-colors"
@@ -200,9 +180,9 @@ export default function BrushesPage() {
               onDelete={handleDelete}
             />
           ))}
-          {brands.length === 0 && (
+          {brands.length === 0 && !fetching && (
             <p className="text-gray-600 text-sm text-center py-8">
-              No brush brands yet. Use "Seed defaults" to add the major brands, or add your own.
+              No brush brands yet. Add one above.
             </p>
           )}
         </div>

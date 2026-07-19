@@ -35,7 +35,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 function BladeSvg() {
   return (
-    <svg width="18" height="11" viewBox="0 0 20 12" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
+    <svg width="18" height="11" viewBox="0 0 20 12" fill="none" shapeRendering="crispEdges" style={{ display: 'inline', verticalAlign: 'middle' }}>
       <rect x="1" y="1" width="18" height="10" rx="1.5" stroke="#8898a8" strokeWidth="1.5" fill="#c0c8cc" />
       <ellipse cx="10" cy="6" rx="2.5" ry="2" fill="#111827" stroke="#7888a0" strokeWidth="1" />
       <line x1="2" y1="3.5" x2="6.5" y2="3.5" stroke="#dce8ec" strokeWidth="0.75" />
@@ -54,8 +54,8 @@ function BrushSvg() {
       <line x1="9.5" y1="2.5" x2="8.5" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
       <line x1="2.5" y1="5" x2="4" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
       <line x1="11.5" y1="5" x2="10" y2="9" stroke="#a08030" strokeWidth="0.8" opacity="0.45" />
-      <rect x="5" y="10" width="4" height="1.5" rx="0.5" fill="#b91c1c" />
-      <rect x="5.5" y="11" width="3" height="8" rx="1.5" fill="#dc2626" />
+      <rect x="4.5" y="10" width="5" height="2" rx="0.3" fill="#9ca3af" />
+      <path d="M 5.2 12 C 3 13 2.5 16 4 19 Q 5.5 19.5 7 19.5 Q 8.5 19.5 10 19 C 11.5 16 11 13 8.8 12 Z" fill="#dc2626" />
     </svg>
   );
 }

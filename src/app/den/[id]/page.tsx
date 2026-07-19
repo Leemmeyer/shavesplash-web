@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import CatalogPicker, { CatalogEntry } from "@/components/CatalogPicker";
 
 // Mirrored from mobile shave-store
 const EDGE_TYPE_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"] as const;
@@ -154,6 +155,9 @@ function ItemDetailContent({ id }: { id: string }) {
   const [editScentFamily, setEditScentFamily] = useState("");
   const [editFamilySubtype, setEditFamilySubtype] = useState("");
 
+  // Catalog picker (edit form)
+  const [showCatalogPicker, setShowCatalogPicker] = useState(false);
+
   // Edit form — plates (razors)
   const [editPlates, setEditPlates] = useState<RazorPlate[]>([]);
   const [editingPlateIdx, setEditingPlateIdx] = useState<number | null>(null); // null = no form, -1 = add new
@@ -213,6 +217,22 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditError(null);
     setShowEdit(true);
     setShowBST(false);
+  };
+
+  const handleCatalogSelect = (entry: CatalogEntry) => {
+    setEditBrand(entry.brandDisplay);
+    setEditName(entry.productDisplay);
+    const url = entry.urlPath.startsWith("http")
+      ? entry.urlPath
+      : `https://www.shavesplash.com${entry.urlPath}`;
+    setEditShaveSplashUrl(url);
+    if (entry.topNotes) setEditTopNotes(entry.topNotes);
+    if (entry.heartNotes) setEditHeartNotes(entry.heartNotes);
+    if (entry.baseNotes) setEditBaseNotes(entry.baseNotes);
+    if (entry.description) setEditScentDescription(entry.description);
+    if (entry.inspiration) setEditInspiration(entry.inspiration);
+    if (entry.scentFamily) setEditScentFamily(entry.scentFamily);
+    if (entry.familySubtype) setEditFamilySubtype(entry.familySubtype);
   };
 
   const handleSaveEdit = async () => {
@@ -494,6 +514,16 @@ function ItemDetailContent({ id }: { id: string }) {
           </div>
 
           <div className="space-y-5">
+            {/* Catalog picker for soaps and aftershaves */}
+            {(isSoap || isAftershave) && (
+              <button
+                type="button"
+                onClick={() => setShowCatalogPicker(true)}
+                className="w-full py-3 rounded-xl border border-[#c9a050]/40 bg-[#c9a050]/10 text-[#c9a050] text-sm font-semibold hover:bg-[#c9a050]/20 transition-colors"
+              >
+                📚 Browse ShaveSplash Catalog
+              </button>
+            )}
             {/* Base fields */}
             <Field label="Brand *">
               <input value={editBrand} onChange={(e) => setEditBrand(e.target.value)} className={input} />
@@ -803,6 +833,14 @@ function ItemDetailContent({ id }: { id: string }) {
             </div>
           </div>
         </div>
+      )}
+
+      {showCatalogPicker && (
+        <CatalogPicker
+          category={isSoap ? "soaps" : "aftershaves"}
+          onSelect={handleCatalogSelect}
+          onClose={() => setShowCatalogPicker(false)}
+        />
       )}
 
       {/* BST Form */}

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import CatalogPicker, { CatalogEntry } from "@/components/CatalogPicker";
 
 const EDGE_TYPE_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"] as const;
 const CONSTRUCTION_OPTIONS = ["1pc", "2pc", "3pc", "4pc", "Adjustable"] as const;
@@ -213,6 +214,9 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   // Preshave
   const [preshaveType, setPreshaveType] = useState<string>("");
 
+  // Catalog picker
+  const [showCatalogPicker, setShowCatalogPicker] = useState(false);
+
   // Scent info (soap & aftershave)
   const [shaveSplashUrl, setShaveSplashUrl] = useState("");
   const [topNotes, setTopNotes] = useState("");
@@ -257,6 +261,22 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
     setEditingPlateIdx(null);
   };
   const deletePlate = (idx: number) => setPlates((prev) => prev.filter((_, i) => i !== idx));
+
+  const handleCatalogSelect = (entry: CatalogEntry) => {
+    setBrand(entry.brandDisplay);
+    setName(entry.productDisplay);
+    const url = entry.urlPath.startsWith("http")
+      ? entry.urlPath
+      : `https://www.shavesplash.com${entry.urlPath}`;
+    setShaveSplashUrl(url);
+    if (entry.topNotes) setTopNotes(entry.topNotes);
+    if (entry.heartNotes) setHeartNotes(entry.heartNotes);
+    if (entry.baseNotes) setBaseNotes(entry.baseNotes);
+    if (entry.description) setScentDescription(entry.description);
+    if (entry.inspiration) setInspiration(entry.inspiration);
+    if (entry.scentFamily) setScentFamily(entry.scentFamily);
+    if (entry.familySubtype) setFamilySubtype(entry.familySubtype);
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) { setError("Name is required"); return; }
@@ -357,6 +377,15 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
         {/* Base fields */}
         <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-4">
           <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider mb-4">Details</h2>
+          {(isSoap || isAftershave) && (
+            <button
+              type="button"
+              onClick={() => setShowCatalogPicker(true)}
+              className="w-full py-3 rounded-xl border border-[#c9a050]/40 bg-[#c9a050]/10 text-[#c9a050] text-sm font-semibold hover:bg-[#c9a050]/20 transition-colors"
+            >
+              📚 Browse ShaveSplash Catalog
+            </button>
+          )}
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Brand <span className="text-red-400">*</span></label>
             <input
@@ -593,6 +622,14 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
           </button>
         </div>
       </div>
+
+      {showCatalogPicker && (
+        <CatalogPicker
+          category={isSoap ? "soaps" : "aftershaves"}
+          onSelect={handleCatalogSelect}
+          onClose={() => setShowCatalogPicker(false)}
+        />
+      )}
     </div>
   );
 }

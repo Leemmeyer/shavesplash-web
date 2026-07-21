@@ -26,6 +26,8 @@ const CATEGORIES = [
 const CONDITIONS = ["New", "Mint", "Excellent", "Good", "Fair"];
 
 type BrandEntry = { name: string; models: string[]; materials: string[] };
+type CategoryBrand = { name: string; items: string[] };
+type CategoryBrandsData = { soap: CategoryBrand[]; aftershave: CategoryBrand[]; blade: CategoryBrand[]; brush: string[] };
 
 async function resizeToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -76,22 +78,36 @@ export default function CreateListingModal() {
 
   // remote data
   const [brands, setBrands] = useState<BrandEntry[]>([]);
+  const [categoryBrands, setCategoryBrands] = useState<CategoryBrandsData>({ soap: [], aftershave: [], blade: [], brush: [] });
   const [isExpert, setIsExpert] = useState(false);
 
   const MAX_PHOTOS = isExpert ? 10 : 3;
 
-  // Derived brand/model/metal options
-  const brandOptions = brands.map((b) => b.name).sort((a, b) => a.localeCompare(b));
+  // Derived options
   const isCustomBrand = brand === CUSTOM_BRAND_KEY;
-  const selectedBrandData = brands.find((b) => b.name === brand);
-  const modelOptions = (selectedBrandData?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
+  const isCustomModel = !isCustomBrand && model === CUSTOM_MODEL_KEY;
+
+  // Razor options
+  const razorBrandOptions = brands.map((b) => b.name).sort((a, b) => a.localeCompare(b));
+  const selectedRazorBrand = brands.find((b) => b.name === brand);
+  const modelOptions = (selectedRazorBrand?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
   const allMaterials = Array.from(
-    new Set([...STANDARD_METALS, ...(selectedBrandData?.materials ?? [])])
+    new Set([...STANDARD_METALS, ...(selectedRazorBrand?.materials ?? [])])
   ).sort((a, b) => a.localeCompare(b));
+
+  // Soap / aftershave / brush options
+  const isItemCategory = ["soap", "aftershave"].includes(category);
+  const isBrushCategory = category === "brush";
+  const currentCategoryBrands: CategoryBrand[] =
+    category === "soap" ? categoryBrands.soap :
+    category === "aftershave" ? categoryBrands.aftershave : [];
+  const currentItemOptions = (currentCategoryBrands.find((b) => b.name === brand)?.items ?? [])
+    .slice().sort((a, b) => a.localeCompare(b));
 
   useEffect(() => {
     if (!open || !session) return;
     api.get<{ brands: BrandEntry[] }>("/api/bst/brands").then((d) => setBrands(d.brands)).catch(() => {});
+    api.get<CategoryBrandsData>("/api/bst/category-brands").then((d) => setCategoryBrands(d)).catch(() => {});
     api.get<{ profile: { displayName?: string | null }; user: { name: string } }>("/api/bst/profile")
       .then((d) => setDisplayName(d.profile?.displayName || d.user?.name || ""))
       .catch(() => {});
@@ -293,7 +309,7 @@ export default function CreateListingModal() {
                       className={selectCls}
                     >
                       <option value="">Any brand</option>
-                      {brandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                      {razorBrandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
                       <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
                     </select>
                     {isCustomBrand && (
@@ -357,6 +373,83 @@ export default function CreateListingModal() {
                 </div>
               )}
 
+              {/* Soap / Aftershave: brand + scent dropdowns */}
+              {isItemCategory && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls}>Brand</label>
+                    <select
+                      value={brand}
+                      onChange={(e) => { setBrand(e.target.value); setModel(""); setCustomBrandInput(""); setCustomModelInput(""); }}
+                      className={selectCls}
+                    >
+                      <option value="">Select brand…</option>
+                      {currentCategoryBrands.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
+                      <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
+                    </select>
+                    {isCustomBrand && (
+                      <input
+                        type="text"
+                        value={customBrandInput}
+                        onChange={(e) => setCustomBrandInput(e.target.value)}
+                        placeholder="Brand name…"
+                        autoFocus
+                        className={`mt-2 w-full bg-[#161616] border border-[#c9a050]/40 rounded-lg px-3 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/70`}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Scent / Product</label>
+                    {isCustomBrand || isCustomModel ? (
+                      <input
+                        type="text"
+                        value={customModelInput}
+                        onChange={(e) => setCustomModelInput(e.target.value)}
+                        placeholder="Scent name…"
+                        className={inputCls}
+                      />
+                    ) : (
+                      <select
+                        value={model}
+                        onChange={(e) => { setModel(e.target.value); setCustomModelInput(""); }}
+                        disabled={!brand}
+                        className={`${selectCls} disabled:opacity-40`}
+                      >
+                        <option value="">Select scent…</option>
+                        {currentItemOptions.map((i) => <option key={i} value={i}>{i}</option>)}
+                        {brand && <option value={CUSTOM_MODEL_KEY}>Other / Enter my own</option>}
+                      </select>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Brush: brand dropdown only */}
+              {isBrushCategory && (
+                <div className="max-w-xs">
+                  <label className={labelCls}>Brand</label>
+                  <select
+                    value={brand}
+                    onChange={(e) => { setBrand(e.target.value); setCustomBrandInput(""); }}
+                    className={selectCls}
+                  >
+                    <option value="">Select brand…</option>
+                    {categoryBrands.brush.map((b) => <option key={b} value={b}>{b}</option>)}
+                    <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
+                  </select>
+                  {isCustomBrand && (
+                    <input
+                      type="text"
+                      value={customBrandInput}
+                      onChange={(e) => setCustomBrandInput(e.target.value)}
+                      placeholder="Brand name…"
+                      autoFocus
+                      className={`mt-2 w-full bg-[#161616] border border-[#c9a050]/40 rounded-lg px-3 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/70`}
+                    />
+                  )}
+                </div>
+              )}
+
               {/* Item Name — hidden for razors (title auto-generated from brand + model) */}
               {!isRazor && (
                 <div>
@@ -365,7 +458,11 @@ export default function CreateListingModal() {
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Simpson Chubby 2 Best Badger Brush"
+                    placeholder={
+                      isItemCategory ? "e.g. Declaration Grooming Sellout" :
+                      isBrushCategory ? "e.g. Simpson Chubby 2 Best Badger" :
+                      "Item name"
+                    }
                     maxLength={120}
                     className={inputCls}
                   />

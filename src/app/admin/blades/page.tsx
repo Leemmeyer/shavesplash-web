@@ -6,8 +6,6 @@ export default function BladesPage() {
       apiPath="/api/admin/blade-brands"
       title="Blade Brands"
       itemLabel="Blade Names"
-      seedPath="/api/admin/blade-brands/seed"
-      seedLabel="Seed from blades.json"
     />
   );
 }

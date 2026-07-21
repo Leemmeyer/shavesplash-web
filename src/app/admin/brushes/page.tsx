@@ -8,6 +8,7 @@ type BrushBrand = {
   name: string;
   description: string;
   sortOrder: number;
+  pending: boolean;
 };
 
 function BrushBrandCard({
@@ -109,6 +110,11 @@ export default function BrushesPage() {
     setBrands((prev) => prev.map((b) => b.id === id ? updated.brand : b));
   };
 
+  const handleApprove = async (id: string) => {
+    const updated = await api.patch<{ brand: BrushBrand }>(`/api/admin/brush-brands/${id}/approve`, {});
+    setBrands((prev) => prev.map((b) => b.id === id ? updated.brand : b).sort((a, b) => a.name.localeCompare(b.name)));
+  };
+
   const handleDelete = async (id: string) => {
     await api.delete(`/api/admin/brush-brands/${id}`);
     setBrands((prev) => prev.filter((b) => b.id !== id));
@@ -133,7 +139,7 @@ export default function BrushesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-[#f5f2eb] font-semibold text-lg">Brush Brands</h2>
-          <p className="text-gray-500 text-sm mt-0.5">{brands.length} brands</p>
+          <p className="text-gray-500 text-sm mt-0.5">{brands.filter((b) => !b.pending).length} brands · click to edit</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -171,21 +177,53 @@ export default function BrushesPage() {
       {fetching ? (
         <p className="text-gray-600 text-sm">Loading…</p>
       ) : (
-        <div className="space-y-2">
-          {brands.map((brand) => (
-            <BrushBrandCard
-              key={brand.id}
-              brand={brand}
-              onSave={handleSave}
-              onDelete={handleDelete}
-            />
-          ))}
-          {brands.length === 0 && !fetching && (
-            <p className="text-gray-600 text-sm text-center py-8">
-              No brush brands yet. Add one above.
-            </p>
+        <>
+          {brands.filter((b) => b.pending).length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-3">
+                ⏳ Pending Review ({brands.filter((b) => b.pending).length})
+              </h2>
+              <div className="space-y-2">
+                {brands.filter((b) => b.pending).map((brand) => (
+                  <div key={brand.id} className="bg-[#242424] rounded-2xl border border-amber-400/20 px-5 py-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[#f5f2eb] font-semibold">{brand.name}</p>
+                      <p className="text-gray-600 text-xs mt-0.5 italic">User-submitted</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => handleApprove(brand.id)}
+                        className="text-sm bg-[#c9a050] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-[#b8903f] transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleDelete(brand.id)}
+                        className="text-sm text-gray-500 hover:text-red-400 transition-colors px-2"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-        </div>
+
+          <div className="space-y-2">
+            {brands.filter((b) => !b.pending).map((brand) => (
+              <BrushBrandCard
+                key={brand.id}
+                brand={brand}
+                onSave={handleSave}
+                onDelete={handleDelete}
+              />
+            ))}
+            {brands.filter((b) => !b.pending).length === 0 && (
+              <p className="text-gray-600 text-sm text-center py-8">No brush brands yet. Add one above.</p>
+            )}
+          </div>
+        </>
       )}
     </>
   );

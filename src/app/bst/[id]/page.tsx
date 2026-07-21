@@ -21,6 +21,8 @@ type Listing = {
   createdAt: string;
   expiresAt: string | null;
   views: number;
+  percentRemaining: number | null;
+  ageMonths: number | null;
   photos: Photo[];
   seller: Seller;
 };
@@ -127,7 +129,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               </>
             )}
 
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center flex-wrap gap-2 mb-6">
               <span className="text-[#c9a050] text-3xl font-bold">${listing.price.toFixed(2)}</span>
               <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
                 {listing.condition}
@@ -135,6 +137,16 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400 capitalize">
                 {listing.category}
               </span>
+              {listing.percentRemaining != null && (
+                <span className="bg-[#242424] border border-[#c9a050]/30 rounded-lg px-3 py-1 text-sm text-[#c9a050]">
+                  {listing.percentRemaining}% remaining
+                </span>
+              )}
+              {listing.ageMonths != null && (
+                <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
+                  ~{listing.ageMonths} {listing.ageMonths === 1 ? "month" : "months"} old
+                </span>
+              )}
             </div>
 
             <div className="bg-[#242424] rounded-2xl p-4 mb-6 border border-white/5">

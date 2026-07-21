@@ -69,6 +69,8 @@ export default function CreateListingModal() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("");
+  const [percentRemaining, setPercentRemaining] = useState("");
+  const [ageMonths, setAgeMonths] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,6 +110,8 @@ export default function CreateListingModal() {
     setDescription("");
     setPrice("");
     setCondition("");
+    setPercentRemaining("");
+    setAgeMonths("");
     setError(null);
     setSubmitting(false);
   };
@@ -157,6 +161,7 @@ export default function CreateListingModal() {
         ? ([resolvedBrand, resolvedModel].filter(Boolean).join(" ") || "Razor")
         : title.trim();
 
+      const hasLiquidFields = ["soap", "aftershave", "edp"].includes(category);
       await api.post("/api/bst/listings", {
         title: resolvedTitle,
         brand: resolvedBrand,
@@ -166,6 +171,8 @@ export default function CreateListingModal() {
         price: priceNum,
         condition,
         category,
+        percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
+        ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
         photos: photos.map((data, order) => ({ data, order })),
       });
 
@@ -362,6 +369,37 @@ export default function CreateListingModal() {
                     maxLength={120}
                     className={inputCls}
                   />
+                </div>
+              )}
+
+              {/* Percent Remaining + Age — soap, aftershave, edp only */}
+              {["soap", "aftershave", "edp"].includes(category) && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls}>Percent Remaining</label>
+                    <select
+                      value={percentRemaining}
+                      onChange={(e) => setPercentRemaining(e.target.value)}
+                      className={selectCls}
+                    >
+                      <option value="">Not specified</option>
+                      {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
+                        <option key={p} value={String(p)}>{p}%</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Approx. Age (months)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={ageMonths}
+                      onChange={(e) => setAgeMonths(e.target.value)}
+                      placeholder="e.g. 12"
+                      className={inputCls}
+                    />
+                  </div>
                 </div>
               )}
 

@@ -32,6 +32,8 @@ type Listing = {
   createdAt: string;
   expiresAt: string | null;
   views: number;
+  percentRemaining: number | null;
+  ageMonths: number | null;
   photos: Photo[];
   seller: Seller;
 };
@@ -175,8 +177,11 @@ function ListingCard({ listing }: { listing: Listing }) {
               🪒
             </div>
           )}
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-gray-300">
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-gray-300 text-right leading-tight">
             {listing.condition}
+            {listing.percentRemaining != null && (
+              <span className="block text-[10px] text-[#c9a050]">{listing.percentRemaining}% left</span>
+            )}
           </div>
           {listing.isExpertListing && (
             <div className="absolute top-2 left-2 bg-[#c9a050] text-black rounded-lg px-2 py-0.5 text-[10px] font-bold tracking-wide">

@@ -6,6 +6,13 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
 type RazorBrand = { name: string; models: string[]; materials: string[] };
+type CategoryBrand = { name: string; items: string[] };
+type CategoryBrandsData = {
+  soap: CategoryBrand[];
+  aftershave: CategoryBrand[];
+  blade: CategoryBrand[];
+  brush: string[];
+};
 
 const CUSTOM_BRAND_KEY = "__custom__";
 
@@ -49,6 +56,7 @@ export default function WatchlistSection() {
   const [isExpert, setIsExpert] = useState(false);
   const [expertLoading, setExpertLoading] = useState(true);
   const [razorBrands, setRazorBrands] = useState<RazorBrand[]>([]);
+  const [categoryBrands, setCategoryBrands] = useState<CategoryBrandsData>({ soap: [], aftershave: [], blade: [], brush: [] });
   const [alerts, setAlerts] = useState<WatchlistAlert[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -80,6 +88,9 @@ export default function WatchlistSection() {
     api.get<{ brands: RazorBrand[] }>("/api/bst/brands")
       .then((d) => setRazorBrands(d.brands))
       .catch(() => {});
+    api.get<CategoryBrandsData>("/api/bst/category-brands")
+      .then((d) => setCategoryBrands(d))
+      .catch(() => {});
   }, []);
 
   const loadAlerts = useCallback(() => {
@@ -95,14 +106,30 @@ export default function WatchlistSection() {
     loadAlerts();
   }, [loadAlerts]);
 
-  // Derived brand/model/material options for razor category
-  const brandOptions = razorBrands.map((b) => b.name).sort((a, b) => a.localeCompare(b));
+  // Derived options
   const isCustomBrand = formBrand === CUSTOM_BRAND_KEY;
-  const selectedBrandData = razorBrands.find((b) => b.name === formBrand);
-  const modelOptions = (selectedBrandData?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
+  const isCustomModel = !isCustomBrand && formModel === CUSTOM_BRAND_KEY;
+
+  // Razor
+  const razorBrandOptions = razorBrands.map((b) => b.name).sort((a, b) => a.localeCompare(b));
+  const selectedRazorBrand = razorBrands.find((b) => b.name === formBrand);
+  const modelOptions = (selectedRazorBrand?.models ?? []).slice().sort((a, b) => a.localeCompare(b));
   const materialOptions = isCustomBrand
     ? STANDARD_METALS
-    : (selectedBrandData?.materials ?? []).slice().sort((a, b) => a.localeCompare(b));
+    : (selectedRazorBrand?.materials ?? []).slice().sort((a, b) => a.localeCompare(b));
+
+  // Structured non-razor categories
+  const getCategoryBrandList = (): CategoryBrand[] => {
+    if (formCategory === "soap") return categoryBrands.soap;
+    if (formCategory === "aftershave") return categoryBrands.aftershave;
+    if (formCategory === "blade") return categoryBrands.blade;
+    return [];
+  };
+  const currentCategoryBrands = getCategoryBrandList();
+  const currentItemOptions = (currentCategoryBrands.find((b) => b.name === formBrand)?.items ?? [])
+    .slice().sort((a, b) => a.localeCompare(b));
+  const isItemCategory = ["soap", "aftershave", "blade"].includes(formCategory);
+  const isBrushCategory = formCategory === "brush";
 
   const resetForm = () => {
     setFormCategory("razor");
@@ -121,9 +148,10 @@ export default function WatchlistSection() {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    const isCustomBrand = formBrand === CUSTOM_BRAND_KEY;
     const resolvedBrand = isCustomBrand ? customBrandInput.trim() : formBrand;
-    const resolvedModel = isCustomBrand ? (customModelInput.trim() || undefined) : (formModel || undefined);
+    const resolvedModel = isCustomBrand || isCustomModel
+      ? (customModelInput.trim() || undefined)
+      : (formModel || undefined);
     try {
       await api.post("/api/bst/alerts", {
         category: formCategory,
@@ -222,7 +250,7 @@ export default function WatchlistSection() {
             </select>
           </div>
 
-          {/* Razor: structured brand / model / metal dropdowns */}
+          {/* Razor: brand / model / metal dropdowns */}
           {formCategory === "razor" ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
@@ -233,7 +261,7 @@ export default function WatchlistSection() {
                   className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
                 >
                   <option value="">Any brand</option>
-                  {brandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                  {razorBrandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
                   <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
                 </select>
                 {isCustomBrand && (
@@ -282,8 +310,107 @@ export default function WatchlistSection() {
                 </select>
               </div>
             </div>
+          ) : isItemCategory ? (
+            /* Soap / Aftershave / Blade: brand + item dropdowns */
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Brand <span className="text-gray-600">(optional)</span></label>
+                  <select
+                    value={formBrand}
+                    onChange={(e) => { setFormBrand(e.target.value); setFormModel(""); setCustomBrandInput(""); setCustomModelInput(""); }}
+                    className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                  >
+                    <option value="">Any brand</option>
+                    {currentCategoryBrands.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
+                    <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
+                  </select>
+                  {isCustomBrand && (
+                    <input
+                      type="text"
+                      value={customBrandInput}
+                      onChange={(e) => setCustomBrandInput(e.target.value)}
+                      placeholder="Brand name…"
+                      autoFocus
+                      className="mt-2 w-full bg-[#1e1e1e] border border-[#c9a050]/40 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/70"
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">
+                    {formCategory === "blade" ? "Blade name" : "Scent / Product"} <span className="text-gray-600">(optional)</span>
+                  </label>
+                  {isCustomBrand || isCustomModel ? (
+                    <input
+                      type="text"
+                      value={customModelInput}
+                      onChange={(e) => setCustomModelInput(e.target.value)}
+                      placeholder={formCategory === "blade" ? "Blade name…" : "Scent name…"}
+                      className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                    />
+                  ) : (
+                    <select
+                      value={formModel}
+                      onChange={(e) => { setFormModel(e.target.value); setCustomModelInput(""); }}
+                      disabled={!formBrand}
+                      className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 disabled:opacity-40"
+                    >
+                      <option value="">Any item</option>
+                      {currentItemOptions.map((i) => <option key={i} value={i}>{i}</option>)}
+                      {formBrand && <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>}
+                    </select>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Keyword <span className="text-gray-600">(optional — matched against listing text)</span></label>
+                <input
+                  type="text"
+                  value={formKeyword}
+                  onChange={(e) => setFormKeyword(e.target.value)}
+                  placeholder={`e.g. "Ghost Town Barber", "Collaboration"`}
+                  className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                />
+              </div>
+            </div>
+          ) : isBrushCategory ? (
+            /* Brush: brand dropdown + optional keyword */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Brand <span className="text-gray-600">(optional)</span></label>
+                <select
+                  value={formBrand}
+                  onChange={(e) => { setFormBrand(e.target.value); setCustomBrandInput(""); }}
+                  className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                >
+                  <option value="">Any brand</option>
+                  {categoryBrands.brush.map((b) => <option key={b} value={b}>{b}</option>)}
+                  <option value={CUSTOM_BRAND_KEY}>Other / Enter my own</option>
+                </select>
+                {isCustomBrand && (
+                  <input
+                    type="text"
+                    value={customBrandInput}
+                    onChange={(e) => setCustomBrandInput(e.target.value)}
+                    placeholder="Brand name…"
+                    autoFocus
+                    className="mt-2 w-full bg-[#1e1e1e] border border-[#c9a050]/40 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/70"
+                  />
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Keyword <span className="text-gray-600">(optional)</span></label>
+                <input
+                  type="text"
+                  value={formKeyword}
+                  onChange={(e) => setFormKeyword(e.target.value)}
+                  placeholder={`e.g. "Manchurian", "2-band"`}
+                  className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                />
+              </div>
+            </div>
           ) : (
-            /* Non-razor: keyword required */
+            /* EDP/EDT, Misc: keyword required */
             <div>
               <label className="text-xs text-gray-500 block mb-1">
                 Keyword <span className="text-red-400">*</span>
@@ -292,7 +419,7 @@ export default function WatchlistSection() {
                 type="text"
                 value={formKeyword}
                 onChange={(e) => setFormKeyword(e.target.value)}
-                placeholder={`e.g. "Ghost Town Barber", "Declaration B3", "Aventus"`}
+                placeholder={`e.g. "Aventus", "Baccarat Rouge"`}
                 className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
               />
               <p className="text-gray-600 text-xs mt-1">Matched against listing title and description</p>
@@ -352,10 +479,11 @@ export default function WatchlistSection() {
               <div className="min-w-0">
                 <p className="text-[#f5f2eb] text-sm font-medium truncate">
                   {CATEGORY_LABELS[alert.category] ?? alert.category}
-                  {alert.category === "razor" ? (
+                  {["razor", "soap", "aftershave", "blade", "brush"].includes(alert.category) ? (
                     <>
                       {alert.brand && <span className="text-gray-400 font-normal"> · {alert.brand}</span>}
                       {alert.model && <span className="text-gray-400 font-normal"> · {alert.model}</span>}
+                      {alert.keyword && <span className="text-gray-400 font-normal"> · &ldquo;{alert.keyword}&rdquo;</span>}
                     </>
                   ) : (
                     alert.keyword && <span className="text-gray-400 font-normal"> · &ldquo;{alert.keyword}&rdquo;</span>

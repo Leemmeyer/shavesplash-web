@@ -66,6 +66,7 @@ function CategoryIcon({ catId }: { catId: string }) {
   return <span>{CATEGORY_ICONS[catId] ?? '📦'}</span>;
 }
 const CATEGORY_ORDER = ["razors","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
+const LINE_COLORS = ["#c9a050","#60a5fa","#f472b6","#34d399","#a78bfa"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function getScoreValue(s: ScoreEntry): number {
@@ -187,10 +188,12 @@ function AnalyticsContent() {
       ) : (
         <div className="space-y-14">
           <HeatmapSection logs={logs} resultOptions={resultOptions} />
+          <ResultTrendSection logs={logs} resultOptions={resultOptions} />
           <GearComparisonSection
             logs={logs} inventory={inventory}
             resultOptions={resultOptions} scoreParameters={scoreParameters}
           />
+          <BladeWearSection logs={logs} inventory={inventory} resultOptions={resultOptions} />
           <PersonalRecordsSection
             logs={logs} inventory={inventory}
             resultOptions={resultOptions} scoreParameters={scoreParameters}
@@ -543,7 +546,358 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
   );
 }
 
-// ── Section 3: Result Correlation ──────────────────────────────────────────
+// ── Section 3: Result Trend ────────────────────────────────────────────────
+function ResultTrendSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptions: string[] }) {
+  const [range, setRange] = useState<"3mo" | "6mo" | "1yr" | "all">("all");
+  const [hoveredPt, setHoveredPt] = useState<number | null>(null);
+
+  const sorted = useMemo(() => [...logs].sort((a, b) => a.date - b.date), [logs]);
+
+  const filtered = useMemo(() => {
+    if (range === "all") return sorted;
+    const ms = range === "3mo" ? 90 : range === "6mo" ? 180 : 365;
+    const cutoff = Date.now() - ms * 24 * 60 * 60 * 1000;
+    return sorted.filter(l => l.date >= cutoff);
+  }, [sorted, range]);
+
+  const points = useMemo(() =>
+    filtered
+      .map(log => ({ log, norm: resultNorm(log, resultOptions) }))
+      .filter((p): p is { log: ShaveLog; norm: number } => p.norm !== null),
+    [filtered, resultOptions]
+  );
+
+  const N = points.length;
+
+  const rollingAvg = useMemo(() => {
+    const WINDOW = 10;
+    return points.map((_, i) => {
+      const slice = points.slice(Math.max(0, i - WINDOW + 1), i + 1);
+      return slice.reduce((s, x) => s + x.norm, 0) / slice.length;
+    });
+  }, [points]);
+
+  const trend = useMemo(() => {
+    const xs = points.map((_, i) => i);
+    const ys = points.map(p => p.norm);
+    return linReg(xs, ys);
+  }, [points]);
+
+  const yLabels = useMemo(() => {
+    const count = Math.min(5, resultOptions.length);
+    const step = (resultOptions.length - 1) / Math.max(1, count - 1);
+    return Array.from({ length: count }, (_, i) => {
+      const idx = Math.round(i * step);
+      return { label: resultOptions[idx], norm: idx / (resultOptions.length - 1) };
+    });
+  }, [resultOptions]);
+
+  const xTicks = useMemo(() => {
+    if (N < 2) return [];
+    const count = Math.min(6, N);
+    return Array.from({ length: count }, (_, i) => {
+      const idx = Math.round((i / (count - 1)) * (N - 1));
+      return { idx, label: new Date(points[idx].log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) };
+    });
+  }, [points, N]);
+
+  if (N < 3) return null;
+
+  const W = 680, PL = 62, PR = 20, PT = 15, PH = 220, LABEL_SPACE = 50;
+  const H = PT + PH + LABEL_SPACE, PW = W - PL - PR;
+  const sx = (i: number) => PL + (i / (N - 1)) * PW;
+  const sy = (norm: number) => PT + PH - norm * PH;
+  const TICK_Y = PT + PH + 18, TITLE_Y = PT + PH + 40;
+
+  const avgPath = rollingAvg
+    .map((avg, i) => `${i === 0 ? "M" : "L"} ${sx(i).toFixed(1)} ${sy(avg).toFixed(1)}`)
+    .join(" ");
+
+  const trendLine = trend && N >= 5 ? (() => {
+    const y0 = Math.max(0, Math.min(1, trend.a));
+    const y1 = Math.max(0, Math.min(1, trend.a + trend.b * (N - 1)));
+    const improving = trend.b > 0.003, declining = trend.b < -0.003;
+    return {
+      x1: sx(0), y1: sy(y0), x2: sx(N - 1), y2: sy(y1),
+      label: improving ? "↗ Improving" : declining ? "↘ Declining" : "→ Stable",
+      color: improving ? "#22c55e" : declining ? "#ef4444" : "#6b7280",
+    };
+  })() : null;
+
+  const hovPt = hoveredPt !== null ? points[hoveredPt] : null;
+
+  return (
+    <section>
+      <div className="flex items-end justify-between mb-4">
+        <div>
+          <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Result Trend</h2>
+          <p className="text-gray-500 text-xs">Shave quality over time · gold line = 10-shave rolling average</p>
+        </div>
+        <div className="flex gap-1.5">
+          {(["3mo","6mo","1yr","all"] as const).map(r => (
+            <button key={r} onClick={() => setRange(r)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                range === r
+                  ? "bg-[#c9a050]/15 border-[#c9a050]/30 text-[#c9a050]"
+                  : "bg-[#1e1e1e] border-white/10 text-gray-400 hover:text-[#f5f2eb] hover:border-white/20"
+              }`}>
+              {r === "all" ? "All" : r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
+        <div className="flex items-center gap-4 mb-4 flex-wrap">
+          {trendLine && (
+            <span className="text-sm font-semibold" style={{ color: trendLine.color }}>{trendLine.label}</span>
+          )}
+          <span className="text-gray-600 text-xs">{N} shaves</span>
+          <div className="flex items-center gap-2 ml-auto">
+            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#c9a050" strokeWidth="2" strokeOpacity="0.7" /></svg>
+            <span className="text-gray-500 text-xs">10-shave avg</span>
+          </div>
+        </div>
+
+        <div className="relative">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 360 }}>
+            {yLabels.map(({ norm }) => (
+              <line key={norm} x1={PL} y1={sy(norm)} x2={PL + PW} y2={sy(norm)} stroke="#252525" strokeWidth={1} />
+            ))}
+            {xTicks.map(({ idx }) => (
+              <line key={idx} x1={sx(idx)} y1={PT} x2={sx(idx)} y2={PT + PH} stroke="#252525" strokeWidth={1} />
+            ))}
+            {trendLine && (
+              <line x1={trendLine.x1} y1={trendLine.y1} x2={trendLine.x2} y2={trendLine.y2}
+                stroke={trendLine.color} strokeWidth={1} strokeOpacity={0.25} strokeDasharray="4 3" />
+            )}
+            <path d={avgPath} fill="none" stroke="#c9a050" strokeWidth={2} strokeOpacity={0.75} strokeLinejoin="round" />
+            {points.map((pt, i) => (
+              <circle key={i} cx={sx(i)} cy={sy(pt.norm)}
+                r={hoveredPt === i ? 6 : 3.5}
+                fill={normColor(pt.norm)}
+                fillOpacity={hoveredPt !== null && hoveredPt !== i ? 0.2 : 0.85}
+                stroke={hoveredPt === i ? "#fff" : "none"} strokeWidth={1.5}
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHoveredPt(i)}
+                onMouseLeave={() => setHoveredPt(null)}
+              />
+            ))}
+            {xTicks.map(({ idx, label }) => (
+              <text key={idx} x={sx(idx)} y={TICK_Y} textAnchor="middle" fontSize={10} fill="#6b7280">{label}</text>
+            ))}
+            {yLabels.map(({ label, norm }) => (
+              <text key={norm} x={PL - 6} y={sy(norm)} textAnchor="end" dominantBaseline="middle" fontSize={9} fill="#6b7280">{label}</text>
+            ))}
+            <text x={10} y={PT + PH / 2} textAnchor="middle" dominantBaseline="middle"
+              fontSize={11} fill="#9ca3af" transform={`rotate(-90, 10, ${PT + PH / 2})`}>Result →</text>
+          </svg>
+
+          {hovPt && (
+            <div className="absolute top-2 right-2 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 text-xs pointer-events-none shadow-lg min-w-[150px]">
+              <p className="text-[#f5f2eb] font-semibold mb-1">
+                {new Date(hovPt.log.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+              <p className="font-medium" style={{ color: normColor(hovPt.norm) }}>{hovPt.log.result}</p>
+              {avgScoreOf(hovPt.log.scores) !== null && (
+                <p className="text-gray-500">Avg score: {avgScoreOf(hovPt.log.scores)!.toFixed(1)}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Section 4: Blade Wear Curve ────────────────────────────────────────────
+function BladeWearSection({ logs, inventory, resultOptions }: {
+  logs: ShaveLog[]; inventory: InventoryItem[]; resultOptions: string[];
+}) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [hoveredPt, setHoveredPt] = useState<{ si: number; use: number } | null>(null);
+
+  const bladeRuns = useMemo(() => {
+    const sorted = [...logs].sort((a, b) => a.date - b.date);
+    const runs: Array<{ itemId: string; useNum: number; log: ShaveLog }> = [];
+    let currentId: string | null = null;
+    let useCount = 0;
+    for (const log of sorted) {
+      const blade = log.selectedItems["blades"];
+      if (!blade?.itemId) continue;
+      if (blade.itemId === currentId) {
+        useCount++;
+      } else {
+        currentId = blade.itemId;
+        useCount = 1;
+      }
+      runs.push({ itemId: blade.itemId, useNum: useCount, log });
+    }
+    return runs;
+  }, [logs]);
+
+  const bladeItems = useMemo(() => {
+    const ids = new Set(bladeRuns.map(r => r.itemId));
+    return inventory
+      .filter(i => i.categoryId === "blades" && ids.has(i.id))
+      .sort((a, b) => a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name));
+  }, [bladeRuns, inventory]);
+
+  const toggle = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 5 ? [...prev, id] : prev
+    );
+  };
+
+  const seriesData = useMemo(() => {
+    return selectedIds.map(id => {
+      const item = inventory.find(i => i.id === id);
+      if (!item) return null;
+      const runsForBlade = bladeRuns.filter(r => r.itemId === id);
+      const byUse: Record<number, number[]> = {};
+      for (const run of runsForBlade) {
+        const norm = resultNorm(run.log, resultOptions);
+        if (norm === null) continue;
+        if (!byUse[run.useNum]) byUse[run.useNum] = [];
+        byUse[run.useNum].push(norm);
+      }
+      const maxUse = Object.keys(byUse).length ? Math.max(...Object.keys(byUse).map(Number)) : 0;
+      const points = Array.from({ length: maxUse }, (_, i) => {
+        const nums = byUse[i + 1];
+        return nums ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+      });
+      return { id, item, points, totalRuns: runsForBlade.length };
+    }).filter((s): s is NonNullable<typeof s> => s !== null);
+  }, [selectedIds, bladeRuns, resultOptions, inventory]);
+
+  const maxUse = Math.max(...seriesData.map(s => s.points.length), 2);
+
+  const yLabels = useMemo(() => {
+    const count = Math.min(5, resultOptions.length);
+    const step = (resultOptions.length - 1) / Math.max(1, count - 1);
+    return Array.from({ length: count }, (_, i) => {
+      const idx = Math.round(i * step);
+      return { label: resultOptions[idx], norm: idx / (resultOptions.length - 1) };
+    });
+  }, [resultOptions]);
+
+  const W = 680, PL = 62, PR = 20, PT = 15, PH = 220, LABEL_SPACE = 50;
+  const H = PT + PH + LABEL_SPACE, PW = W - PL - PR;
+  const sx = (use: number) => maxUse <= 1 ? PL + PW / 2 : PL + ((use - 1) / (maxUse - 1)) * PW;
+  const sy = (norm: number) => PT + PH - norm * PH;
+  const TICK_Y = PT + PH + 18, TITLE_Y = PT + PH + 40;
+
+  return (
+    <section>
+      <div className="mb-4">
+        <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Blade Wear Curve</h2>
+        <p className="text-gray-500 text-xs">How shave quality changes with each consecutive blade use · select up to 5 blades</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-5">
+        {bladeItems.map(item => {
+          const selIdx = selectedIds.indexOf(item.id);
+          const sel = selIdx >= 0;
+          const color = sel ? LINE_COLORS[selIdx] : undefined;
+          return (
+            <button key={item.id} onClick={() => toggle(item.id)}
+              disabled={!sel && selectedIds.length >= 5}
+              className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+                sel ? "" : "bg-[#1e1e1e] border-white/5 text-gray-400 hover:border-white/20 hover:text-[#f5f2eb] disabled:opacity-30 disabled:cursor-not-allowed"
+              }`}
+              style={sel ? { color, borderColor: color + "80", background: color + "18" } : {}}>
+              {item.brand} {item.name}
+            </button>
+          );
+        })}
+        {bladeItems.length === 0 && <p className="text-gray-600 text-sm">No blade data found in your logs</p>}
+      </div>
+
+      <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
+        {seriesData.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-gray-600 text-sm">Select blades above to see their wear curves</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-4 mb-4">
+              {seriesData.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-2">
+                  <div style={{ width: 20, height: 2, backgroundColor: LINE_COLORS[i], borderRadius: 1 }} />
+                  <span className="text-xs text-gray-400">{s.item.brand} {s.item.name}</span>
+                  <span className="text-gray-600 text-xs">({s.totalRuns} uses logged)</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="relative">
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 360 }}>
+                {yLabels.map(({ norm }) => (
+                  <line key={norm} x1={PL} y1={sy(norm)} x2={PL + PW} y2={sy(norm)} stroke="#252525" strokeWidth={1} />
+                ))}
+                {Array.from({ length: maxUse }, (_, i) => (
+                  <line key={i} x1={sx(i + 1)} y1={PT} x2={sx(i + 1)} y2={PT + PH} stroke="#252525" strokeWidth={1} />
+                ))}
+
+                {seriesData.map((s, si) => {
+                  const color = LINE_COLORS[si];
+                  const pts = s.points
+                    .map((norm, i) => norm !== null ? { use: i + 1, norm } : null)
+                    .filter((p): p is { use: number; norm: number } => p !== null);
+                  const path = pts
+                    .map((p, i) => `${i === 0 ? "M" : "L"} ${sx(p.use).toFixed(1)} ${sy(p.norm).toFixed(1)}`)
+                    .join(" ");
+                  return (
+                    <g key={s.id}>
+                      <path d={path} fill="none" stroke={color} strokeWidth={2} strokeOpacity={0.85} strokeLinejoin="round" />
+                      {pts.map(p => (
+                        <circle key={p.use}
+                          cx={sx(p.use)} cy={sy(p.norm)}
+                          r={hoveredPt?.si === si && hoveredPt?.use === p.use ? 6 : 4}
+                          fill={color} fillOpacity={0.85}
+                          stroke={hoveredPt?.si === si && hoveredPt?.use === p.use ? "#fff" : "none"}
+                          strokeWidth={1.5}
+                          style={{ cursor: "pointer" }}
+                          onMouseEnter={() => setHoveredPt({ si, use: p.use })}
+                          onMouseLeave={() => setHoveredPt(null)}
+                        />
+                      ))}
+                    </g>
+                  );
+                })}
+
+                {Array.from({ length: maxUse }, (_, i) => (
+                  <text key={i} x={sx(i + 1)} y={TICK_Y} textAnchor="middle" fontSize={10} fill="#6b7280">{i + 1}</text>
+                ))}
+                {yLabels.map(({ label, norm }) => (
+                  <text key={norm} x={PL - 6} y={sy(norm)} textAnchor="end" dominantBaseline="middle" fontSize={9} fill="#6b7280">{label}</text>
+                ))}
+                <text x={PL + PW / 2} y={TITLE_Y} textAnchor="middle" fontSize={11} fill="#9ca3af">Use # →</text>
+                <text x={10} y={PT + PH / 2} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={11} fill="#9ca3af" transform={`rotate(-90, 10, ${PT + PH / 2})`}>Result →</text>
+              </svg>
+
+              {hoveredPt && seriesData[hoveredPt.si] && (() => {
+                const s = seriesData[hoveredPt.si];
+                const norm = s.points[hoveredPt.use - 1];
+                if (norm === null || norm === undefined) return null;
+                return (
+                  <div className="absolute top-2 right-2 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 text-xs pointer-events-none shadow-lg">
+                    <p className="text-[#f5f2eb] font-semibold mb-1">{s.item.brand} {s.item.name}</p>
+                    <p className="text-gray-400">Use #{hoveredPt.use}</p>
+                    <p className="font-medium mt-1" style={{ color: normColor(norm) }}>{nearestResult(norm, resultOptions)}</p>
+                  </div>
+                );
+              })()}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Section 5: Result Correlation ──────────────────────────────────────────
 function CorrelationSection({ logs, resultOptions, scoreParameters }: {
   logs: ShaveLog[]; resultOptions: string[]; scoreParameters: ScoreParameter[];
 }) {

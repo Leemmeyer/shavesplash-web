@@ -32,11 +32,11 @@ interface Thread {
 
 const CATEGORY_LABELS: Record<string, string> = {
   "general": "General Discussion",
-  "soap-reviews": "Soap Reviews",
-  "razor-reviews": "Razor Reviews",
-  "brush-reviews": "Brush Reviews",
-  "technique": "Technique & Advice",
-  "show-and-tell": "Show & Tell",
+  "razors": "Razors",
+  "soap-aftershave": "Soap/Aftershave",
+  "brushes": "Brushes",
+  "blades": "Blades",
+  "fragrance": "Fragrance",
 };
 
 function displayName(author: Author) {

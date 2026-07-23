@@ -92,7 +92,10 @@ export default async function BSTPage({
               {listings.length} active listing{listings.length !== 1 ? "s" : ""} from the wetshaving community
             </p>
           </div>
-          <div className="shrink-0 pt-1">
+          <div className="shrink-0 pt-1 flex items-center gap-3">
+            <Link href="/bst/my-listings" className="text-sm text-[#c9a050] hover:underline font-medium whitespace-nowrap">
+              My Listings
+            </Link>
             <CreateListingModal />
           </div>
         </div>

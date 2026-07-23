@@ -7,11 +7,11 @@ import { useSession } from "@/lib/session-context";
 
 const CATEGORIES = [
   { value: "general", label: "General Discussion" },
-  { value: "soap-reviews", label: "Soap Reviews" },
-  { value: "razor-reviews", label: "Razor Reviews" },
-  { value: "brush-reviews", label: "Brush Reviews" },
-  { value: "technique", label: "Technique & Advice" },
-  { value: "show-and-tell", label: "Show & Tell" },
+  { value: "razors", label: "Razors" },
+  { value: "soap-aftershave", label: "Soap/Aftershave" },
+  { value: "brushes", label: "Brushes" },
+  { value: "blades", label: "Blades" },
+  { value: "fragrance", label: "Fragrance" },
 ];
 
 interface Thread {

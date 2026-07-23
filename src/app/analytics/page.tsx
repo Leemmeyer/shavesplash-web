@@ -191,12 +191,12 @@ function AnalyticsContent() {
             logs={logs} inventory={inventory}
             resultOptions={resultOptions} scoreParameters={scoreParameters}
           />
-          <CorrelationSection
-            logs={logs} resultOptions={resultOptions} scoreParameters={scoreParameters}
-          />
           <PersonalRecordsSection
             logs={logs} inventory={inventory}
             resultOptions={resultOptions} scoreParameters={scoreParameters}
+          />
+          <CorrelationSection
+            logs={logs} resultOptions={resultOptions} scoreParameters={scoreParameters}
           />
         </div>
       )}

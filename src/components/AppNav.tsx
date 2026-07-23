@@ -80,7 +80,7 @@ export default function AppNav() {
                 href="/sign-in"
                 className="text-sm bg-[#c9a050] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-[#b8903f] transition-colors whitespace-nowrap"
               >
-                Sign in
+                Sign In / Join Free
               </Link>
             )
           )}

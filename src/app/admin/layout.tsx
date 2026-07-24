@@ -12,6 +12,7 @@ const TABS = [
   { label: "Aftershaves", href: "/admin/aftershaves" },
   { label: "Blades", href: "/admin/blades" },
   { label: "Brushes", href: "/admin/brushes" },
+  { label: "Activity", href: "/admin/activity" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -38,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-4 py-10">
         <Link href="/" className="text-xs text-gray-600 hover:text-gray-400 transition-colors mb-4 block">
           ← Home
         </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
@@ -58,7 +58,7 @@ const SORT_OPTIONS = [
 
 type InventoryItem = {
   id: string; categoryId: string; name: string; brand: string;
-  notes?: string; photoUrl?: string; createdAt: number;
+  notes?: string; hasPhoto: boolean; createdAt: number;
 };
 
 function sortItems(items: InventoryItem[], sort: string, usageCounts: Record<string, number>): InventoryItem[] {
@@ -263,27 +263,58 @@ function DenContent() {
   );
 }
 
+function ItemPhoto({ item }: { item: InventoryItem }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const fetched = useRef(false);
+
+  const fetchPhoto = useCallback(() => {
+    if (fetched.current || !item.hasPhoto) return;
+    fetched.current = true;
+    api.get<{ photoUrl: string | null }>(`/api/inventory/${item.id}/photo`)
+      .then((d) => setPhotoUrl(d.photoUrl))
+      .catch(() => {});
+  }, [item.id, item.hasPhoto]);
+
+  useEffect(() => {
+    if (!item.hasPhoto) return;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) { fetchPhoto(); observer.disconnect(); } },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [item.hasPhoto, fetchPhoto]);
+
+  return (
+    <div ref={ref} className="aspect-square bg-[#1e1e1e] relative overflow-hidden">
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photoUrl}
+          alt={item.name}
+          onLoad={() => setLoaded(true)}
+          className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <span className="text-3xl opacity-15">
+            {DEFAULT_CATEGORIES.find((c) => c.id === item.categoryId)?.icon ?? "📦"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ItemCard({ item }: { item: InventoryItem }) {
   return (
     <Link href={`/den/${item.id}`} className="group block">
       <div className="bg-[#242424] rounded-2xl overflow-hidden border border-white/5 hover:border-[#c9a050]/30 transition-all hover:shadow-lg hover:shadow-black/20">
-        {/* Photo */}
-        <div className="aspect-square bg-[#1e1e1e] relative overflow-hidden">
-          {item.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={item.photoUrl}
-              alt={item.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-3xl opacity-15">
-                {DEFAULT_CATEGORIES.find((c) => c.id === item.categoryId)?.icon ?? "📦"}
-              </span>
-            </div>
-          )}
-        </div>
+        <ItemPhoto item={item} />
 
         {/* Info */}
         <div className="p-3">

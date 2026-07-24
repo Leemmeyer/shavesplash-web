@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import SyncNote from "@/components/SyncNote";
@@ -458,6 +458,45 @@ function LogForm({
   );
 }
 
+// ── Log thumbnail — lazy loads via IntersectionObserver ──────────────────────
+function LogThumbnail({ logId, photoCache, setPhotoCache }: {
+  logId: string;
+  photoCache: Record<string, string>;
+  setPhotoCache: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const fetched = useRef(false);
+
+  useEffect(() => {
+    if (photoCache[logId]) return;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !fetched.current) {
+          fetched.current = true;
+          api.get<{ photoUrl: string | null }>(`/api/logs/${logId}/photo`)
+            .then((d) => { if (d.photoUrl) setPhotoCache((prev) => ({ ...prev, [logId]: d.photoUrl! })); })
+            .catch(() => {});
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [logId, photoCache, setPhotoCache]);
+
+  return (
+    <div ref={ref} className="w-9 h-9 rounded-md overflow-hidden flex-shrink-0 bg-[#242424]">
+      {photoCache[logId] && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photoCache[logId]} alt="" className="w-full h-full object-cover opacity-90" />
+      )}
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function LogsPage() {
   return (
@@ -699,7 +738,7 @@ function LogsContent() {
                           {usedItems.slice(0,3).map(([,s])=>s.itemName).join(" · ")}
                         </span>
                         {log.hasPhoto && (
-                          <span className="text-gray-600 text-sm flex-shrink-0">📷</span>
+                          <LogThumbnail logId={log.id} photoCache={photoCache} setPhotoCache={setPhotoCache} />
                         )}
                         {avg !== null && (
                           <span className="text-[#c9a050] text-sm font-semibold w-10 text-right flex-shrink-0">{avg.toFixed(1)}</span>

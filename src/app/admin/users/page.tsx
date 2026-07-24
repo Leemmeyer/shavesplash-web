@@ -1,0 +1,135 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
+type UserRow = {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  emailVerified: boolean;
+  profile: {
+    displayName: string | null;
+    isExpert: boolean;
+    expertSince: string | null;
+    paypalHandle: string | null;
+  } | null;
+  _count: {
+    shaveLogs: number;
+    listings: number;
+    forumThreads: number;
+    forumReplies: number;
+  };
+};
+
+function formatDate(ts: string) {
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+export default function UsersPage() {
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users")
+      .then((d) => setUsers(d.users))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = users.filter((u) => {
+    const q = search.toLowerCase();
+    return (
+      u.email.toLowerCase().includes(q) ||
+      (u.profile?.displayName ?? "").toLowerCase().includes(q) ||
+      u.name.toLowerCase().includes(q)
+    );
+  });
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-6 h-6 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+
+      {/* Header + search */}
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-gray-500 text-sm">{users.length} total users</p>
+        <input
+          type="text"
+          placeholder="Search by email or name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 outline-none focus:border-[#c9a050]/40 w-64"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-wide">
+              <th className="text-left px-5 py-3 font-medium">User</th>
+              <th className="text-left px-5 py-3 font-medium hidden md:table-cell">Email</th>
+              <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">Logs</th>
+              <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">BST</th>
+              <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">Posts</th>
+              <th className="text-left px-5 py-3 font-medium hidden sm:table-cell">Joined</th>
+              <th className="text-center px-4 py-3 font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {filtered.map((u) => {
+              const displayName = u.profile?.displayName ?? u.name;
+              return (
+                <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-5 py-3">
+                    <p className="text-[#f5f2eb] font-medium truncate max-w-[180px]">{displayName}</p>
+                    <p className="text-gray-600 text-[11px] truncate max-w-[180px] md:hidden">{u.email}</p>
+                  </td>
+                  <td className="px-5 py-3 hidden md:table-cell">
+                    <p className="text-gray-400 text-xs truncate max-w-[200px]">{u.email}</p>
+                    {!u.emailVerified && (
+                      <span className="text-[10px] text-amber-500/70">unverified</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center hidden lg:table-cell">
+                    <span className="text-[#c9a050] font-medium">{u._count.shaveLogs}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center hidden lg:table-cell">
+                    <span className="text-gray-400">{u._count.listings}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center hidden lg:table-cell">
+                    <span className="text-gray-400">{u._count.forumThreads + u._count.forumReplies}</span>
+                  </td>
+                  <td className="px-5 py-3 hidden sm:table-cell">
+                    <span className="text-gray-500 text-xs">{formatDate(u.createdAt)}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {u.profile?.isExpert ? (
+                      <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
+                    ) : (
+                      <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-5 py-10 text-center text-gray-600 text-sm">No users found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

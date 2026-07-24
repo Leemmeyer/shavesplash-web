@@ -8,6 +8,7 @@ type UserRow = {
   email: string;
   name: string;
   createdAt: string;
+  lastSeen: string | null;
   emailVerified: boolean;
   profile: {
     displayName: string | null;
@@ -82,6 +83,7 @@ export default function UsersPage() {
               <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">BST</th>
               <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">Posts</th>
               <th className="text-left px-5 py-3 font-medium hidden sm:table-cell">Joined</th>
+              <th className="text-left px-5 py-3 font-medium hidden xl:table-cell">Last Seen</th>
               <th className="text-center px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
@@ -112,6 +114,9 @@ export default function UsersPage() {
                   <td className="px-5 py-3 hidden sm:table-cell">
                     <span className="text-gray-500 text-xs">{formatDate(u.createdAt)}</span>
                   </td>
+                  <td className="px-5 py-3 hidden xl:table-cell">
+                    <span className="text-gray-500 text-xs">{u.lastSeen ? formatDate(u.lastSeen) : <span className="text-gray-700">—</span>}</span>
+                  </td>
                   <td className="px-4 py-3 text-center">
                     {u.profile?.isExpert ? (
                       <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
@@ -124,7 +129,7 @@ export default function UsersPage() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-gray-600 text-sm">No users found.</td>
+                <td colSpan={8} className="px-5 py-10 text-center text-gray-600 text-sm">No users found.</td>
               </tr>
             )}
           </tbody>

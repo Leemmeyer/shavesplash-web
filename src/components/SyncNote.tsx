@@ -25,14 +25,16 @@ export default function SyncNote() {
           >
             <h2 className="text-[#f5f2eb] font-semibold text-base mb-4">Sync between web & mobile</h2>
             <div className="space-y-3 text-sm text-gray-400 leading-relaxed">
+              <p className="text-[#f5f2eb] text-xs font-semibold uppercase tracking-wide">Shave History &amp; Den</p>
               <p>
-                Your shave logs and Den live locally on your phone. The iOS app automatically pushes your data to the cloud whenever you make a change, and the web app reads from that cloud data.
+                These live locally on your phone. The iOS app automatically pushes changes to the cloud, and the web reads from there — so the web always reflects what's on your phone.
               </p>
               <p>
-                This means the web always reflects what's on your phone. However, changes you make on the web (adding gear, editing logs) won't appear on your phone automatically.
+                Changes made on the web won't appear on your phone automatically. To pull them down, open the iOS app, go to <span className="text-[#f5f2eb]">Settings</span>, and tap <span className="text-[#f5f2eb]">Sync from Cloud</span>.
               </p>
+              <p className="text-[#f5f2eb] text-xs font-semibold uppercase tracking-wide pt-1">Forum, BST &amp; SOTD</p>
               <p>
-                To pull web changes down to your phone, open the iOS app, go to <span className="text-[#f5f2eb]">Settings</span>, and tap <span className="text-[#f5f2eb]">Sync from Cloud</span>.
+                These are live on both platforms. Anything posted on the web or the app appears instantly everywhere — no sync step needed.
               </p>
             </div>
             <button

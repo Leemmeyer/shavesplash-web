@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import SyncNote from "@/components/SyncNote";
 
 // Fallback defaults (used if preferences haven't been saved yet)
 const DEFAULT_RESULT_OPTIONS = [
@@ -557,6 +558,7 @@ function LogsContent() {
         <div>
           <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">Shave History</h1>
           <p className="text-gray-500 text-sm">{logs.length} shave{logs.length !== 1 ? "s" : ""} logged</p>
+          <SyncNote />
         </div>
         <div className="flex items-center gap-3">
           {totalAvg !== null && (

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import SyncNote from "@/components/SyncNote";
 
 const DEFAULT_CATEGORIES = [
   { id: "razors",      label: "Razors",       icon: "🪒" },
@@ -163,6 +164,7 @@ function DenContent() {
             My Den
           </h1>
           <p className="text-gray-500 text-sm">{totalItems} item{totalItems !== 1 ? "s" : ""} in your collection</p>
+          <SyncNote />
         </div>
       </div>
 

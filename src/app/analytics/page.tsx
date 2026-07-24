@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import SyncNote from "@/components/SyncNote";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type ScoreEntry = { value: number; shortName: string } | number;
@@ -177,6 +178,7 @@ function AnalyticsContent() {
       <div className="mb-10">
         <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">Analytics</h1>
         <p className="text-gray-500 text-sm">{logs.length} shave{logs.length !== 1 ? "s" : ""} analyzed</p>
+        <SyncNote />
       </div>
 
       {logs.length === 0 ? (

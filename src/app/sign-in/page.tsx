@@ -38,10 +38,10 @@ function SignInForm() {
     <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-2 text-center">
-          Sign In
+          Continue with Email
         </h1>
         <p className="text-gray-500 text-sm text-center mb-8">
-          Access your Den, logs, and the marketplace
+          Enter your email to sign in or create a free account
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-6">
           Admin
         </h1>
-        <div className="flex gap-1 mb-8 border-b border-white/10 overflow-x-auto">
+        <div className="flex gap-1 mb-8 border-b border-white/10 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => {
             const active = pathname === tab.href;
             return (

@@ -252,7 +252,7 @@ export default function ActivityPage() {
         <div className="bg-[#1e1e1e] border border-[#c9a050]/20 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[#f5f2eb] font-semibold">Activity Timeline</h2>
-            <button onClick={() => setSelectedUser(null)} className="text-gray-500 hover:text-gray-300 text-sm">✕ Close</button>
+            <button onClick={() => setSelectedUser(null)} className="text-gray-500 hover:text-gray-300 text-sm bg-transparent border-none outline-none cursor-pointer">✕ Close</button>
           </div>
           <UserTimeline userId={selectedUser.userId} name={selectedUser.displayName ?? selectedUser.userEmail ?? selectedUser.userId} />
         </div>

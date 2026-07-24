@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
@@ -113,7 +113,20 @@ function SotdCard({ post, onReact, session }: {
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [gearExpanded, setGearExpanded] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const GEAR_LIMIT = 5;
+
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showEmojiPicker]);
 
   const color = resultColor(post.resultRank, post.resultOptionsCount);
   const avg = avgScore(post.scores);
@@ -249,26 +262,56 @@ function SotdCard({ post, onReact, session }: {
         )}
 
         {/* Reactions */}
-        <div className="flex items-center gap-2 pt-1">
-          {SOTD_EMOJIS.map((emoji) => {
+        <div className="flex items-center gap-2 pt-1 flex-wrap">
+          {/* Show existing reactions that have counts */}
+          {SOTD_EMOJIS.filter((e) => (post.reactions[e]?.count ?? 0) > 0).map((emoji) => {
             const g = post.reactions[emoji];
-            const reacted = g?.reacted ?? false;
             return (
               <button
                 key={emoji}
                 onClick={() => session ? onReact(post.id, emoji) : undefined}
                 disabled={!session}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
-                  reacted
+                  g?.reacted
                     ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
                     : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
                 }`}
               >
                 <span>{emoji}</span>
-                {(g?.count ?? 0) > 0 && <span className="text-xs font-medium">{g.count}</span>}
+                <span className="text-xs font-medium">{g!.count}</span>
               </button>
             );
           })}
+
+          {/* Emoji picker trigger */}
+          <div className="relative" ref={pickerRef}>
+            {showEmojiPicker ? (
+              <div className="flex items-center gap-0.5 bg-[#242424] border border-white/10 rounded-full px-2 py-1">
+                {SOTD_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      if (session) onReact(post.id, emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-base"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                onClick={() => session ? setShowEmojiPicker(true) : undefined}
+                disabled={!session}
+                title={session ? "React" : "Sign in to react"}
+                className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-base text-gray-500 hover:border-white/25 hover:bg-white/5 transition-colors disabled:cursor-default"
+              >
+                😊
+              </button>
+            )}
+          </div>
+
           <button
             onClick={() => setShowComments((v) => !v)}
             className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"

@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [expertPending, setExpertPending] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users")
@@ -50,6 +51,20 @@ export default function UsersPage() {
     } catch {}
     setDeleting(null);
     setConfirmId(null);
+  }
+
+  async function handleToggleExpert(userId: string, currentlyExpert: boolean) {
+    setExpertPending(userId);
+    try {
+      const endpoint = currentlyExpert ? "/api/subscriptions/revoke" : "/api/subscriptions/grant";
+      await api.post(endpoint, { userId });
+      setUsers((prev) => prev.map((u) =>
+        u.id === userId
+          ? { ...u, profile: u.profile ? { ...u.profile, isExpert: !currentlyExpert } : { displayName: null, isExpert: !currentlyExpert, expertSince: null, paypalHandle: null } }
+          : u
+      ));
+    } catch {}
+    setExpertPending(null);
   }
 
   const filtered = users.filter((u) => {
@@ -133,11 +148,24 @@ export default function UsersPage() {
                     <span className="text-gray-500 text-xs">{u.lastSeen ? formatDate(u.lastSeen) : <span className="text-gray-700">—</span>}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {u.profile?.isExpert ? (
-                      <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
-                    ) : (
-                      <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
-                    )}
+                    <div className="flex flex-col items-center gap-1.5">
+                      {u.profile?.isExpert ? (
+                        <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
+                      )}
+                      <button
+                        onClick={() => handleToggleExpert(u.id, !!u.profile?.isExpert)}
+                        disabled={expertPending === u.id}
+                        className={`text-[10px] font-semibold rounded-full px-2 py-0.5 border transition-colors cursor-pointer disabled:opacity-40 ${
+                          u.profile?.isExpert
+                            ? "text-gray-500 border-gray-700 hover:text-red-400 hover:border-red-700 bg-transparent"
+                            : "text-[#c9a050] border-[#c9a050]/30 hover:bg-[#c9a050]/10 bg-transparent"
+                        }`}
+                      >
+                        {expertPending === u.id ? "…" : u.profile?.isExpert ? "Revoke" : "Grant Expert"}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     {isConfirming ? (

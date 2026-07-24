@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import SyncNote from "@/components/SyncNote";
@@ -76,7 +76,7 @@ type ShaveLog = {
   resultRank?: number; resultOptionsCount?: number;
   scores: Record<string, ScoreEntry>;
   selectedItems: Record<string, SelectedItem>;
-  notes?: string; photoUrl?: string;
+  notes?: string; hasPhoto?: boolean;
   isPublic?: boolean; isAnonymous?: boolean;
 };
 
@@ -204,7 +204,14 @@ function LogForm({
   });
   const [selectedItems, setSelectedItems] = useState<Record<string, SelectedItem>>(() => initial?.selectedItems ?? {});
   const [notes, setNotes] = useState(initial?.notes ?? "");
-  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(initial?.photoUrl ?? null);
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (initial?.hasPhoto) {
+      api.get<{ photoUrl: string | null }>(`/api/logs/${initial.id}/photo`)
+        .then((d) => setPhotoDataUrl(d.photoUrl))
+        .catch(() => {});
+    }
+  }, [initial?.id, initial?.hasPhoto]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -264,12 +271,12 @@ function LogForm({
       } else {
         await api.post("/api/logs", body);
       }
-      if (photoDataUrl && photoDataUrl !== initial?.photoUrl) {
+      if (photoDataUrl) {
         await api.post(`/api/logs/${logId}/photo`, { data: photoDataUrl });
       }
       onSave({
         ...body,
-        photoUrl: photoDataUrl ?? initial?.photoUrl ?? undefined,
+        hasPhoto: !!photoDataUrl || (isEdit && !!initial?.hasPhoto),
         isPublic: isEdit ? (initial?.isPublic ?? false) : autoShareSotd,
         isAnonymous: initial?.isAnonymous ?? false,
       } as ShaveLog);
@@ -476,6 +483,7 @@ function LogsContent() {
   const [autoShareLoading, setAutoShareLoading] = useState(false);
   const [sotdUpdating, setSotdUpdating] = useState<string | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [photoCache, setPhotoCache] = useState<Record<string, string>>({});
 
   useEffect(() => {
     Promise.all([
@@ -529,6 +537,16 @@ function LogsContent() {
       setLogs((prev) => prev.map((l) => l.id === log.id ? { ...l, isPublic } : l));
     } catch { /* ignore */ } finally { setSotdUpdating(null); }
   };
+
+  const handleExpand = useCallback((log: ShaveLog) => {
+    const isExpanding = expanded !== log.id;
+    setExpanded(isExpanding ? log.id : null);
+    if (isExpanding && log.hasPhoto && !photoCache[log.id]) {
+      api.get<{ photoUrl: string | null }>(`/api/logs/${log.id}/photo`)
+        .then((d) => { if (d.photoUrl) setPhotoCache((prev) => ({ ...prev, [log.id]: d.photoUrl! })); })
+        .catch(() => {});
+    }
+  }, [expanded, photoCache]);
 
   const handleAnonToggle = async (log: ShaveLog, isAnonymous: boolean) => {
     setSotdUpdating(log.id);
@@ -671,7 +689,7 @@ function LogsContent() {
                   return (
                     <div key={log.id} className="bg-[#1e1e1e] rounded-xl border border-white/5 overflow-hidden hover:border-white/10 transition-colors">
                       <button
-                        onClick={() => setExpanded(isExpanded ? null : log.id)}
+                        onClick={() => handleExpand(log)}
                         className="w-full text-left px-4 py-3.5 flex items-center gap-3"
                       >
                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
@@ -680,8 +698,8 @@ function LogsContent() {
                         <span className="text-gray-500 text-sm truncate flex-1 hidden sm:block">
                           {usedItems.slice(0,3).map(([,s])=>s.itemName).join(" · ")}
                         </span>
-                        {log.photoUrl && (
-                          <img src={log.photoUrl} alt="" className="w-9 h-9 rounded-md object-cover flex-shrink-0 opacity-90" />
+                        {log.hasPhoto && (
+                          <span className="text-gray-600 text-sm flex-shrink-0">📷</span>
                         )}
                         {avg !== null && (
                           <span className="text-[#c9a050] text-sm font-semibold w-10 text-right flex-shrink-0">{avg.toFixed(1)}</span>
@@ -700,11 +718,17 @@ function LogsContent() {
                       {isExpanded && (
                         <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-4">
                           {/* Photo + Gear side by side */}
-                          {(log.photoUrl || usedItems.length > 0) && (
+                          {(log.hasPhoto || usedItems.length > 0) && (
                             <div className="flex gap-3 items-start">
-                              {log.photoUrl && (
-                                <button onClick={() => setLightboxUrl(log.photoUrl!)} className="flex-shrink-0 w-1/2 rounded-xl overflow-hidden bg-[#242424] block cursor-zoom-in">
-                                  <img src={log.photoUrl} alt="Shave photo" className="w-full object-cover max-h-36" />
+                              {log.hasPhoto && (
+                                <button onClick={() => photoCache[log.id] && setLightboxUrl(photoCache[log.id])} className="flex-shrink-0 w-1/2 rounded-xl overflow-hidden bg-[#242424] block cursor-zoom-in">
+                                  {photoCache[log.id] ? (
+                                    <img src={photoCache[log.id]} alt="Shave photo" className="w-full object-cover max-h-36" />
+                                  ) : (
+                                    <div className="w-full max-h-36 h-28 flex items-center justify-center">
+                                      <div className="w-4 h-4 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+                                    </div>
+                                  )}
                                 </button>
                               )}
                               {usedItems.length > 0 && (

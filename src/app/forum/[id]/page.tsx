@@ -6,17 +6,22 @@ import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
+const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
+
 interface Author {
   id: string;
   name: string;
   profile?: { displayName?: string };
 }
 
+type ReactionGroup = { count: number; reacted: boolean };
+
 interface Reply {
   id: string;
   body: string;
   author: Author;
   createdAt: string;
+  reactions: Record<string, ReactionGroup>;
 }
 
 interface Thread {
@@ -28,6 +33,7 @@ interface Thread {
   createdAt: string;
   author: Author;
   replies: Reply[];
+  reactions: Record<string, ReactionGroup>;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -55,6 +61,76 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString();
 }
 
+// ── Emoji Picker ──────────────────────────────────────────────────────────────
+function EmojiReactions({ reactions, onReact, session }: {
+  reactions: Record<string, ReactionGroup>;
+  onReact: (emoji: string) => void;
+  session: { user: { id: string } } | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Active reaction pills */}
+      {FORUM_EMOJIS.filter((e) => (reactions[e]?.count ?? 0) > 0).map((emoji) => {
+        const g = reactions[emoji];
+        return (
+          <button
+            key={emoji}
+            onClick={() => session ? onReact(emoji) : undefined}
+            disabled={!session}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
+              g?.reacted
+                ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
+                : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
+            }`}
+          >
+            <span>{emoji}</span>
+            <span className="text-xs font-medium">{g!.count}</span>
+          </button>
+        );
+      })}
+
+      {/* Picker trigger */}
+      <div className="relative" ref={ref}>
+        {open ? (
+          <div className="flex items-center gap-0.5 bg-[#242424] border border-white/10 rounded-full px-2 py-1">
+            {FORUM_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => { if (session) onReact(emoji); setOpen(false); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-base"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <button
+            onClick={() => session ? setOpen(true) : undefined}
+            disabled={!session}
+            title={session ? "React" : "Sign in to react"}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-base text-gray-500 hover:border-white/25 hover:bg-white/5 transition-colors disabled:cursor-default"
+          >
+            👍
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Thread Page ───────────────────────────────────────────────────────────────
 export default function ThreadPage() {
   const { id } = useParams<{ id: string }>();
   const { session } = useSession();
@@ -71,6 +147,25 @@ export default function ThreadPage() {
       .catch(() => router.push("/forum"));
   }, [id, router]);
 
+  const handleReactThread = async (emoji: string) => {
+    if (!session) return;
+    const { reactions } = await api.post<{ reactions: Record<string, ReactionGroup> }>(
+      "/api/forum/reactions", { targetType: "thread", targetId: id, emoji }
+    );
+    setThread((t) => t ? { ...t, reactions } : t);
+  };
+
+  const handleReactReply = async (replyId: string, emoji: string) => {
+    if (!session) return;
+    const { reactions } = await api.post<{ reactions: Record<string, ReactionGroup> }>(
+      "/api/forum/reactions", { targetType: "reply", targetId: replyId, emoji }
+    );
+    setThread((t) => t ? {
+      ...t,
+      replies: t.replies.map((r) => r.id === replyId ? { ...r, reactions } : r),
+    } : t);
+  };
+
   const handleReply = async () => {
     if (!replyBody.trim() || submitting || !session) return;
     setSubmitting(true);
@@ -82,11 +177,7 @@ export default function ThreadPage() {
       setThread((t) => t ? { ...t, replies: [...t.replies, reply] } : t);
       setReplyBody("");
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    } catch {
-      // ignore
-    } finally {
-      setSubmitting(false);
-    }
+    } catch { /* ignore */ } finally { setSubmitting(false); }
   };
 
   const handleDeleteThread = async () => {
@@ -129,11 +220,12 @@ export default function ThreadPage() {
           {thread.title}
         </h1>
         <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-4">{thread.body}</p>
-        <div className="flex items-center gap-2 text-xs text-gray-600 border-t border-white/5 pt-4">
+        <div className="flex items-center gap-2 text-xs text-gray-600 border-t border-white/5 pt-4 mb-3">
           <span className="font-medium text-gray-400">{displayName(thread.author)}</span>
           <span>·</span>
           <span>{timeAgo(thread.createdAt)}</span>
         </div>
+        <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} />
       </div>
 
       {/* Replies */}
@@ -157,7 +249,8 @@ export default function ThreadPage() {
                   </button>
                 )}
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{reply.body}</p>
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-3">{reply.body}</p>
+              <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} />
             </div>
           ))}
         </div>

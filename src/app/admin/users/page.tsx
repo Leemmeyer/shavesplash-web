@@ -32,6 +32,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users")
@@ -39,6 +41,16 @@ export default function UsersPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleDelete(userId: string) {
+    setDeleting(userId);
+    try {
+      await api.delete(`/api/admin/monitoring/users/${userId}`);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch {}
+    setDeleting(null);
+    setConfirmId(null);
+  }
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
@@ -85,13 +97,16 @@ export default function UsersPage() {
               <th className="text-left px-5 py-3 font-medium hidden sm:table-cell">Joined</th>
               <th className="text-left px-5 py-3 font-medium hidden xl:table-cell">Last Seen</th>
               <th className="text-center px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {filtered.map((u) => {
               const displayName = u.profile?.displayName ?? u.name;
+              const isConfirming = confirmId === u.id;
+              const isDeleting = deleting === u.id;
               return (
-                <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={u.id} className={`transition-colors ${isConfirming ? "bg-red-950/20" : "hover:bg-white/[0.02]"}`}>
                   <td className="px-5 py-3">
                     <p className="text-[#f5f2eb] font-medium truncate max-w-[180px]">{displayName}</p>
                     <p className="text-gray-600 text-[11px] truncate max-w-[180px] md:hidden">{u.email}</p>
@@ -124,12 +139,39 @@ export default function UsersPage() {
                       <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {isConfirming ? (
+                      <span className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          disabled={isDeleting}
+                          className="text-[11px] font-semibold text-red-400 hover:text-red-300 bg-transparent border-none outline-none cursor-pointer disabled:opacity-50"
+                        >
+                          {isDeleting ? "Deleting…" : "Confirm"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmId(null)}
+                          className="text-[11px] text-gray-600 hover:text-gray-400 bg-transparent border-none outline-none cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmId(u.id)}
+                        className="text-gray-700 hover:text-red-500 transition-colors bg-transparent border-none outline-none cursor-pointer text-xs"
+                        title="Delete user"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </td>
                 </tr>
               );
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-10 text-center text-gray-600 text-sm">No users found.</td>
+                <td colSpan={9} className="px-5 py-10 text-center text-gray-600 text-sm">No users found.</td>
               </tr>
             )}
           </tbody>

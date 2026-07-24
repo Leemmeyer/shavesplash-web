@@ -99,15 +99,9 @@ function DenContent() {
   useEffect(() => {
     Promise.all([
       api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
-      api.get<{ logs: Array<{ selectedItems: Record<string, { itemId?: string }> }> }>("/api/logs").then((d) => d.logs).catch(() => []),
-    ]).then(([inv, logs]) => {
+      api.get<{ counts: Record<string, number> }>("/api/inventory/usage-counts").then((d) => d.counts).catch(() => ({} as Record<string, number>)),
+    ]).then(([inv, counts]) => {
       setItems(inv);
-      const counts: Record<string, number> = {};
-      for (const log of logs) {
-        for (const sel of Object.values(log.selectedItems ?? {})) {
-          if (sel.itemId) counts[sel.itemId] = (counts[sel.itemId] ?? 0) + 1;
-        }
-      }
       setUsageCounts(counts);
     }).finally(() => setLoading(false));
   }, []);

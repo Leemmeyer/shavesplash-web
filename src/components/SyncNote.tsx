@@ -26,13 +26,13 @@ export default function SyncNote() {
             <h2 className="text-[#f5f2eb] font-semibold text-base mb-4">Sync between web & mobile</h2>
             <div className="space-y-3 text-sm text-gray-400 leading-relaxed">
               <p>
-                Your ShaveSplash data lives on our servers, not on your device. That means the web app and the iOS app are always looking at the same information.
+                Your shave logs and Den live locally on your phone. The iOS app automatically pushes your data to the cloud whenever you make a change, and the web app reads from that cloud data.
               </p>
               <p>
-                Log a shave on your phone and it shows up here instantly. Add gear to your Den on the web and it appears in the app right away. There's nothing to sync manually.
+                This means the web always reflects what's on your phone. However, changes you make on the web (adding gear, editing logs) won't appear on your phone automatically.
               </p>
               <p>
-                All you need is to be signed in to the same account on both.
+                To pull web changes down to your phone, open the iOS app, go to <span className="text-[#f5f2eb]">Settings</span>, and tap <span className="text-[#f5f2eb]">Sync from Cloud</span>.
               </p>
             </div>
             <button

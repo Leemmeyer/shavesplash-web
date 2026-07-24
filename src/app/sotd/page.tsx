@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
-const SOTD_EMOJIS = ["👍", "❤️", "🔥", "🙂", "😮", "😢"];
+const SOTD_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 const CATEGORY_ICONS: Record<string, string> = {
   razors: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };

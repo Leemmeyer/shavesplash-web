@@ -76,6 +76,7 @@ export default function Home() {
           <Link href="https://shavesplash.com" target="_blank" className="hover:text-gray-400 transition-colors">shavesplash.com</Link>
           <Link href="/forum" className="hover:text-gray-400 transition-colors">Forum</Link>
           <Link href="/bst" className="hover:text-gray-400 transition-colors">Marketplace</Link>
+          <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
         </div>
       </footer>
     </div>

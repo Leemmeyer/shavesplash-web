@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
 const STORAGE_KEY = "ss_forum_read";
+const NAV_COUNT_KEY = "ss_forum_unread_nav";
 
 function loadReadState(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"); }
@@ -50,11 +51,34 @@ export default function ForumPage() {
     });
   }, []);
 
-  const isUnread = (thread: Thread) => {
+  const isUnread = useCallback((thread: Thread) => {
     const lastRead = readState[thread.id];
     if (!lastRead) return true;
     return new Date(thread.updatedAt).getTime() > lastRead;
-  };
+  }, [readState]);
+
+  // Unread counts per category — written to localStorage so the nav badge can read it
+  const unreadByCategory = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const thread of threads) {
+      if (isUnread(thread)) {
+        counts[thread.category] = (counts[thread.category] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [threads, isUnread]);
+
+  const totalUnread = useMemo(
+    () => Object.values(unreadByCategory).reduce((a, b) => a + b, 0),
+    [unreadByCategory]
+  );
+
+  // Keep nav badge in sync whenever the count changes
+  useEffect(() => {
+    if (!fetching) {
+      try { localStorage.setItem(NAV_COUNT_KEY, String(totalUnread)); } catch {}
+    }
+  }, [totalUnread, fetching]);
 
   useEffect(() => {
     setFetching(true);
@@ -90,27 +114,40 @@ export default function ForumPage() {
       <div className="flex gap-2 flex-wrap mb-8">
         <button
           onClick={() => setActiveCategory(null)}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+          className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
             activeCategory === null
               ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
               : "border-white/10 text-gray-400 hover:text-[#f5f2eb]"
           }`}
         >
           All
+          {totalUnread > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 rounded-full bg-[#c9a050] text-[#1a1a1a] text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
         </button>
-        {CATEGORIES.map((cat) => (
+        {CATEGORIES.map((cat) => {
+          const catUnread = unreadByCategory[cat.value] ?? 0;
+          return (
           <button
             key={cat.value}
             onClick={() => setActiveCategory(cat.value === activeCategory ? null : cat.value)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+            className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
               activeCategory === cat.value
                 ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
                 : "border-white/10 text-gray-400 hover:text-[#f5f2eb]"
             }`}
           >
             {cat.label}
+            {catUnread > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 rounded-full bg-[#c9a050] text-[#1a1a1a] text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                {catUnread > 99 ? "99+" : catUnread}
+              </span>
+            )}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Thread list */}

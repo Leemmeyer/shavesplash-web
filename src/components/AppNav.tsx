@@ -25,11 +25,20 @@ export default function AppNav() {
   const { session, loading, refresh } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [forumUnread, setForumUnread] = useState(0);
 
-  // Close menu on route change; clear badge when viewing messages
+  // Close menu on route change; sync badge counts from localStorage
   useEffect(() => {
     setMenuOpen(false);
     if (pathname.startsWith("/messages")) setUnreadCount(0);
+    if (pathname.startsWith("/forum")) {
+      setForumUnread(0);
+    } else {
+      try {
+        const n = parseInt(localStorage.getItem("ss_forum_unread_nav") ?? "0", 10);
+        setForumUnread(isNaN(n) ? 0 : n);
+      } catch {}
+    }
   }, [pathname]);
 
   // Poll unread message count every 30 s
@@ -82,6 +91,11 @@ export default function AppNav() {
                   {link.href === "/messages" && unreadCount > 0 && (
                     <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
                       {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  {link.href === "/forum" && forumUnread > 0 && (
+                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                      {forumUnread > 99 ? "99+" : forumUnread}
                     </span>
                   )}
                 </Link>
@@ -150,6 +164,11 @@ export default function AppNav() {
                 {link.href === "/messages" && unreadCount > 0 && (
                   <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none">
                     {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+                {link.href === "/forum" && forumUnread > 0 && (
+                  <span className="min-w-[18px] h-[18px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                    {forumUnread > 99 ? "99+" : forumUnread}
                   </span>
                 )}
               </Link>

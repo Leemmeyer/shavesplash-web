@@ -73,7 +73,7 @@ interface SotdPost {
   scores: Record<string, ScoreEntry>;
   selectedItems: Record<string, SelectedItem>;
   notes?: string;
-  photoUrl?: string;
+  hasPhoto?: boolean;
   isAnonymous: boolean;
   authorName: string | null;
   reactions: Record<string, ReactionGroup>;
@@ -114,8 +114,30 @@ function SotdCard({ post, onReact, session }: {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [gearExpanded, setGearExpanded] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const GEAR_LIMIT = 5;
+
+  // Lazy-load photo when card scrolls into view
+  useEffect(() => {
+    if (!post.hasPhoto) return;
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          api.get<{ photoUrl: string | null }>(`/api/logs/${post.id}/photo`)
+            .then((d) => { if (d.photoUrl) setPhotoUrl(d.photoUrl); })
+            .catch(() => {});
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [post.id, post.hasPhoto]);
 
   useEffect(() => {
     if (!showEmojiPicker) return;
@@ -159,7 +181,7 @@ function SotdCard({ post, onReact, session }: {
   return (
     <>
     {/* Lightbox */}
-    {lightboxOpen && post.photoUrl && (
+    {lightboxOpen && photoUrl && (
       <div
         className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6 cursor-pointer"
         onClick={() => setLightboxOpen(false)}
@@ -169,7 +191,7 @@ function SotdCard({ post, onReact, session }: {
           onClick={() => setLightboxOpen(false)}
         >✕</button>
         <img
-          src={post.photoUrl}
+          src={photoUrl}
           alt="SOTD"
           className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
           onClick={(e) => e.stopPropagation()}
@@ -177,7 +199,7 @@ function SotdCard({ post, onReact, session }: {
       </div>
     )}
 
-    <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
+    <div ref={cardRef} className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
       {/* Header: name + date + result */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3">
         <div>
@@ -194,13 +216,17 @@ function SotdCard({ post, onReact, session }: {
 
       {/* Body: photo left, gear + scores right */}
       <div className="flex gap-4 px-4 pb-4">
-        {post.photoUrl && (
+        {post.hasPhoto && (
           <button
-            onClick={() => setLightboxOpen(true)}
-            className="shrink-0 w-[218px] h-[218px] rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors"
+            onClick={() => photoUrl && setLightboxOpen(true)}
+            className="shrink-0 w-[218px] h-[218px] rounded-xl overflow-hidden border border-white/10 hover:border-[#c9a050]/60 transition-colors bg-[#242424] flex items-center justify-center"
             title="Click to expand"
           >
-            <img src={post.photoUrl} alt="SOTD" className="w-full h-full object-cover" />
+            {photoUrl ? (
+              <img src={photoUrl} alt="SOTD" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+            )}
           </button>
         )}
 

@@ -40,6 +40,7 @@ type WatchlistAlert = {
   keyword: string | null;
   maxPrice: number | null;
   createdAt: string;
+  matchCount?: number;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -476,7 +477,7 @@ export default function WatchlistSection() {
         <ul className="divide-y divide-white/5">
           {alerts.map((alert) => (
             <li key={alert.id} className="flex items-center justify-between px-5 py-3 gap-3">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[#f5f2eb] text-sm font-medium truncate">
                   {CATEGORY_LABELS[alert.category] ?? alert.category}
                   {["razor", "soap", "aftershave", "blade", "brush"].includes(alert.category) ? (
@@ -489,12 +490,20 @@ export default function WatchlistSection() {
                     alert.keyword && <span className="text-gray-400 font-normal"> · &ldquo;{alert.keyword}&rdquo;</span>
                   )}
                 </p>
-                <p className="text-gray-600 text-xs mt-0.5">
-                  {[
-                    alert.category === "razor" ? alert.material : null,
-                    alert.maxPrice != null ? `up to $${alert.maxPrice.toFixed(0)}` : null,
-                  ].filter(Boolean).join(" · ") || "No price limit"}
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-gray-600 text-xs">
+                    {[
+                      alert.category === "razor" ? alert.material : null,
+                      alert.maxPrice != null ? `up to $${alert.maxPrice.toFixed(0)}` : null,
+                    ].filter(Boolean).join(" · ") || "No price limit"}
+                  </p>
+                  {(alert.matchCount ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 bg-[#c9a050]/15 text-[#c9a050] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] inline-block" />
+                      {alert.matchCount} {alert.matchCount === 1 ? "listing" : "listings"} now
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => handleDelete(alert.id)}

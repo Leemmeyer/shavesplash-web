@@ -159,6 +159,92 @@ function PlateForm({ name, type, gap, exposure, onName, onType, onGap, onExposur
   );
 }
 
+const MATCHABLE_CATS = [
+  { id: "soaps",       label: "Shave Soap", emoji: "🫧" },
+  { id: "aftershaves", label: "Aftershave",  emoji: "💧" },
+  { id: "edpedt",     label: "EDP / EDT",   emoji: "🌸" },
+];
+
+function MatchingItemsOverlay({
+  brand,
+  name,
+  sourceCategoryId,
+  onConfirm,
+  onSkip,
+}: {
+  brand: string;
+  name: string;
+  sourceCategoryId: string;
+  onConfirm: (selectedIds: string[]) => Promise<void>;
+  onSkip: () => void;
+}) {
+  const options = MATCHABLE_CATS.filter((c) => c.id !== sourceCategoryId);
+  const [selected, setSelected] = useState<Set<string>>(new Set(options.map((o) => o.id)));
+  const [confirming, setConfirming] = useState(false);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <div className="bg-[#1e1e1e] rounded-2xl border border-white/10 p-8 max-w-sm w-full shadow-2xl">
+        <h2 className="text-[#c9a050] text-xl font-bold mb-2">Add matching items?</h2>
+        <p className="text-gray-500 text-sm mb-6 truncate">{brand} — {name}</p>
+
+        <div className="space-y-3 mb-6">
+          {options.map((opt) => {
+            const on = selected.has(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => toggle(opt.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all text-left ${
+                  on
+                    ? "border-[#c9a050] bg-[#c9a050]/10"
+                    : "border-white/10 bg-[#242424] hover:border-white/20"
+                }`}
+              >
+                <span className="text-xl">{opt.emoji}</span>
+                <span className={`flex-1 font-semibold text-sm ${on ? "text-[#f5f2eb]" : "text-gray-400"}`}>{opt.label}</span>
+                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                  on ? "border-[#c9a050] bg-[#c9a050] text-[#1a1a1a]" : "border-gray-600"
+                }`}>{on ? "✓" : ""}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          disabled={confirming}
+          onClick={async () => {
+            const sel = [...selected];
+            if (sel.length === 0) { onSkip(); return; }
+            setConfirming(true);
+            await onConfirm(sel);
+          }}
+          className="w-full py-3.5 rounded-xl bg-[#c9a050] text-[#1a1a1a] font-bold text-sm hover:bg-[#d4aa60] transition-colors mb-3 disabled:opacity-50"
+        >
+          {confirming ? "Saving…" : selected.size > 0 ? `Add ${selected.size} item${selected.size > 1 ? "s" : ""}` : "Continue"}
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="w-full py-3 text-gray-500 text-sm hover:text-gray-400 transition-colors"
+        >
+          No thanks
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function NewItemForm({ categoryId }: { categoryId: string }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -216,6 +302,10 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
 
   // Catalog picker
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
+  const [fromCatalog, setFromCatalog] = useState(false);
+
+  // Matching items state: shown after successful save for soap/aftershave/edpedt (non-catalog)
+  const [pendingMatch, setPendingMatch] = useState<{ id: string; brand: string; name: string } | null>(null);
 
   // Scent info (soap & aftershave)
   const [shaveSplashUrl, setShaveSplashUrl] = useState("");
@@ -263,6 +353,7 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   const deletePlate = (idx: number) => setPlates((prev) => prev.filter((_, i) => i !== idx));
 
   const handleCatalogSelect = (entry: CatalogEntry) => {
+    setFromCatalog(true);
     setBrand(entry.brandDisplay);
     setName(entry.productDisplay);
     const url = entry.urlPath.startsWith("http")
@@ -350,7 +441,13 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
         createdAt: Date.now(),
         data,
       });
-      router.push(`/den/${newId}`);
+      const isMatchable = isSoap || isAftershave || isEdpEdt;
+      if (isMatchable && !fromCatalog) {
+        setPendingMatch({ id: newId, brand: brand.trim(), name: name.trim() });
+        setSaving(false);
+      } else {
+        router.push(`/den/${newId}`);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");
       setSaving(false);
@@ -633,6 +730,30 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
           category={isSoap ? "soaps" : "aftershaves"}
           onSelect={handleCatalogSelect}
           onClose={() => setShowCatalogPicker(false)}
+        />
+      )}
+
+      {pendingMatch && (
+        <MatchingItemsOverlay
+          brand={pendingMatch.brand}
+          name={pendingMatch.name}
+          sourceCategoryId={categoryId}
+          onConfirm={async (selectedIds) => {
+            await Promise.all(
+              selectedIds.map((catId) =>
+                api.post("/api/inventory", {
+                  id: crypto.randomUUID(),
+                  categoryId: catId,
+                  name: pendingMatch.name,
+                  brand: pendingMatch.brand,
+                  createdAt: Date.now(),
+                  data: {},
+                })
+              )
+            );
+            router.push(`/den/${pendingMatch.id}`);
+          }}
+          onSkip={() => router.push(`/den/${pendingMatch.id}`)}
         />
       )}
     </div>

@@ -289,8 +289,9 @@ function LogForm({
   const categories = CATEGORY_ORDER.filter((id) => itemsByCat[id]?.length);
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-[#1e1e1e] rounded-2xl border border-white/10 w-full max-w-lg my-8">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto overflow-x-hidden">
+      <div className="flex items-start justify-center p-4 min-h-full">
+      <div className="bg-[#1e1e1e] rounded-2xl border border-white/10 w-full max-w-lg my-8 overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-white/5">
           <h2 className="text-[#f5f2eb] font-semibold text-lg">{isEdit ? "Edit Entry" : "New Log Entry"}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-[#f5f2eb] transition-colors text-xl leading-none">✕</button>
@@ -300,8 +301,11 @@ function LogForm({
           {/* Date */}
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
-            <input type="date" value={dateVal} onChange={(e) => setDateVal(e.target.value)}
-              className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 [color-scheme:dark]" />
+            <div className="w-full overflow-hidden rounded-xl">
+              <input type="date" value={dateVal} onChange={(e) => setDateVal(e.target.value)}
+                style={{ colorScheme: 'dark', width: '100%', display: 'block', boxSizing: 'border-box' }}
+                className="bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50" />
+            </div>
           </div>
 
           {/* Result */}
@@ -346,8 +350,9 @@ function LogForm({
                   const label = CATEGORY_LABELS[catId] ?? catId;
                   return (
                     <div key={catId}>
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 flex items-center justify-center"><CategoryIcon catId={catId} /></span>
+                      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                        <span className="w-6 flex-shrink-0 flex items-center justify-center"><CategoryIcon catId={catId} /></span>
+                        <div className="flex-1 min-w-0 overflow-hidden">
                         <select
                           value={sel?.itemId ?? ""}
                           onChange={(e) => {
@@ -355,16 +360,18 @@ function LogForm({
                             if (item) setItemSelection(catId, item.id, `${item.brand} ${item.name}`);
                             else clearItem(catId);
                           }}
-                          className="flex-1 bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                          style={{ width: '100%', display: 'block', boxSizing: 'border-box' }}
+                          className="bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
                         >
                           <option value="">{label}…</option>
                           {items.map((item) => (
                             <option key={item.id} value={item.id}>{item.brand} {item.name}</option>
                           ))}
                         </select>
+                        </div>
                         {sel?.itemId && (
                           <button type="button" onClick={() => clearItem(catId)}
-                            className="text-gray-600 hover:text-red-400 transition-colors text-sm">✕</button>
+                            className="text-gray-600 hover:text-red-400 transition-colors text-sm flex-shrink-0">✕</button>
                         )}
                       </div>
 
@@ -453,6 +460,7 @@ function LogForm({
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

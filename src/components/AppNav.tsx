@@ -80,7 +80,7 @@ export default function AppNav() {
                 >
                   {link.label}
                   {link.href === "/messages" && unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   )}

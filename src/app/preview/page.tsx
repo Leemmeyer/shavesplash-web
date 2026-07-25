@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function PreviewPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +19,7 @@ export default function PreviewPage() {
     });
 
     if (res.ok) {
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } else {
       setError(true);
       setLoading(false);

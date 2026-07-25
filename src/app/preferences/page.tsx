@@ -153,6 +153,18 @@ function PreferencesContent() {
             <strong className="text-gray-400">To update these:</strong> Change your Result Options or Score Parameters in the ShaveSplash mobile app (Settings → Score Parameters / Result Options), then press Sync. The web app will pick up the changes automatically.
           </p>
         </div>
+
+        {/* Import data */}
+        <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+          <h2 className="text-[#f5f2eb] font-semibold text-base mb-1">Import Data</h2>
+          <p className="text-gray-500 text-xs mb-4">Upload a ShaveSplash CSV export to import your inventory and shave logs into this account.</p>
+          <a
+            href="/import"
+            className="inline-flex items-center gap-2 bg-[#c9a050] text-black font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-[#b8903f] transition-colors"
+          >
+            Import from CSV
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signOut } from "@/lib/auth";
 import { useSession } from "@/lib/session-context";
+import { api } from "@/lib/api";
 
 const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/den", label: "My Den" },
@@ -23,9 +24,26 @@ export default function AppNav() {
   const router = useRouter();
   const { session, loading, refresh } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Close menu on route change
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  // Close menu on route change; clear badge when viewing messages
+  useEffect(() => {
+    setMenuOpen(false);
+    if (pathname.startsWith("/messages")) setUnreadCount(0);
+  }, [pathname]);
+
+  // Poll unread message count every 30 s
+  useEffect(() => {
+    if (!session) { setUnreadCount(0); return; }
+    const fetch = () => {
+      api.get<{ count: number }>("/api/bst/unread-count")
+        .then((d) => setUnreadCount(d.count))
+        .catch(() => {});
+    };
+    fetch();
+    const id = setInterval(fetch, 30_000);
+    return () => clearInterval(id);
+  }, [session]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,7 +70,7 @@ export default function AppNav() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                     pathname.startsWith(link.href)
                       ? "text-[#c9a050] bg-[#c9a050]/10"
                       : link.gold
@@ -61,6 +79,11 @@ export default function AppNav() {
                   }`}
                 >
                   {link.label}
+                  {link.href === "/messages" && unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -112,7 +135,7 @@ export default function AppNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   pathname.startsWith(link.href)
                     ? "text-[#c9a050] bg-[#c9a050]/10"
                     : link.gold
@@ -121,6 +144,11 @@ export default function AppNav() {
                 }`}
               >
                 {link.label}
+                {link.href === "/messages" && unreadCount > 0 && (
+                  <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Link>
             ))}
             <div className="h-px bg-white/5 my-2" />

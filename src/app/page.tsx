@@ -3,70 +3,72 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-6 text-center">
+      <main className="flex-1 flex flex-col">
 
-        {/* BST badge */}
-        <div className="inline-flex items-center gap-2 bg-[#c9a050]/10 border border-[#c9a050]/30 rounded-full px-4 py-1.5 text-xs text-[#c9a050] mb-5 font-semibold tracking-wide">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] animate-pulse" />
-          Marketplace now live · Free to list
+        {/* Hero */}
+        <div className="flex flex-col items-center text-center px-6 py-12">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-[#c9a050]/10 border border-[#c9a050]/30 rounded-full px-4 py-1.5 text-xs text-[#c9a050] mb-5 font-semibold tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] animate-pulse" />
+            Marketplace now live · Free to list
+          </div>
+
+          <h1 className="font-[family-name:var(--font-fredericka)] text-2xl md:text-4xl text-[#f5f2eb] mb-2 leading-tight max-w-2xl">
+            Home of the ShaveSplash{" "}
+            <span className="text-[#c9a050]">Buy · Sell · Trade</span> Marketplace
+          </h1>
+
+          <p className="text-[#c9a050] text-base md:text-lg font-semibold mt-1 mb-1">
+            Move Your Shave to the Cloud
+          </p>
+
+          <p className="text-gray-500 text-sm max-w-md mb-6 leading-relaxed">
+            Web companion to{" "}
+            <span className="text-gray-400 font-medium">ShaveSplash: The Rabbit Hole</span>
+            {" "}— the iOS and Android app for Wetshaving.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center mb-10">
+            <Link href="/bst" className="flex items-center gap-2 bg-[#c9a050] text-black font-bold px-6 py-3 rounded-2xl hover:bg-[#b8903f] transition-colors text-sm">
+              Browse Marketplace
+            </Link>
+            <Link href="https://apps.apple.com/app/shavesplash" target="_blank" className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm">
+              <AppleIcon />
+              iOS App
+            </Link>
+            <Link href="https://play.google.com/store/apps/details?id=com.shavesplash" target="_blank" className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm">
+              <AndroidIcon />
+              Android App
+            </Link>
+          </div>
+
+          {/* Photo */}
+          <div className="w-full max-w-2xl rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/barbershop-hero.png"
+              alt="Victorian barbershop waiting room"
+              style={{ width: "100%", display: "block", objectFit: "cover", maxHeight: 340 }}
+            />
+          </div>
+          <p className="text-gray-600 text-xs mt-3 italic">The gentlemen's waiting room</p>
         </div>
 
-        {/* Primary headline */}
-        <h1 className="font-[family-name:var(--font-fredericka)] text-2xl md:text-3xl text-[#f5f2eb] mb-2 leading-tight max-w-2xl">
-          Home of the ShaveSplash{" "}
-          <span className="text-[#c9a050]">Buy · Sell · Trade</span> Marketplace
-        </h1>
+        {/* Features section */}
+        <div className="flex flex-col items-center px-6 pb-12 text-center">
+          <h2 className="font-[family-name:var(--font-fredericka)] text-lg text-[#c9a050] mb-4">
+            Everything in one place
+          </h2>
 
-        {/* Tagline */}
-        <p className="text-[#c9a050] text-base md:text-lg font-semibold mt-1 mb-1">
-          Move Your Shave to the Cloud
-        </p>
-
-        {/* Sub-copy */}
-        <p className="text-gray-500 text-sm max-w-md mb-6 leading-relaxed">
-          Web companion to{" "}
-          <span className="text-gray-400 font-medium">ShaveSplash: The Rabbit Hole</span>
-          {" "}— the iOS and Android app for Wetshaving.
-        </p>
-
-        {/* Everything in one place */}
-        <h2 className="font-[family-name:var(--font-fredericka)] text-lg text-[#c9a050] mb-3">
-          Everything in one place
-        </h2>
-
-        {/* Feature cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-3xl mb-6">
-          <Feature icon="🏠" title="My Den" description="Catalog your collection" href="/den" />
-          <Feature icon="📊" title="Analytics" description="Visualize your shave history" href="/logs" />
-          <Feature icon="💬" title="Forum" description="Community discussions" href="/forum" />
-          <Feature icon="🛒" title="Marketplace" description="Buy, sell, and trade gear" href="/bst" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-3xl">
+            <Feature icon="🏠" title="My Den" description="Catalog your collection" href="/den" />
+            <Feature icon="📊" title="Analytics" description="Visualize your shave history" href="/logs" />
+            <Feature icon="💬" title="Forum" description="Community discussions" href="/forum" />
+            <Feature icon="🛒" title="Marketplace" description="Buy, sell, and trade gear" href="/bst" />
+          </div>
         </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <Link
-            href="/bst"
-            className="flex items-center gap-2 bg-[#c9a050] text-black font-bold px-6 py-3 rounded-2xl hover:bg-[#b8903f] transition-colors text-sm"
-          >
-            Browse Marketplace
-          </Link>
-          <Link
-            href="https://apps.apple.com/app/shavesplash"
-            target="_blank"
-            className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm"
-          >
-            <AppleIcon />
-            iOS App
-          </Link>
-          <Link
-            href="https://play.google.com/store/apps/details?id=com.shavesplash"
-            target="_blank"
-            className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm"
-          >
-            <AndroidIcon />
-            Android App
-          </Link>
-        </div>
       </main>
 
       {/* Footer */}

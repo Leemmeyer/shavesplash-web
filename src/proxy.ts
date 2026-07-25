@@ -6,7 +6,7 @@ const PREVIEW_MODE = true;
 const PREVIEW_PASSWORD = process.env.PREVIEW_PASSWORD ?? "shavesplash2026";
 const COOKIE_NAME = "ss_preview";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   if (!PREVIEW_MODE) return NextResponse.next();
 
   const { pathname } = req.nextUrl;

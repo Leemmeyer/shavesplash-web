@@ -106,12 +106,15 @@ export default function AppNav() {
                   {/* Hamburger — mobile only */}
                   <button
                     onClick={() => setMenuOpen((o) => !o)}
-                    className="md:hidden flex flex-col gap-1.5 p-2 -mr-2"
+                    className="md:hidden relative flex flex-col gap-1.5 p-2 -mr-2"
                     aria-label="Menu"
                   >
                     <span className={`block w-5 h-0.5 bg-[#c9a050] transition-transform origin-center ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
                     <span className={`block w-5 h-0.5 bg-[#c9a050] transition-opacity ${menuOpen ? "opacity-0" : ""}`} />
                     <span className={`block w-5 h-0.5 bg-[#c9a050] transition-transform origin-center ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-[#1a1a1a]" />
+                    )}
                   </button>
                 </>
               ) : (

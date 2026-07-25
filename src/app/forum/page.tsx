@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
+
+const STORAGE_KEY = "ss_forum_read";
+
+function loadReadState(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"); }
+  catch { return {}; }
+}
 
 const CATEGORIES = [
   { value: "general", label: "General Discussion" },
@@ -31,6 +38,23 @@ export default function ForumPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [fetching, setFetching] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [readState, setReadState] = useState<Record<string, number>>({});
+
+  useEffect(() => { setReadState(loadReadState()); }, []);
+
+  const markRead = useCallback((threadId: string) => {
+    setReadState((prev) => {
+      const next = { ...prev, [threadId]: Date.now() };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  const isUnread = (thread: Thread) => {
+    const lastRead = readState[thread.id];
+    if (!lastRead) return true;
+    return new Date(thread.updatedAt).getTime() > lastRead;
+  };
 
   useEffect(() => {
     setFetching(true);
@@ -107,25 +131,33 @@ export default function ForumPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {threads.map((thread) => (
+          {threads.map((thread) => {
+            const unread = isUnread(thread);
+            return (
             <Link
               key={thread.id}
               href={`/forum/${thread.id}`}
-              className="flex items-start gap-4 bg-[#242424] hover:bg-[#2a2a2a] border border-white/5 rounded-2xl p-5 transition-colors group"
+              onClick={() => markRead(thread.id)}
+              className={`flex items-start gap-4 rounded-2xl p-5 transition-colors group border-l-[3px] ${
+                unread
+                  ? "bg-[#242424] hover:bg-[#2a2a2a] border border-white/5 border-l-[#c9a050]/50"
+                  : "bg-[#1c1c1c] hover:bg-[#222222] border border-white/5 border-l-transparent"
+              }`}
             >
               {thread.isPinned && (
                 <span className="text-[#c9a050] text-xs mt-0.5 shrink-0">📌</span>
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3 mb-1.5">
-                  <h2 className="text-[#f5f2eb] font-semibold group-hover:text-[#c9a050] transition-colors leading-snug">
+                  <h2 className={`font-semibold group-hover:text-[#c9a050] transition-colors leading-snug flex items-center gap-2 ${unread ? "text-[#f5f2eb]" : "text-gray-400"}`}>
+                    {unread && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] shrink-0 inline-block" />}
                     {thread.title}
                   </h2>
                   <span className="text-xs text-gray-600 shrink-0 mt-0.5">
                     {new Date(thread.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-gray-500 text-sm line-clamp-2 mb-3">{thread.body}</p>
+                <p className={`text-sm line-clamp-2 mb-3 ${unread ? "text-gray-500" : "text-gray-600"}`}>{thread.body}</p>
                 <div className="flex items-center gap-3 text-xs text-gray-600">
                   <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full">
                     {categoryLabel(thread.category)}
@@ -137,7 +169,8 @@ export default function ForumPage() {
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

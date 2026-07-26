@@ -14,6 +14,10 @@ const fredericka = Fredericka_the_Great({
 export const metadata: Metadata = {
   title: "ShaveSplash Community — The Wetshaving Community",
   description: "Log your shaves, track your den, and connect with the wetshaving community.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
   openGraph: {
     title: "ShaveSplash Community",
     description: "The wetshaving community. Log shaves, manage your den, and trade gear.",

@@ -33,13 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="flex-1">
             {children}
           </div>
-          <footer className="border-t border-white/5 px-6 py-4 flex items-center justify-between text-sm text-gray-600">
+          <footer className="border-t border-white/5 px-6 py-4 flex flex-wrap items-center gap-y-3 justify-between text-sm text-gray-600">
             <div className="flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/rabbit-logo.jpeg"
                 alt="ShaveSplash"
-                style={{ width: 49, height: 49, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(201,160,80,0.4)", opacity: 0.85 }}
+                style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(201,160,80,0.4)", opacity: 0.85 }}
               />
               <span className="font-[family-name:var(--font-fredericka)] text-xl text-[#c9a050]">ShaveSplash</span>
             </div>

@@ -11,8 +11,12 @@ export function proxy(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // Always allow the unlock endpoint and static assets
-  if (pathname === "/api/preview-unlock" || pathname.startsWith("/_next")) {
+  // Always allow the unlock endpoint, static assets, and public images
+  if (
+    pathname === "/api/preview-unlock" ||
+    pathname.startsWith("/_next") ||
+    /\.(png|jpe?g|gif|svg|webp|ico|woff2?)$/.test(pathname)
+  ) {
     return NextResponse.next();
   }
 

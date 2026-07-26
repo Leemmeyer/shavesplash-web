@@ -71,16 +71,6 @@ export default function Home() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
-        <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050]/60">ShaveSplash</span>
-        <div className="flex gap-6">
-          <Link href="https://shavesplash.com" target="_blank" className="hover:text-gray-400 transition-colors">shavesplash.com</Link>
-          <Link href="/forum" className="hover:text-gray-400 transition-colors">Forum</Link>
-          <Link href="/bst" className="hover:text-gray-400 transition-colors">Marketplace</Link>
-          <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
-        </div>
-      </footer>
     </div>
   );
 }

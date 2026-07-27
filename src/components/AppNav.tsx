@@ -63,8 +63,8 @@ export default function AppNav() {
   return (
     <>
       <nav className="sticky top-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-white/5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3 gap-4">
-          {/* Brand */}
+        {/* Row 1: Brand + auth */}
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pt-3 pb-2 gap-4">
           <Link
             href="/"
             className="font-[family-name:var(--font-fredericka)] text-xl text-[#c9a050] shrink-0 whitespace-nowrap"
@@ -72,43 +72,11 @@ export default function AppNav() {
             ShaveSplash Community
           </Link>
 
-          {/* Desktop nav links — hidden on mobile */}
-          {session && (
-            <div className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto scrollbar-hide">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    pathname.startsWith(link.href)
-                      ? "text-[#c9a050] bg-[#c9a050]/10"
-                      : link.gold
-                      ? "text-[#c9a050]/70 hover:text-[#c9a050]"
-                      : "text-gray-400 hover:text-[#f5f2eb]"
-                  }`}
-                >
-                  {link.label}
-                  {link.href === "/messages" && unreadCount > 0 && (
-                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                  {link.href === "/forum" && forumUnread > 0 && (
-                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                      {forumUnread > 99 ? "99+" : forumUnread}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* Right side */}
           <div className="flex items-center gap-3 shrink-0">
             {!loading && (
               session ? (
                 <>
-                  <span className="text-gray-600 text-xs hidden lg:block truncate max-w-[160px]">
+                  <span className="text-gray-600 text-xs hidden md:block truncate max-w-[200px]">
                     {session.user.email}
                   </span>
                   <button
@@ -142,6 +110,37 @@ export default function AppNav() {
             )}
           </div>
         </div>
+
+        {/* Row 2: Nav links — desktop only */}
+        {session && (
+          <div className="hidden md:flex items-center gap-0.5 px-6 pb-1 border-t border-white/5">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  pathname.startsWith(link.href)
+                    ? "text-[#c9a050] bg-[#c9a050]/10"
+                    : link.gold
+                    ? "text-[#c9a050]/70 hover:text-[#c9a050]"
+                    : "text-gray-400 hover:text-[#f5f2eb]"
+                }`}
+              >
+                {link.label}
+                {link.href === "/messages" && unreadCount > 0 && (
+                  <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+                {link.href === "/forum" && forumUnread > 0 && (
+                  <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                    {forumUnread > 99 ? "99+" : forumUnread}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Mobile dropdown menu */}

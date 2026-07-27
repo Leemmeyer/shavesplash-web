@@ -6,7 +6,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col">
 
         {/* Hero */}
-        <div className="flex flex-col items-center text-center px-6 py-12">
+        <div className="flex flex-col items-center text-center px-6 pt-8 pb-12">
           <h1 className="font-[family-name:var(--font-fredericka)] text-2xl md:text-4xl text-[#f5f2eb] mb-2 leading-tight max-w-2xl">
             Home of the ShaveSplash{" "}
             <span className="text-[#c9a050]">Buy · Sell · Trade</span> Marketplace

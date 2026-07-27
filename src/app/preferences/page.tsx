@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
+import { useRouter } from "next/navigation";
 
 type ScoreParameter = { id: string; name: string; shortName: string };
 
@@ -17,6 +18,7 @@ export default function PreferencesPage() {
 
 function PreferencesContent() {
   const { session } = useSession();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [resultOptions, setResultOptions] = useState<string[]>([]);
   const [scoreParameters, setScoreParameters] = useState<ScoreParameter[]>([]);
@@ -26,6 +28,30 @@ function PreferencesContent() {
   const [displayName, setDisplayName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
+
+  // Clear all data
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState("");
+  const [clearing, setClearing] = useState(false);
+  const [clearError, setClearError] = useState("");
+  const [clearInventory, setClearInventory] = useState(true);
+  const [clearLogs, setClearLogs] = useState(true);
+  const [clearPreferences, setClearPreferences] = useState(true);
+
+  const nothingSelected = !clearInventory && !clearLogs && !clearPreferences;
+
+  const handleClearData = async () => {
+    if (clearConfirmText !== "DELETE" || clearing || nothingSelected) return;
+    setClearing(true);
+    setClearError("");
+    try {
+      await api.delete("/api/user/data", { inventory: clearInventory, logs: clearLogs, preferences: clearPreferences });
+      router.push("/?cleared=1");
+    } catch {
+      setClearError("Something went wrong. Please try again.");
+      setClearing(false);
+    }
+  };
 
   useEffect(() => {
     api.get<{ resultOptions: string[]; scoreParameters: ScoreParameter[] }>("/api/preferences")
@@ -164,6 +190,84 @@ function PreferencesContent() {
           >
             Import from CSV
           </a>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-[#1e1e1e] rounded-2xl border border-red-500/20 p-6">
+          <h2 className="text-red-400 font-semibold text-base mb-1">Danger Zone</h2>
+          <p className="text-gray-500 text-xs mb-4">
+            Permanently deletes selected data from the cloud. Your account is kept. This cannot be undone.
+          </p>
+          {!showClearConfirm ? (
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+            >
+              Clear Data…
+            </button>
+          ) : (
+            <div className="space-y-4">
+              {/* Toggles */}
+              <div className="space-y-2">
+                <p className="text-gray-400 text-sm font-medium">What would you like to delete?</p>
+                {[
+                  { label: "Inventory (Den)", description: "All your gear", value: clearInventory, set: setClearInventory },
+                  { label: "Shave Logs", description: "All your shave history", value: clearLogs, set: setClearLogs },
+                  { label: "Preferences", description: "Result options, score parameters, display name", value: clearPreferences, set: setClearPreferences },
+                ].map(({ label, description, value, set }) => (
+                  <button
+                    key={label}
+                    onClick={() => set(!value)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-colors ${
+                      value
+                        ? "bg-red-500/10 border-red-500/30"
+                        : "bg-[#242424] border-white/5 opacity-50"
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-sm font-medium ${value ? "text-red-300" : "text-gray-400"}`}>{label}</p>
+                      <p className="text-gray-600 text-xs">{description}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded flex items-center justify-center border ${value ? "bg-red-500 border-red-500" : "border-gray-600"}`}>
+                      {value && <span className="text-white text-xs">✓</span>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Confirm input */}
+              {!nothingSelected && (
+                <>
+                  <p className="text-gray-400 text-sm">
+                    Type <span className="font-mono font-bold text-red-400">DELETE</span> to confirm.
+                  </p>
+                  <input
+                    type="text"
+                    value={clearConfirmText}
+                    onChange={(e) => setClearConfirmText(e.target.value)}
+                    placeholder="Type DELETE to confirm"
+                    className="w-full bg-[#242424] border border-red-500/20 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-red-500/40"
+                  />
+                </>
+              )}
+              {clearError && <p className="text-red-400 text-xs">{clearError}</p>}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleClearData}
+                  disabled={clearConfirmText !== "DELETE" || clearing || nothingSelected}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-40"
+                >
+                  {clearing ? "Clearing…" : "Confirm Delete"}
+                </button>
+                <button
+                  onClick={() => { setShowClearConfirm(false); setClearConfirmText(""); setClearError(""); setClearInventory(true); setClearLogs(true); setClearPreferences(true); }}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#242424] text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -7,12 +7,6 @@ export default function Home() {
 
         {/* Hero */}
         <div className="flex flex-col items-center text-center px-6 py-12">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-[#c9a050]/10 border border-[#c9a050]/30 rounded-full px-4 py-1.5 text-xs text-[#c9a050] mb-5 font-semibold tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] animate-pulse" />
-            Marketplace now live · Free to list
-          </div>
-
           <h1 className="font-[family-name:var(--font-fredericka)] text-2xl md:text-4xl text-[#f5f2eb] mb-2 leading-tight max-w-2xl">
             Home of the ShaveSplash{" "}
             <span className="text-[#c9a050]">Buy · Sell · Trade</span> Marketplace

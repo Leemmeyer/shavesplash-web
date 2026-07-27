@@ -16,7 +16,6 @@ const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/forum", label: "Forum" },
   { href: "/sotd", label: "SOTD" },
   { href: "/preferences", label: "Preferences" },
-  { href: "/subscribe", label: "★ Upgrade", gold: true },
 ];
 
 export default function AppNav() {
@@ -26,6 +25,7 @@ export default function AppNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [forumUnread, setForumUnread] = useState(0);
+  const [isExpert, setIsExpert] = useState(false);
 
   // Close menu on route change; sync badge counts from localStorage
   useEffect(() => {
@@ -40,6 +40,14 @@ export default function AppNav() {
       } catch {}
     }
   }, [pathname]);
+
+  // Fetch expert status when session changes
+  useEffect(() => {
+    if (!session) { setIsExpert(false); return; }
+    api.get<{ isExpert: boolean }>("/api/subscriptions/status")
+      .then((d) => setIsExpert(d.isExpert))
+      .catch(() => {});
+  }, [session]);
 
   // Poll unread message count every 30 s
   useEffect(() => {
@@ -63,8 +71,8 @@ export default function AppNav() {
   return (
     <>
       <nav className="sticky top-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-white/5">
-        {/* Row 1: Brand + auth */}
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pt-3 pb-2 gap-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3 gap-4">
+          {/* Brand */}
           <Link
             href="/"
             className="font-[family-name:var(--font-fredericka)] text-xl text-[#c9a050] shrink-0 whitespace-nowrap"
@@ -72,19 +80,61 @@ export default function AppNav() {
             ShaveSplash Community
           </Link>
 
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Nav links — desktop only */}
+          {session && (
+            <div className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                    pathname.startsWith(link.href)
+                      ? "text-[#c9a050] bg-[#c9a050]/10"
+                      : "text-gray-400 hover:text-[#f5f2eb]"
+                  }`}
+                >
+                  {link.label}
+                  {link.href === "/messages" && unreadCount > 0 && (
+                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  {link.href === "/forum" && forumUnread > 0 && (
+                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                      {forumUnread > 99 ? "99+" : forumUnread}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Right side: auth + upgrade */}
+          <div className="flex items-end gap-3 shrink-0">
             {!loading && (
               session ? (
                 <>
-                  <span className="text-gray-600 text-xs hidden md:block truncate max-w-[200px]">
-                    {session.user.email}
-                  </span>
-                  <button
-                    onClick={handleSignOut}
-                    className="text-sm text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap hidden md:block"
-                  >
-                    Sign out
-                  </button>
+                  <div className="hidden md:flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-3">
+                      <span className="text-gray-600 text-xs truncate max-w-[180px]">{session.user.email}</span>
+                      <button
+                        onClick={handleSignOut}
+                        className="text-sm text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap"
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                    <Link
+                      href="/subscribe"
+                      className={`text-sm font-semibold whitespace-nowrap transition-colors ${
+                        isExpert
+                          ? "text-[#c9a050]"
+                          : "text-[#c9a050]/70 hover:text-[#c9a050]"
+                      }`}
+                    >
+                      {isExpert ? "★ Expert Account" : "★ Upgrade"}
+                    </Link>
+                  </div>
                   {/* Hamburger — mobile only */}
                   <button
                     onClick={() => setMenuOpen((o) => !o)}
@@ -110,37 +160,6 @@ export default function AppNav() {
             )}
           </div>
         </div>
-
-        {/* Row 2: Nav links — desktop only */}
-        {session && (
-          <div className="hidden md:flex items-center justify-center gap-0.5 px-6 pb-1 border-t border-white/5">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  pathname.startsWith(link.href)
-                    ? "text-[#c9a050] bg-[#c9a050]/10"
-                    : link.gold
-                    ? "text-[#c9a050]/70 hover:text-[#c9a050]"
-                    : "text-gray-400 hover:text-[#f5f2eb]"
-                }`}
-              >
-                {link.label}
-                {link.href === "/messages" && unreadCount > 0 && (
-                  <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                {link.href === "/forum" && forumUnread > 0 && (
-                  <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                    {forumUnread > 99 ? "99+" : forumUnread}
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-        )}
       </nav>
 
       {/* Mobile dropdown menu */}

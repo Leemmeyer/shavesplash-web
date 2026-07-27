@@ -146,10 +146,10 @@ export default function AppNav() {
 
         {/* Row 2: Upgrade only — desktop only */}
         {session && (
-          <div className="hidden md:flex items-center justify-end px-6 pb-2 border-t border-white/5">
+          <div className="hidden md:flex items-center justify-end px-6 pb-2">
             <Link
               href="/subscribe"
-              className={`text-sm font-semibold whitespace-nowrap transition-colors px-3 py-1.5 rounded-lg ${
+              className={`text-sm font-semibold whitespace-nowrap transition-colors ${
                 isExpert
                   ? "text-[#c9a050]"
                   : "text-[#c9a050]/70 hover:text-[#c9a050]"

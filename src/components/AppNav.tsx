@@ -146,7 +146,7 @@ export default function AppNav() {
 
         {/* Row 2: Upgrade only — desktop only */}
         {session && (
-          <div className="hidden md:flex items-center justify-end px-6 pb-2">
+          <div className="hidden md:flex items-center justify-end max-w-7xl mx-auto w-full px-6 pb-2 border-t border-white/5">
             <Link
               href="/subscribe"
               className={`text-sm font-semibold whitespace-nowrap transition-colors ${

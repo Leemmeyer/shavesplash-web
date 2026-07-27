@@ -70,7 +70,7 @@ export default function AppNav() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-white/5">
+      <nav className="sticky top-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-sm">
         {/* Row 1: Brand + nav links + auth */}
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pt-3 pb-2 gap-4">
           <Link

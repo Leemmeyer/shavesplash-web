@@ -113,7 +113,7 @@ export default function AppNav() {
 
         {/* Row 2: Nav links — desktop only */}
         {session && (
-          <div className="hidden md:flex items-center gap-0.5 px-6 pb-1 border-t border-white/5">
+          <div className="hidden md:flex items-center justify-center gap-0.5 px-6 pb-1 border-t border-white/5">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

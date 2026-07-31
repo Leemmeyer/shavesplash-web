@@ -6,6 +6,7 @@ import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import CatalogPicker, { CatalogEntry } from "@/components/CatalogPicker";
+import CreateListingModal from "@/components/CreateListingModal";
 
 // Mirrored from mobile shave-store
 const EDGE_TYPE_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"] as const;
@@ -40,13 +41,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 const BST_CATEGORY_MAP: Record<string, string> = {
   razors: "razor", brushes: "brush", soaps: "soap", aftershaves: "aftershave",
 };
-const BST_CONDITIONS = ["New", "Mint", "Excellent", "Good", "Fair"];
 
 type RazorPlate = { name: string; type: string; bladeGap?: number; exposure?: number };
 
 type InventoryItem = {
   id: string; categoryId: string; name: string; brand: string;
-  notes?: string; photoUrl?: string; createdAt: number;
+  notes?: string; hasPhoto?: boolean; photoUrl?: string | null; createdAt: number;
   // Razor
   edgeType?: string; construction?: string; metal?: string; finish?: string;
   weight?: number; bladeGap?: number; exposure?: number; plates?: RazorPlate[];
@@ -85,17 +85,9 @@ function ItemDetailContent({ id }: { id: string }) {
   const router = useRouter();
   const [item, setItem] = useState<InventoryItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showBST, setShowBST] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  // BST form
-  const [price, setPrice] = useState("");
-  const [condition, setCondition] = useState("");
-  const [bstError, setBstError] = useState<string | null>(null);
-  const [bstLoading, setBstLoading] = useState(false);
-  const [bstSuccess, setBstSuccess] = useState(false);
 
   // Edit form — base fields
   const [editName, setEditName] = useState("");
@@ -157,6 +149,7 @@ function ItemDetailContent({ id }: { id: string }) {
 
   // Catalog picker (edit form)
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   // Edit form — plates (razors)
   const [editPlates, setEditPlates] = useState<RazorPlate[]>([]);
@@ -168,7 +161,15 @@ function ItemDetailContent({ id }: { id: string }) {
 
   useEffect(() => {
     api.get<{ items: InventoryItem[] }>("/api/inventory")
-      .then((d) => { setItem(d.items.find((i) => i.id === id) ?? null); })
+      .then((d) => {
+        const found = d.items.find((i) => i.id === id) ?? null;
+        setItem(found);
+        if (found?.hasPhoto) {
+          api.get<{ photoUrl: string | null }>(`/api/inventory/${id}/photo`)
+            .then((p) => setPhotoUrl(p.photoUrl))
+            .catch(() => {});
+        }
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -216,7 +217,6 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditingPlateIdx(null);
     setEditError(null);
     setShowEdit(true);
-    setShowBST(false);
   };
 
   const handleCatalogSelect = (entry: CatalogEntry) => {
@@ -347,27 +347,6 @@ function ItemDetailContent({ id }: { id: string }) {
     }
   };
 
-  const handleListInBST = async () => {
-    if (!item) return;
-    const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) { setBstError("Enter a valid price"); return; }
-    if (!condition) { setBstError("Select a condition"); return; }
-    setBstError(null);
-    setBstLoading(true);
-    try {
-      await api.post("/api/bst/listings", {
-        title: item.name, brand: item.brand || undefined,
-        description: item.notes || item.name, price: priceNum,
-        condition, category: BST_CATEGORY_MAP[item.categoryId] ?? "misc",
-        linkedItemId: item.id, photos: [],
-      });
-      setBstSuccess(true);
-      setTimeout(() => router.push("/bst"), 1500);
-    } catch (e) {
-      setBstError(e instanceof Error ? e.message : "Failed to create listing");
-      setBstLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -415,10 +394,11 @@ function ItemDetailContent({ id }: { id: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
         {/* Photo */}
         <div className="aspect-square bg-[#242424] rounded-2xl overflow-hidden border border-white/5 flex items-center justify-center">
-          {item.photoUrl
+          {photoUrl
             // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover" />
-            : <span className="text-7xl opacity-20">{CATEGORY_ICONS[item.categoryId] ?? "📦"}</span>}
+            ? <img src={photoUrl} alt={item.name} className="w-full h-full object-cover" />
+            : <span className="text-7xl opacity-20">{CATEGORY_ICONS[item.categoryId] ?? "📦"}</span>
+          }
         </div>
 
         {/* Info */}
@@ -517,10 +497,16 @@ function ItemDetailContent({ id }: { id: string }) {
             {item.preshaveType && <Spec label="Type" value={item.preshaveType} />}
           </div>
 
-          {isBSTEligible && !showBST && !showEdit && (
-            <button onClick={() => setShowBST(true)} className="w-full border border-[#c9a050]/30 text-[#c9a050] py-3 rounded-xl hover:bg-[#c9a050]/10 transition-colors font-semibold text-sm">
-              🛒 List in Marketplace (BST)
-            </button>
+          {isBSTEligible && !showEdit && (
+            <CreateListingModal
+              prefillTitle={[item.brand, item.name].filter(Boolean).join(' ')}
+              prefillCategory={BST_CATEGORY_MAP[item.categoryId]}
+              trigger={
+                <button className="w-full border border-[#c9a050]/30 text-[#c9a050] py-3 rounded-xl hover:bg-[#c9a050]/10 transition-colors font-semibold text-sm">
+                  🛒 List in Marketplace (BST)
+                </button>
+              }
+            />
           )}
         </div>
       </div>
@@ -863,43 +849,6 @@ function ItemDetailContent({ id }: { id: string }) {
         />
       )}
 
-      {/* BST Form */}
-      {isBSTEligible && showBST && (
-        <div className="mt-8 bg-[#242424] rounded-2xl border border-[#c9a050]/20 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#c9a050]">List in Marketplace</h2>
-            <button onClick={() => setShowBST(false)} className="text-gray-500 hover:text-gray-300 text-xl">✕</button>
-          </div>
-          <div className="flex items-center gap-3 bg-[#1e1e1e] rounded-xl p-3 mb-5">
-            <div className="w-10 h-10 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-lg">
-              {item.photoUrl
-                ? <img src={item.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" />
-                : CATEGORY_ICONS[item.categoryId]}
-            </div>
-            <div>
-              <p className="text-[#f5f2eb] text-sm font-semibold">{item.name}</p>
-              <p className="text-[#c9a050] text-xs">{item.brand}</p>
-            </div>
-          </div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price (USD) *</label>
-          <div className="flex items-center bg-[#1e1e1e] border border-white/10 rounded-xl px-4 h-12 mb-5 focus-within:border-[#c9a050]/50">
-            <span className="text-[#c9a050] font-bold text-lg mr-2">$</span>
-            <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" className="flex-1 bg-transparent text-[#f5f2eb] text-lg font-semibold focus:outline-none" />
-          </div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Condition *</label>
-          <div className="flex gap-2 flex-wrap mb-5">
-            {BST_CONDITIONS.map((c) => (
-              <button key={c} onClick={() => setCondition(c)} className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${condition === c ? "bg-[#c9a050]/15 border-[#c9a050] text-[#c9a050]" : "border-white/10 text-gray-500 hover:border-[#c9a050]/30"}`}>
-                {c}
-              </button>
-            ))}
-          </div>
-          {bstError && <p className="text-red-400 text-sm text-center mb-4">{bstError}</p>}
-          <button onClick={handleListInBST} disabled={bstLoading || bstSuccess} className="w-full bg-[#c9a050] text-black font-bold py-3.5 rounded-xl hover:bg-[#b8903f] transition-colors disabled:opacity-60 text-base shadow-lg shadow-[#c9a050]/20">
-            {bstLoading ? "Posting..." : bstSuccess ? "✓ Listed! Redirecting..." : "Post to Marketplace"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

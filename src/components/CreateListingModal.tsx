@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, cloneElement, isValidElement } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session-context";
 import { api } from "@/lib/api";
@@ -51,12 +51,19 @@ const inputCls = "w-full bg-[#161616] border border-white/10 rounded-lg px-3 py-
 const selectCls = "w-full bg-[#161616] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50";
 const labelCls = "block text-xs text-gray-500 font-medium uppercase tracking-wide mb-1.5";
 
-export default function CreateListingModal() {
+interface Props {
+  prefillTitle?: string;
+  prefillCategory?: string;
+  trigger?: React.ReactNode;
+}
+
+export default function CreateListingModal({ prefillTitle, prefillCategory, trigger }: Props = {}) {
   const { session } = useSession();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [open, setOpen] = useState(false);
+  const prefillApplied = useRef(false);
 
   // form state
   const [displayName, setDisplayName] = useState("");
@@ -114,7 +121,16 @@ export default function CreateListingModal() {
     api.get<{ isExpert: boolean }>("/api/subscriptions/status").then((d) => setIsExpert(d.isExpert)).catch(() => {});
   }, [open, session]);
 
+  // Apply Den prefill (title + category only) when modal opens
+  useEffect(() => {
+    if (prefillApplied.current || !open || !prefillCategory) return;
+    prefillApplied.current = true;
+    setCategory(prefillCategory);
+    if (prefillTitle) setTitle(prefillTitle);
+  }, [open, prefillCategory, prefillTitle]);
+
   const reset = () => {
+    prefillApplied.current = false;
     setPhotos([]);
     setCategory("");
     setBrand("");
@@ -202,14 +218,21 @@ export default function CreateListingModal() {
 
   if (!session) return null;
 
+  const handleOpen = () => setOpen(true);
+
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-[#c9a050] text-black text-sm font-bold rounded-xl hover:bg-[#b8903f] transition-colors"
-      >
-        + List an Item
-      </button>
+      {trigger && isValidElement(trigger)
+        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, { onClick: handleOpen })
+        : (
+          <button
+            onClick={handleOpen}
+            className="px-4 py-2 bg-[#c9a050] text-black text-sm font-bold rounded-xl hover:bg-[#b8903f] transition-colors"
+          >
+            + List an Item
+          </button>
+        )
+      }
 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/75 flex items-start justify-center p-4 overflow-y-auto">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
@@ -14,18 +14,40 @@ const CATEGORIES = [
   { value: "fragrance", label: "Fragrance" },
 ];
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function NewThreadPage() {
   const { session, loading } = useSession();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("general");
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !session) router.push("/sign-in");
   }, [session, loading, router]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToBase64(file);
+      setPhotoDataUrl(dataUrl);
+    } catch {
+      setError("Failed to read image.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +59,7 @@ export default function NewThreadPage() {
         title: title.trim(),
         body: body.trim(),
         category,
+        ...(photoDataUrl ? { photoUrl: photoDataUrl } : {}),
       });
       router.push(`/forum/${thread.id}`);
     } catch {
@@ -90,6 +113,43 @@ export default function NewThreadPage() {
             placeholder="Share your thoughts, questions, or experience…"
             rows={8}
             className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-y focus:outline-none focus:border-[#c9a050]/40"
+          />
+        </div>
+
+        {/* Photo */}
+        <div>
+          <label className="block text-sm text-gray-400 mb-2">Photo (optional)</label>
+          {photoDataUrl ? (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoDataUrl}
+                alt="Attached photo"
+                className="w-full max-h-64 object-cover rounded-xl"
+              />
+              <button
+                type="button"
+                onClick={() => { setPhotoDataUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border border-dashed border-white/15 rounded-xl flex flex-col items-center justify-center py-10 cursor-pointer hover:border-white/30 transition-colors"
+            >
+              <span className="text-2xl mb-2">🖼️</span>
+              <span className="text-sm text-gray-500">Click to attach a photo</span>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
           />
         </div>
 

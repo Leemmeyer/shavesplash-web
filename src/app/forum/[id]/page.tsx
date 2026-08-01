@@ -30,6 +30,7 @@ interface Thread {
   body: string;
   category: string;
   isPinned: boolean;
+  photoUrl?: string | null;
   createdAt: string;
   author: Author;
   replies: Reply[];
@@ -220,6 +221,14 @@ export default function ThreadPage() {
           {thread.title}
         </h1>
         <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-4">{thread.body}</p>
+        {thread.photoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thread.photoUrl}
+            alt="Thread photo"
+            className="w-full max-h-80 object-cover rounded-xl mb-4"
+          />
+        )}
         <div className="flex items-center gap-2 text-xs text-gray-600 border-t border-white/5 pt-4 mb-3">
           <span className="font-medium text-gray-400">{displayName(thread.author)}</span>
           <span>·</span>

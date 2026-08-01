@@ -154,6 +154,10 @@ export default async function BSTPage({
   );
 }
 
+function photoSrc(data: string) {
+  return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
+}
+
 function ListingCard({ listing }: { listing: Listing }) {
   const photo = listing.photos[0];
   const sellerName = listing.seller.profile?.displayName ?? listing.seller.name ?? "Seller";
@@ -171,7 +175,7 @@ function ListingCard({ listing }: { listing: Listing }) {
           {photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={`data:image/jpeg;base64,${photo.data}`}
+              src={photoSrc(photo.data)}
               alt={listing.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />

@@ -20,6 +20,10 @@ type MyListing = {
   expiresAt: string | null;
 };
 
+function photoSrc(data: string) {
+  return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
+}
+
 export default function MyListingsPage() {
   const { session, loading: sessionLoading } = useSession();
   const router = useRouter();
@@ -115,7 +119,7 @@ export default function MyListingsPage() {
                           {listing.photos[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`data:image/jpeg;base64,${listing.photos[0].data}`}
+                              src={photoSrc(listing.photos[0].data)}
                               alt={listing.title}
                               className="w-full h-full object-cover"
                             />
@@ -173,7 +177,7 @@ export default function MyListingsPage() {
                         {listing.photos[0] ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={`data:image/jpeg;base64,${listing.photos[0].data}`}
+                            src={photoSrc(listing.photos[0].data)}
                             alt={listing.title}
                             className="w-full h-full object-cover"
                           />

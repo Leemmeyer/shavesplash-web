@@ -28,6 +28,10 @@ type Listing = {
   seller: Seller;
 };
 
+function photoSrc(data: string) {
+  return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
+}
+
 async function getListing(id: string): Promise<Listing | null> {
   try {
     const res = await fetch(`${BACKEND}/api/bst/listings/${id}`, {
@@ -78,7 +82,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                 <div className="aspect-square bg-[#242424] rounded-2xl overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`data:image/jpeg;base64,${listing.photos[0].data}`}
+                    src={photoSrc(listing.photos[0].data)}
                     alt={listing.title}
                     className="w-full h-full object-cover"
                   />
@@ -89,7 +93,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                       <div key={photo.id} className="aspect-square bg-[#242424] rounded-xl overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={`data:image/jpeg;base64,${photo.data}`}
+                          src={photoSrc(photo.data)}
                           alt=""
                           className="w-full h-full object-cover"
                         />

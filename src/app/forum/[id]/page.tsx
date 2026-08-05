@@ -19,6 +19,7 @@ type ReactionGroup = { count: number; reacted: boolean };
 interface Reply {
   id: string;
   body: string;
+  photoUrl?: string | null;
   author: Author;
   createdAt: string;
   reactions: Record<string, ReactionGroup>;
@@ -138,7 +139,9 @@ export default function ThreadPage() {
   const router = useRouter();
   const [thread, setThread] = useState<Thread | null>(null);
   const [replyBody, setReplyBody] = useState("");
+  const [replyPhotoDataUrl, setReplyPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -167,16 +170,28 @@ export default function ThreadPage() {
     } : t);
   };
 
+  const handleReplyFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setReplyPhotoDataUrl(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleReply = async () => {
-    if (!replyBody.trim() || submitting || !session) return;
+    if ((!replyBody.trim() && !replyPhotoDataUrl) || submitting || !session) return;
     setSubmitting(true);
     try {
       const { reply } = await api.post<{ reply: Reply }>(
         `/api/forum/threads/${id}/replies`,
-        { body: replyBody.trim() }
+        {
+          body: replyBody.trim() || " ",
+          ...(replyPhotoDataUrl ? { photoUrl: replyPhotoDataUrl } : {}),
+        }
       );
       setThread((t) => t ? { ...t, replies: [...t.replies, reply] } : t);
       setReplyBody("");
+      setReplyPhotoDataUrl(null);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch { /* ignore */ } finally { setSubmitting(false); }
   };
@@ -259,6 +274,14 @@ export default function ThreadPage() {
                 )}
               </div>
               <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-3">{reply.body}</p>
+              {reply.photoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={reply.photoUrl}
+                  alt="Reply photo"
+                  className="w-full max-h-64 object-cover rounded-xl mb-3"
+                />
+              )}
               <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} />
             </div>
           ))}
@@ -278,9 +301,29 @@ export default function ThreadPage() {
             rows={4}
             className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-y focus:outline-none focus:border-[#c9a050]/40 mb-3"
           />
+          {replyPhotoDataUrl ? (
+            <div className="relative mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={replyPhotoDataUrl} alt="Attached photo" className="w-full max-h-48 object-cover rounded-xl" />
+              <button
+                type="button"
+                onClick={() => { setReplyPhotoDataUrl(null); if (replyFileInputRef.current) replyFileInputRef.current.value = ""; }}
+                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors text-sm"
+              >✕</button>
+            </div>
+          ) : (
+            <div
+              onClick={() => replyFileInputRef.current?.click()}
+              className="border border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 py-3 mb-3 cursor-pointer hover:border-white/25 transition-colors"
+            >
+              <span className="text-lg">🖼️</span>
+              <span className="text-xs text-gray-500">Attach a photo (optional)</span>
+            </div>
+          )}
+          <input ref={replyFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplyFileChange} />
           <button
             onClick={handleReply}
-            disabled={!replyBody.trim() || submitting}
+            disabled={(!replyBody.trim() && !replyPhotoDataUrl) || submitting}
             className="bg-[#c9a050] text-black font-semibold px-6 py-2.5 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors text-sm"
           >
             {submitting ? "Posting…" : "Post Reply"}

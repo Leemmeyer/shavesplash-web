@@ -208,21 +208,23 @@ export default function ForumPage() {
                   </span>
                 </div>
                 <p className={`text-sm line-clamp-2 mb-3 ${unread ? "text-gray-500" : "text-gray-600"}`}>{thread.body}</p>
-                <div className="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-gray-600">
                   <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full">
                     {categoryLabel(thread.category)}
                   </span>
                   <span>by {thread.author.profile?.displayName ?? thread.author.name}</span>
-                  <span>{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
-                  {thread.lastReply && (
-                    <span className="text-gray-700">
-                      · last reply by{" "}
-                      <span className="text-gray-500">
-                        {thread.lastReply.author.profile?.displayName ?? thread.lastReply.author.name}
+                  <div className="ml-auto text-right shrink-0">
+                    <span>{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
+                    {thread.lastReply && (
+                      <span className="text-gray-700 block">
+                        last reply by{" "}
+                        <span className="text-gray-500">
+                          {thread.lastReply.author.profile?.displayName ?? thread.lastReply.author.name}
+                        </span>
+                        {" "}· {timeAgo(thread.lastReply.createdAt)}
                       </span>
-                      {" "}· {timeAgo(thread.lastReply.createdAt)}
-                    </span>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>

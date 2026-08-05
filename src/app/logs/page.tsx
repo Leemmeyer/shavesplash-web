@@ -80,6 +80,49 @@ type ShaveLog = {
   isPublic?: boolean; isAnonymous?: boolean;
 };
 
+function generateReportText(
+  log: ShaveLog,
+  scoreParameters: ScoreParameter[],
+): string {
+  const date = new Date(log.date).toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+  let text = `Shave Report - ${date}\n\n`;
+
+  const order = ["razors","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
+  const labels: Record<string,string> = {
+    razors:"Razor", blades:"Blade", brushes:"Brush", soaps:"Soap",
+    aftershaves:"Aftershave", balms:"Balm", preshaves:"Preshave", edpedt:"EDP/EDT",
+  };
+  const allKeys = [
+    ...order.filter((k) => log.selectedItems[k]?.itemName),
+    ...Object.keys(log.selectedItems).filter((k) => !order.includes(k) && log.selectedItems[k]?.itemName),
+  ];
+  allKeys.forEach((catId) => {
+    const s = log.selectedItems[catId];
+    if (!s?.itemName) return;
+    const extras: string[] = [];
+    if (s.plate) extras.push(s.plate);
+    if (catId === "blades" && s.bladeUses != null) extras.push(`${s.bladeUses}x`);
+    const value = extras.length ? `${s.itemName} (${extras.join(", ")})` : s.itemName;
+    text += `${labels[catId] ?? catId}: ${value}\n`;
+  });
+
+  const scoreEntries = scoreParameters
+    .map((p) => ({ name: p.name, val: log.scores[p.id] }))
+    .filter((e) => e.val !== undefined);
+  if (scoreEntries.length > 0) {
+    text += "\nScores:\n";
+    scoreEntries.forEach((e) => {
+      text += `  ${e.name}: ${getScoreValue(e.val!)}/10\n`;
+    });
+  }
+
+  text += `\nResult: ${log.result}`;
+  if (log.notes) text += `\n\n${log.notes}`;
+  return text;
+}
+
 function getScoreValue(score: ScoreEntry): number {
   return typeof score === "number" ? score : score.value;
 }
@@ -531,6 +574,7 @@ function LogsContent() {
   const [sotdUpdating, setSotdUpdating] = useState<string | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [photoCache, setPhotoCache] = useState<Record<string, string>>({});
+  const [copiedLog, setCopiedLog] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -594,6 +638,15 @@ function LogsContent() {
         .catch(() => {});
     }
   }, [expanded, photoCache]);
+
+  const handleCopyReport = useCallback(async (log: ShaveLog) => {
+    const text = generateReportText(log, scoreParameters);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedLog(log.id);
+      setTimeout(() => setCopiedLog(null), 2000);
+    } catch { /* clipboard not available */ }
+  }, [scoreParameters]);
 
   const handleAnonToggle = async (log: ShaveLog, isAnonymous: boolean) => {
     setSotdUpdating(log.id);
@@ -851,13 +904,19 @@ function LogsContent() {
                             </div>
                           </div>
 
-                          {/* Edit / Delete actions */}
+                          {/* Edit / Delete / Copy actions */}
                           <div className="pt-2 border-t border-white/5 flex gap-3">
                             <button
                               onClick={() => { setEditLog(log); setShowForm(false); }}
                               className="flex-1 py-2.5 rounded-xl border border-white/10 text-[#c9a050] text-sm font-medium hover:bg-[#c9a050]/10 transition-colors"
                             >
                               Edit Entry
+                            </button>
+                            <button
+                              onClick={() => handleCopyReport(log)}
+                              className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
+                            >
+                              {copiedLog === log.id ? "✓ Copied!" : "Copy Report"}
                             </button>
                             <button
                               onClick={() => setConfirmDelete(log.id)}

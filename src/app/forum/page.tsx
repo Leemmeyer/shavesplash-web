@@ -188,7 +188,7 @@ export default function ForumPage() {
               key={thread.id}
               href={`/forum/${thread.id}`}
               onClick={() => markRead(thread.id)}
-              className={`flex items-start gap-4 rounded-2xl p-5 transition-colors group border-l-[3px] ${
+              className={`flex items-start gap-4 rounded-2xl p-3 transition-colors group border-l-[3px] ${
                 unread
                   ? "bg-[#242424] hover:bg-[#2a2a2a] border border-white/5 border-l-[#c9a050]/50"
                   : "bg-[#1c1c1c] hover:bg-[#222222] border border-white/5 border-l-transparent"

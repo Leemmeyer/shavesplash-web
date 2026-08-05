@@ -213,11 +213,11 @@ export default function ForumPage() {
                     {categoryLabel(thread.category)}
                   </span>
                   <span>by {thread.author.profile?.displayName ?? thread.author.name}</span>
-                  <div className="ml-auto text-right shrink-0">
+                  <div className="ml-auto shrink-0 flex items-center gap-1.5">
                     <span>{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
                     {thread.lastReply && (
-                      <span className="text-gray-700 block">
-                        last reply by{" "}
+                      <span className="text-gray-700">
+                        · last reply by{" "}
                         <span className="text-gray-500">
                           {thread.lastReply.author.profile?.displayName ?? thread.lastReply.author.name}
                         </span>

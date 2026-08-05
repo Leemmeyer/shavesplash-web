@@ -5,6 +5,18 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
+function timeAgo(date: string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const STORAGE_KEY = "ss_forum_read";
 const NAV_COUNT_KEY = "ss_forum_unread_nav";
 
@@ -32,6 +44,7 @@ interface Thread {
   updatedAt: string;
   author: { id: string; name: string; profile?: { displayName?: string } };
   _count: { replies: number };
+  lastReply: { createdAt: string; author: { name: string; profile?: { displayName?: string } } } | null;
 }
 
 export default function ForumPage() {
@@ -191,18 +204,25 @@ export default function ForumPage() {
                     {thread.title}
                   </h2>
                   <span className="text-xs text-gray-600 shrink-0 mt-0.5">
-                    {new Date(thread.updatedAt).toLocaleDateString()}
+                    {timeAgo(thread.updatedAt)}
                   </span>
                 </div>
                 <p className={`text-sm line-clamp-2 mb-3 ${unread ? "text-gray-500" : "text-gray-600"}`}>{thread.body}</p>
-                <div className="flex items-center gap-3 text-xs text-gray-600">
+                <div className="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
                   <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full">
                     {categoryLabel(thread.category)}
                   </span>
-                  <span>
-                    by {thread.author.profile?.displayName ?? thread.author.name}
-                  </span>
+                  <span>by {thread.author.profile?.displayName ?? thread.author.name}</span>
                   <span>{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
+                  {thread.lastReply && (
+                    <span className="text-gray-700">
+                      · last reply by{" "}
+                      <span className="text-gray-500">
+                        {thread.lastReply.author.profile?.displayName ?? thread.lastReply.author.name}
+                      </span>
+                      {" "}· {timeAgo(thread.lastReply.createdAt)}
+                    </span>
+                  )}
                 </div>
               </div>
             </Link>

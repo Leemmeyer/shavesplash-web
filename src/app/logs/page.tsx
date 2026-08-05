@@ -83,6 +83,7 @@ type ShaveLog = {
 function generateReportText(
   log: ShaveLog,
   scoreParameters: ScoreParameter[],
+  opts: { withScores: boolean; withResult: boolean; withNotes: boolean },
 ): string {
   const date = new Date(log.date).toLocaleDateString("en-US", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -108,19 +109,100 @@ function generateReportText(
     text += `${labels[catId] ?? catId}: ${value}\n`;
   });
 
-  const scoreEntries = scoreParameters
-    .map((p) => ({ name: p.name, val: log.scores[p.id] }))
-    .filter((e) => e.val !== undefined);
-  if (scoreEntries.length > 0) {
-    text += "\nScores:\n";
-    scoreEntries.forEach((e) => {
-      text += `  ${e.name}: ${getScoreValue(e.val!)}/10\n`;
-    });
+  if (opts.withScores) {
+    const scoreEntries = scoreParameters
+      .map((p) => ({ name: p.name, val: log.scores[p.id] }))
+      .filter((e) => e.val !== undefined);
+    if (scoreEntries.length > 0) {
+      text += "\nScores:\n";
+      scoreEntries.forEach((e) => {
+        text += `  ${e.name}: ${getScoreValue(e.val!)}/10\n`;
+      });
+    }
   }
 
-  text += `\nResult: ${log.result}`;
-  if (log.notes) text += `\n\n${log.notes}`;
+  if (opts.withResult) text += `\nResult: ${log.result}`;
+  if (opts.withNotes && log.notes) text += `\n\n${log.notes}`;
   return text;
+}
+
+function ReportShareModal({
+  log,
+  scoreParameters,
+  onClose,
+}: {
+  log: ShaveLog;
+  scoreParameters: ScoreParameter[];
+  onClose: () => void;
+}) {
+  const [withScores, setWithScores] = useState(true);
+  const [withResult, setWithResult] = useState(true);
+  const [withNotes, setWithNotes] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+
+  const getText = () => generateReportText(log, scoreParameters, { withScores, withResult, withNotes });
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(getText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({ text: getText(), title: "Shave Report" });
+    } catch { /* user cancelled or unsupported */ }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[#242424] rounded-2xl border border-white/10 p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-[#f5f2eb] font-bold text-base">Copy Shave Report</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-xl leading-none">✕</button>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          {[
+            { label: "Include Scores", value: withScores, set: setWithScores },
+            { label: "Include Result", value: withResult, set: setWithResult },
+            { label: "Include Notes",  value: withNotes,  set: setWithNotes  },
+          ].map(({ label, value, set }) => (
+            <label key={label} className="flex items-center justify-between cursor-pointer select-none">
+              <span className="text-sm text-gray-300">{label}</span>
+              <button
+                onClick={() => set(!value)}
+                aria-label={label}
+                className={`relative w-10 h-5 rounded-full transition-colors ${value ? "bg-[#c9a050]" : "bg-white/10"}`}
+              >
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${value ? "left-5" : "left-0.5"}`} />
+              </button>
+            </label>
+          ))}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={handleCopy}
+            className="flex-1 py-2.5 rounded-xl bg-[#c9a050] text-[#1a1a1a] font-semibold text-sm hover:bg-[#d4aa60] transition-colors"
+          >
+            {copied ? "✓ Copied!" : "Copy to Clipboard"}
+          </button>
+          {canShare && (
+            <button
+              onClick={handleShare}
+              className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
+            >
+              Share…
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function getScoreValue(score: ScoreEntry): number {
@@ -574,7 +656,7 @@ function LogsContent() {
   const [sotdUpdating, setSotdUpdating] = useState<string | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [photoCache, setPhotoCache] = useState<Record<string, string>>({});
-  const [copiedLog, setCopiedLog] = useState<string | null>(null);
+  const [reportModalLog, setReportModalLog] = useState<ShaveLog | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -638,15 +720,6 @@ function LogsContent() {
         .catch(() => {});
     }
   }, [expanded, photoCache]);
-
-  const handleCopyReport = useCallback(async (log: ShaveLog) => {
-    const text = generateReportText(log, scoreParameters);
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedLog(log.id);
-      setTimeout(() => setCopiedLog(null), 2000);
-    } catch { /* clipboard not available */ }
-  }, [scoreParameters]);
 
   const handleAnonToggle = async (log: ShaveLog, isAnonymous: boolean) => {
     setSotdUpdating(log.id);
@@ -729,6 +802,14 @@ function LogsContent() {
           autoShareSotd={autoShareSotd}
           onSave={handleSaved}
           onClose={() => { setShowForm(false); setEditLog(null); }}
+        />
+      )}
+
+      {reportModalLog && (
+        <ReportShareModal
+          log={reportModalLog}
+          scoreParameters={scoreParameters}
+          onClose={() => setReportModalLog(null)}
         />
       )}
 
@@ -913,10 +994,10 @@ function LogsContent() {
                               Edit Entry
                             </button>
                             <button
-                              onClick={() => handleCopyReport(log)}
+                              onClick={() => setReportModalLog(log)}
                               className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/5 transition-colors"
                             >
-                              {copiedLog === log.id ? "✓ Copied!" : "Copy Report"}
+                              Copy Report
                             </button>
                             <button
                               onClick={() => setConfirmDelete(log.id)}

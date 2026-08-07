@@ -425,7 +425,7 @@ function SotdCard({ post, onReact, session }: {
 
 // ── Stats Sidebar ─────────────────────────────────────────────────────────────
 function StatsSidebar() {
-  const [period, setPeriod] = useState<"today" | "week" | "month">("week");
+  const [period, setPeriod] = useState<"today" | "month" | "all">("month");
   const [stats, setStats] = useState<Record<string, { name: string; count: number }[]>>({});
   const [loading, setLoading] = useState(true);
 
@@ -437,10 +437,10 @@ function StatsSidebar() {
       .finally(() => setLoading(false));
   }, [period]);
 
-  const PERIODS: { key: "today" | "week" | "month"; label: string }[] = [
+  const PERIODS: { key: "today" | "month" | "all"; label: string }[] = [
     { key: "today", label: "Today" },
-    { key: "week", label: "This Week" },
     { key: "month", label: "This Month" },
+    { key: "all", label: "All Time" },
   ];
 
   const STAT_CATS = ["razors", "blades", "soaps", "aftershaves"];

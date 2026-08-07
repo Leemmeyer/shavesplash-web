@@ -17,6 +17,12 @@ const CAT_LABELS: Record<string, string> = {
 
 const SCORE_ORDER = ["efficiency", "comfort", "consistency", "easeofuse", "ease of use", "composite", "overall"];
 
+const PERIODS: { key: "today" | "month" | "all"; label: string }[] = [
+  { key: "today", label: "Today" },
+  { key: "month", label: "This Month" },
+  { key: "all", label: "All Time" },
+];
+
 interface PieSlice { name: string; count: number; pct: number; }
 interface RazorRow {
   name: string;
@@ -82,13 +88,16 @@ export default function SotdGraphsPage() {
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState("uses");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [period, setPeriod] = useState<"today" | "month" | "all">("all");
 
   useEffect(() => {
-    api.get<GraphData>("/api/sotd/graphs")
+    setLoading(true);
+    setData(null);
+    api.get<GraphData>(`/api/sotd/graphs?period=${period}`)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [period]);
 
   const allScoreKeys = data
     ? Array.from(
@@ -133,7 +142,7 @@ export default function SotdGraphsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6">
         <Link href="/sotd" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
           ← SOTD
         </Link>
@@ -145,6 +154,21 @@ export default function SotdGraphsPage() {
             <p className="text-gray-600 text-sm mt-0.5">Based on {data.totalShaves} shared shaves</p>
           )}
         </div>
+      </div>
+
+      {/* Period toggle */}
+      <div className="flex gap-1 mb-8 bg-[#1e1e1e] border border-white/5 rounded-xl p-1 w-fit">
+        {PERIODS.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              period === p.key ? "bg-[#c9a050] text-black" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (

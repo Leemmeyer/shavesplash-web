@@ -332,9 +332,9 @@ function SotdCard({ post, onReact, session }: {
                 onClick={() => session ? setShowEmojiPicker(true) : undefined}
                 disabled={!session}
                 title={session ? "React" : "Sign in to react"}
-                className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-base text-gray-500 hover:border-white/25 hover:bg-white/5 transition-colors disabled:cursor-default"
+                className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-base hover:border-white/25 hover:bg-white/5 transition-colors disabled:cursor-default grayscale opacity-50"
               >
-                👍
+                😊
               </button>
             )}
           </div>

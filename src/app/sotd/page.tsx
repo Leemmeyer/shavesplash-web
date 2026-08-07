@@ -117,6 +117,7 @@ function SotdCard({ post, onReact, session }: {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const GEAR_LIMIT = 5;
 
   // Lazy-load photo when card scrolls into view
@@ -338,13 +339,26 @@ function SotdCard({ post, onReact, session }: {
             )}
           </div>
 
-          <button
-            onClick={() => setShowComments((v) => !v)}
-            className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            <span>💬</span>
-            <span>{comments.length} comment{comments.length !== 1 ? "s" : ""}</span>
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setShowComments((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              <span>💬</span>
+              <span>{comments.length} comment{comments.length !== 1 ? "s" : ""}</span>
+            </button>
+            {session && (
+              <button
+                onClick={() => {
+                  setShowComments(true);
+                  setTimeout(() => textareaRef.current?.focus(), 50);
+                }}
+                className="text-xs text-[#c9a050] border border-[#c9a050]/30 hover:bg-[#c9a050]/10 px-2.5 py-1 rounded-full transition-colors"
+              >
+                Add Comment
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Comments */}
@@ -373,6 +387,7 @@ function SotdCard({ post, onReact, session }: {
             {session ? (
               <div className="flex gap-2 items-end">
                 <textarea
+                  ref={textareaRef}
                   value={commentBody}
                   onChange={(e) => setCommentBody(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleComment(); } }}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Set to false to open the site to the public
-const PREVIEW_MODE = true;
+const PREVIEW_MODE = false;
 
 const PREVIEW_PASSWORD = process.env.PREVIEW_PASSWORD ?? "shavesplash2026";
 const COOKIE_NAME = "ss_preview";

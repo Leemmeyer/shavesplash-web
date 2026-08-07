@@ -447,7 +447,20 @@ function StatsSidebar() {
 
   return (
     <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl p-4 sticky top-20">
-      <h2 className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-lg mb-3">Community Stats</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-lg">Community Stats</h2>
+        <Link
+          href="/sotd/graphs"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#c9a050] border border-white/10 hover:border-[#c9a050]/30 px-2.5 py-1 rounded-full transition-colors"
+        >
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <rect x="1" y="7" width="3" height="6" rx="0.5"/>
+            <rect x="5.5" y="4" width="3" height="9" rx="0.5"/>
+            <rect x="10" y="1" width="3" height="12" rx="0.5"/>
+          </svg>
+          Graphs
+        </Link>
+      </div>
 
       {/* Period tabs */}
       <div className="flex gap-1 mb-4 bg-[#242424] rounded-xl p-1">

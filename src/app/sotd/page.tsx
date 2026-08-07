@@ -425,7 +425,7 @@ function SotdCard({ post, onReact, session }: {
 
 // ── Stats Sidebar ─────────────────────────────────────────────────────────────
 function StatsSidebar() {
-  const [period, setPeriod] = useState<"today" | "month" | "all">("month");
+  const [period, setPeriod] = useState<"week" | "month" | "all">("week");
   const [stats, setStats] = useState<Record<string, { name: string; count: number }[]>>({});
   const [loading, setLoading] = useState(true);
 
@@ -437,8 +437,8 @@ function StatsSidebar() {
       .finally(() => setLoading(false));
   }, [period]);
 
-  const PERIODS: { key: "today" | "month" | "all"; label: string }[] = [
-    { key: "today", label: "Today" },
+  const PERIODS: { key: "week" | "month" | "all"; label: string }[] = [
+    { key: "week", label: "This Week" },
     { key: "month", label: "This Month" },
     { key: "all", label: "All Time" },
   ];

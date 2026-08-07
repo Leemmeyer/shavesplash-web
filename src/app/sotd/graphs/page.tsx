@@ -17,8 +17,8 @@ const CAT_LABELS: Record<string, string> = {
 
 const SCORE_ORDER = ["efficiency", "comfort", "consistency", "easeofuse", "ease of use", "composite", "overall"];
 
-const PERIODS: { key: "today" | "month" | "all"; label: string }[] = [
-  { key: "today", label: "Today" },
+const PERIODS: { key: "week" | "month" | "all"; label: string }[] = [
+  { key: "week", label: "This Week" },
   { key: "month", label: "This Month" },
   { key: "all", label: "All Time" },
 ];
@@ -88,7 +88,7 @@ export default function SotdGraphsPage() {
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState("uses");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [period, setPeriod] = useState<"today" | "month" | "all">("all");
+  const [period, setPeriod] = useState<"week" | "month" | "all">("all");
 
   useEffect(() => {
     setLoading(true);

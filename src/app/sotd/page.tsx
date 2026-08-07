@@ -395,6 +395,13 @@ function SotdCard({ post, onReact, session }: {
                   rows={1}
                   className="flex-1 bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 resize-none focus:outline-none focus:border-[#c9a050]/40"
                 />
+                {commentBody && (
+                  <button
+                    onClick={() => setCommentBody("")}
+                    className="w-7 h-7 flex items-center justify-center rounded-full text-gray-600 hover:text-gray-300 hover:bg-white/5 transition-colors text-sm shrink-0"
+                    title="Clear"
+                  >✕</button>
+                )}
                 <button
                   onClick={handleComment}
                   disabled={!commentBody.trim() || submitting}

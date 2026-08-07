@@ -93,20 +93,34 @@ export default function SotdGraphsPage() {
   const allScoreKeys = data
     ? Array.from(
         new Set(data.razorScores.flatMap(r => Object.keys(r.scores)))
-      ).sort((a, b) => {
+      ).filter(k => k.toLowerCase() !== "composite")
+       .sort((a, b) => {
         const ai = SCORE_ORDER.indexOf(a.toLowerCase());
         const bi = SCORE_ORDER.indexOf(b.toLowerCase());
         return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
       })
     : [];
 
-  const sortedRazors = data
-    ? [...data.razorScores].sort((a, b) => {
-        const aVal = sortKey === "uses" ? a.uses : (a.scores[sortKey]?.avg ?? 0);
-        const bVal = sortKey === "uses" ? b.uses : (b.scores[sortKey]?.avg ?? 0);
-        return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+  // Compute composite avg per razor as mean of all score avgs
+  const razorsWithComposite = data
+    ? data.razorScores.map(r => {
+        const vals = Object.entries(r.scores)
+          .filter(([k]) => k.toLowerCase() !== "composite")
+          .map(([, v]) => v.avg);
+        const composite = vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+        return { ...r, composite };
       })
     : [];
+
+  const sortedRazors = razorsWithComposite.slice().sort((a, b) => {
+    const aVal = sortKey === "uses" ? a.uses
+      : sortKey === "composite" ? (a.composite ?? 0)
+      : (a.scores[sortKey]?.avg ?? 0);
+    const bVal = sortKey === "uses" ? b.uses
+      : sortKey === "composite" ? (b.composite ?? 0)
+      : (b.scores[sortKey]?.avg ?? 0);
+    return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+  });
 
   const handleSort = (key: string) => {
     if (key === sortKey) setSortDir(d => d === "desc" ? "asc" : "desc");
@@ -170,7 +184,7 @@ export default function SotdGraphsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/5">
+                      <tr className="border-b border-white/5 bg-white/[0.02]">
                         <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs">Razor</th>
                         <SortTh label="Uses" colKey="uses" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                         {allScoreKeys.map(k => (
@@ -183,6 +197,7 @@ export default function SotdGraphsPage() {
                             onSort={handleSort}
                           />
                         ))}
+                        <SortTh label="Composite" colKey="composite" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                       </tr>
                     </thead>
                     <tbody>
@@ -196,10 +211,7 @@ export default function SotdGraphsPage() {
                           {allScoreKeys.map(k => (
                             <td key={k} className="px-4 py-3 text-center">
                               {razor.scores[k] ? (
-                                <span
-                                  className="font-semibold"
-                                  style={{ color: scoreColor(razor.scores[k]!.avg) }}
-                                >
+                                <span className="font-semibold" style={{ color: scoreColor(razor.scores[k]!.avg) }}>
                                   {razor.scores[k]!.avg}
                                 </span>
                               ) : (
@@ -207,6 +219,15 @@ export default function SotdGraphsPage() {
                               )}
                             </td>
                           ))}
+                          <td className="px-4 py-3 text-center">
+                            {razor.composite !== null ? (
+                              <span className="font-bold" style={{ color: scoreColor(razor.composite!) }}>
+                                {razor.composite}
+                              </span>
+                            ) : (
+                              <span className="text-gray-700">—</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

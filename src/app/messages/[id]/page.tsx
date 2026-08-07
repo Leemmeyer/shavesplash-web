@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session-context";
 interface Message {
   id: string;
   body: string;
+  imageData?: string | null;
   senderId: string;
   sender: { id: string; name: string };
   createdAt: string;
@@ -36,7 +37,9 @@ export default function ConversationPage() {
   const [conv, setConv] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [body, setBody] = useState("");
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [deletingMsg, setDeletingMsg] = useState<string | null>(null);
   const [confirmDeleteConv, setConfirmDeleteConv] = useState(false);
   const [deletingConv, setDeletingConv] = useState(false);
@@ -61,16 +64,26 @@ export default function ConversationPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setPendingImage(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const handleSend = async () => {
-    if (!body.trim() || sending) return;
+    if ((!body.trim() && !pendingImage) || sending) return;
     setSending(true);
     try {
       const { message } = await api.post<{ message: Message }>(
         `/api/bst/conversations/${id}/messages`,
-        { body: body.trim() }
+        { body: body.trim(), ...(pendingImage ? { imageData: pendingImage } : {}) }
       );
       setMessages((prev) => [...prev, message]);
       setBody("");
+      setPendingImage(null);
     } catch {
       // ignore
     } finally {
@@ -166,10 +179,13 @@ export default function ConversationPage() {
           return (
             <div key={msg.id} className={`flex flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
               <span className="text-xs text-gray-500 px-2">{senderName(msg.senderId)}</span>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              <div className={`max-w-[75%] rounded-2xl overflow-hidden text-sm leading-relaxed ${
                 isMe ? "bg-[#c9a050] text-black rounded-br-sm" : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
               }`}>
-                <p>{msg.body}</p>
+                {msg.imageData && (
+                  <img src={msg.imageData} alt="attachment" className="w-full max-w-xs object-cover" />
+                )}
+                {msg.body.trim() && <p className="px-4 py-3">{msg.body}</p>}
                 <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
                   <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -193,22 +209,43 @@ export default function ConversationPage() {
       </div>
 
       {/* Compose */}
-      <div className="flex gap-3 items-end border-t border-white/5 pt-4">
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          placeholder="Type a message…"
-          rows={2}
-          className="flex-1 bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-none focus:outline-none focus:border-[#c9a050]/40"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!body.trim() || sending}
-          className="bg-[#c9a050] text-black font-semibold px-5 py-3 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors text-sm whitespace-nowrap"
-        >
-          {sendLabel}
-        </button>
+      <div className="border-t border-white/5 pt-4 flex flex-col gap-2">
+        {pendingImage && (
+          <div className="relative self-start">
+            <img src={pendingImage} alt="preview" className="w-20 h-20 rounded-lg object-cover" />
+            <button
+              onClick={() => setPendingImage(null)}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#1a1a1a] border border-white/20 flex items-center justify-center text-[10px] text-gray-300 hover:text-white"
+            >✕</button>
+          </div>
+        )}
+        <div className="flex gap-3 items-end">
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="text-gray-600 hover:text-[#c9a050] transition-colors pb-3 shrink-0"
+            title="Attach image"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </button>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            placeholder="Type a message…"
+            rows={2}
+            className="flex-1 bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-none focus:outline-none focus:border-[#c9a050]/40"
+          />
+          <button
+            onClick={handleSend}
+            disabled={(!body.trim() && !pendingImage) || sending}
+            className="bg-[#c9a050] text-black font-semibold px-5 py-3 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors text-sm whitespace-nowrap"
+          >
+            {sendLabel}
+          </button>
+        </div>
       </div>
     </div>
   );

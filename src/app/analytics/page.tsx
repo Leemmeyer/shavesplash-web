@@ -144,12 +144,22 @@ export default function AnalyticsPage() {
   );
 }
 
+const RANGE_OPTIONS = [
+  { key: "week", label: "This Week" },
+  { key: "30d",  label: "30 Days" },
+  { key: "90d",  label: "90 Days" },
+  { key: "1yr",  label: "1 Year" },
+  { key: "all",  label: "All Time" },
+] as const;
+type Range = typeof RANGE_OPTIONS[number]["key"];
+
 function AnalyticsContent() {
   const [logs, setLogs] = useState<ShaveLog[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [resultOptions, setResultOptions] = useState<string[]>(DEFAULT_RESULT_OPTIONS);
   const [scoreParameters, setScoreParameters] = useState<ScoreParameter[]>(DEFAULT_SCORE_PARAMETERS);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<Range>("all");
 
   useEffect(() => {
     Promise.all([
@@ -165,6 +175,13 @@ function AnalyticsContent() {
     }).finally(() => setLoading(false));
   }, []);
 
+  const filteredLogs = useMemo(() => {
+    if (range === "all") return logs;
+    const days = range === "week" ? 7 : range === "30d" ? 30 : range === "90d" ? 90 : 365;
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    return logs.filter(l => l.date >= cutoff);
+  }, [logs, range]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -175,7 +192,7 @@ function AnalyticsContent() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10 w-full">
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">Analytics</h1>
         <p className="text-gray-500 text-sm">{logs.length} shave{logs.length !== 1 ? "s" : ""} analyzed</p>
         <SyncNote />
@@ -188,22 +205,37 @@ function AnalyticsContent() {
           <p className="text-sm">Log some shaves first — analytics will appear here.</p>
         </div>
       ) : (
-        <div className="space-y-14">
-          <HeatmapSection logs={logs} resultOptions={resultOptions} />
-          <ResultTrendSection logs={logs} resultOptions={resultOptions} />
-          <GearComparisonSection
-            logs={logs} inventory={inventory}
-            resultOptions={resultOptions} scoreParameters={scoreParameters}
-          />
-          <BladeWearSection logs={logs} inventory={inventory} resultOptions={resultOptions} />
-          <PersonalRecordsSection
-            logs={logs} inventory={inventory}
-            resultOptions={resultOptions} scoreParameters={scoreParameters}
-          />
-          <CorrelationSection
-            logs={logs} resultOptions={resultOptions} scoreParameters={scoreParameters}
-          />
-        </div>
+        <>
+          {/* Global time range toggle */}
+          <div className="flex gap-1 mb-12 bg-[#1e1e1e] border border-white/5 rounded-xl p-1 w-fit">
+            {RANGE_OPTIONS.map(r => (
+              <button key={r.key} onClick={() => setRange(r.key)}
+                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  range === r.key ? "bg-[#c9a050] text-black" : "text-gray-500 hover:text-gray-300"
+                }`}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-14">
+            <PersonalRecordsSection
+              logs={logs} inventory={inventory}
+              resultOptions={resultOptions} scoreParameters={scoreParameters}
+            />
+            <ResultTrendSection logs={filteredLogs} resultOptions={resultOptions} />
+            <HeatmapSection logs={logs} resultOptions={resultOptions} />
+            <MostUsedGearSection logs={filteredLogs} inventory={inventory} />
+            <BladeWearSection logs={logs} inventory={inventory} resultOptions={resultOptions} />
+            <GearComparisonSection
+              logs={filteredLogs} inventory={inventory}
+              resultOptions={resultOptions} scoreParameters={scoreParameters}
+            />
+            <CorrelationSection
+              logs={filteredLogs} resultOptions={resultOptions} scoreParameters={scoreParameters}
+            />
+          </div>
+        </>
       )}
     </div>
   );
@@ -550,23 +582,13 @@ function GearComparisonSection({ logs, inventory, resultOptions, scoreParameters
 
 // ── Section 3: Result Trend ────────────────────────────────────────────────
 function ResultTrendSection({ logs, resultOptions }: { logs: ShaveLog[]; resultOptions: string[] }) {
-  const [range, setRange] = useState<"3mo" | "6mo" | "1yr" | "all">("all");
   const [hoveredPt, setHoveredPt] = useState<number | null>(null);
 
-  const sorted = useMemo(() => [...logs].sort((a, b) => a.date - b.date), [logs]);
-
-  const filtered = useMemo(() => {
-    if (range === "all") return sorted;
-    const ms = range === "3mo" ? 90 : range === "6mo" ? 180 : 365;
-    const cutoff = Date.now() - ms * 24 * 60 * 60 * 1000;
-    return sorted.filter(l => l.date >= cutoff);
-  }, [sorted, range]);
-
   const points = useMemo(() =>
-    filtered
+    [...logs].sort((a, b) => a.date - b.date)
       .map(log => ({ log, norm: resultNorm(log, resultOptions) }))
       .filter((p): p is { log: ShaveLog; norm: number } => p.norm !== null),
-    [filtered, resultOptions]
+    [logs, resultOptions]
   );
 
   const N = points.length;
@@ -630,23 +652,9 @@ function ResultTrendSection({ logs, resultOptions }: { logs: ShaveLog[]; resultO
 
   return (
     <section>
-      <div className="flex items-end justify-between mb-4">
-        <div>
-          <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Result Trend</h2>
-          <p className="text-gray-500 text-xs">Shave quality over time · gold line = 10-shave rolling average</p>
-        </div>
-        <div className="flex gap-1.5">
-          {(["3mo","6mo","1yr","all"] as const).map(r => (
-            <button key={r} onClick={() => setRange(r)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                range === r
-                  ? "bg-[#c9a050]/15 border-[#c9a050]/30 text-[#c9a050]"
-                  : "bg-[#1e1e1e] border-white/10 text-gray-400 hover:text-[#f5f2eb] hover:border-white/20"
-              }`}>
-              {r === "all" ? "All" : r}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4">
+        <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Result Trend</h2>
+        <p className="text-gray-500 text-xs">Shave quality over time · gold line = 10-shave rolling average</p>
       </div>
 
       <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
@@ -1067,12 +1075,11 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
   );
 }
 
-// ── Section 4: Personal Records ────────────────────────────────────────────
-function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameters }: {
+// ── Section: Personal Records ──────────────────────────────────────────────
+function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameters: _scoreParameters }: {
   logs: ShaveLog[]; inventory: InventoryItem[];
   resultOptions: string[]; scoreParameters: ScoreParameter[];
 }) {
-  // Shave with the highest result (tiebreak: highest avg score)
   const bestResultShave = useMemo(() => {
     return logs.reduce<ShaveLog | null>((best, log) => {
       const n = resultNorm(log, resultOptions);
@@ -1085,7 +1092,6 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
     }, null);
   }, [logs, resultOptions]);
 
-  // Shave with the highest avg score (tiebreak: highest result)
   const bestScoreShave = useMemo(() => {
     return logs.reduce<ShaveLog | null>((best, log) => {
       const s = avgScoreOf(log.scores);
@@ -1098,33 +1104,11 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
     }, null);
   }, [logs, resultOptions]);
 
-  // Top 5 most-used items per category + "Other"
-  const categoryUsage = useMemo(() => {
-    return CATEGORY_ORDER.map(catId => {
-      const itemMap: Record<string, { name: string; count: number }> = {};
-      let total = 0;
-      for (const log of logs) {
-        const sel = log.selectedItems[catId];
-        if (!sel?.itemId) continue;
-        const item = inventory.find(i => i.id === sel.itemId);
-        const name = item ? `${item.brand} ${item.name}` : (sel.itemName ?? "Unknown");
-        if (!itemMap[sel.itemId]) itemMap[sel.itemId] = { name, count: 0 };
-        itemMap[sel.itemId].count++;
-        total++;
-      }
-      if (total === 0) return null;
-      const sorted = Object.values(itemMap).sort((a, b) => b.count - a.count);
-      const top = sorted.slice(0, 5).map(e => ({ name: e.name, count: e.count, pct: (e.count / total) * 100 }));
-      const otherCount = sorted.slice(5).reduce((s, e) => s + e.count, 0);
-      return { catId, total, top, otherCount, otherPct: (otherCount / total) * 100 };
-    }).filter((c): c is NonNullable<typeof c> => c !== null);
-  }, [logs, inventory]);
-
   const renderGear = (log: ShaveLog) => {
     const gear = CATEGORY_ORDER.map(catId => {
       const sel = log.selectedItems[catId];
-      if (!sel?.itemId) return null;
-      const item = inventory.find(i => i.id === sel.itemId);
+      if (!sel?.itemId && !sel?.itemName) return null;
+      const item = sel.itemId ? inventory.find(i => i.id === sel.itemId) : null;
       const name = item ? `${item.brand} ${item.name}` : sel.itemName;
       if (!name) return null;
       return { catId, name };
@@ -1151,11 +1135,9 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
     <section>
       <div className="mb-6">
         <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Personal Records</h2>
-        <p className="text-gray-500 text-xs">Your best setups and most-used gear</p>
+        <p className="text-gray-500 text-xs">Your best shaves of all time</p>
       </div>
-
-      {/* Best result + best score side by side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
           <p className="text-gray-500 text-[11px] uppercase tracking-wider mb-3">Highest Result Setup</p>
           {bestResultShave ? (
@@ -1193,44 +1175,79 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
           ) : <p className="text-gray-600 text-sm">No data</p>}
         </div>
       </div>
+    </section>
+  );
+}
 
-      {/* Most used per category */}
-      <h3 className="text-[#f5f2eb] font-semibold text-base mb-4">Most Used Gear</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categoryUsage.map(({ catId, total, top, otherCount, otherPct }) => (
-          <div key={catId} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center"><CategoryIcon catId={catId} /></span>
-              <p className="text-[#f5f2eb] text-sm font-semibold flex-1">{CATEGORY_LABELS[catId] ?? catId}</p>
-              <span className="text-gray-600 text-xs">{total} uses</span>
-            </div>
-            <div className="space-y-2.5">
-              {top.map((e, i) => (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[#f5f2eb] text-xs truncate flex-1 pr-2" title={e.name}>{e.name}</span>
-                    <span className="text-[#c9a050] text-xs font-semibold shrink-0">{e.pct.toFixed(0)}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                    <div className="h-full bg-[#c9a050] rounded-full" style={{ width: `${e.pct}%` }} />
-                  </div>
-                </div>
-              ))}
-              {otherCount > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-gray-500 text-xs">Other</span>
-                    <span className="text-gray-500 text-xs font-semibold">{otherPct.toFixed(0)}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                    <div className="h-full bg-[#4b5563] rounded-full" style={{ width: `${otherPct}%` }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+// ── Section: Most Used Gear ────────────────────────────────────────────────
+function MostUsedGearSection({ logs, inventory }: { logs: ShaveLog[]; inventory: InventoryItem[] }) {
+  const categoryUsage = useMemo(() => {
+    return CATEGORY_ORDER.map(catId => {
+      const itemMap: Record<string, { name: string; count: number }> = {};
+      let total = 0;
+      for (const log of logs) {
+        const sel = log.selectedItems[catId];
+        if (!sel?.itemId && !sel?.itemName) continue;
+        const itemKey = sel.itemId ?? sel.itemName!;
+        const item = sel.itemId ? inventory.find(i => i.id === sel.itemId) : null;
+        const name = item ? `${item.brand} ${item.name}` : (sel.itemName ?? "Unknown");
+        if (!itemMap[itemKey]) itemMap[itemKey] = { name, count: 0 };
+        itemMap[itemKey].count++;
+        total++;
+      }
+      if (total === 0) return null;
+      const sorted = Object.values(itemMap).sort((a, b) => b.count - a.count);
+      const top = sorted.slice(0, 5).map(e => ({ name: e.name, count: e.count, pct: (e.count / total) * 100 }));
+      const otherCount = sorted.slice(5).reduce((s, e) => s + e.count, 0);
+      return { catId, total, top, otherCount, otherPct: (otherCount / total) * 100 };
+    }).filter((c): c is NonNullable<typeof c> => c !== null);
+  }, [logs, inventory]);
+
+  return (
+    <section>
+      <div className="mb-4">
+        <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Most Used Gear</h2>
+        <p className="text-gray-500 text-xs">Your most-reached-for items in the selected period</p>
       </div>
+      {categoryUsage.length === 0 ? (
+        <p className="text-gray-600 text-sm">No gear data for this period.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categoryUsage.map(({ catId, total, top, otherCount, otherPct }) => (
+            <div key={catId} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center"><CategoryIcon catId={catId} /></span>
+                <p className="text-[#f5f2eb] text-sm font-semibold flex-1">{CATEGORY_LABELS[catId] ?? catId}</p>
+                <span className="text-gray-600 text-xs">{total} uses</span>
+              </div>
+              <div className="space-y-2.5">
+                {top.map((e, i) => (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[#f5f2eb] text-xs truncate flex-1 pr-2" title={e.name}>{e.name}</span>
+                      <span className="text-[#c9a050] text-xs font-semibold shrink-0">{e.pct.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#c9a050] rounded-full" style={{ width: `${e.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+                {otherCount > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-gray-500 text-xs">Other</span>
+                      <span className="text-gray-500 text-xs font-semibold">{otherPct.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#4b5563] rounded-full" style={{ width: `${otherPct}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

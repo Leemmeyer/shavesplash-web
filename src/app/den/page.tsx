@@ -58,7 +58,7 @@ const SORT_OPTIONS = [
 
 type InventoryItem = {
   id: string; categoryId: string; name: string; brand: string;
-  notes?: string; hasPhoto: boolean; createdAt: number;
+  notes?: string; hasPhoto: boolean; createdAt: number; _categoryName?: string;
 };
 
 function sortItems(items: InventoryItem[], sort: string, usageCounts: Record<string, number>): InventoryItem[] {
@@ -110,7 +110,10 @@ function DenContent() {
   const categories = useMemo(() => {
     const defaultIds = new Set(DEFAULT_CATEGORIES.map((c) => c.id));
     const customIds = [...new Set(items.map((i) => i.categoryId).filter((id) => !defaultIds.has(id)))];
-    const customs = customIds.map((id) => ({ id, label: id, icon: "📦" }));
+    const customs = customIds.map((id) => {
+      const catName = items.find((i) => i.categoryId === id)?._categoryName;
+      return { id, label: catName || id, icon: "📦" };
+    });
     return [...DEFAULT_CATEGORIES, ...customs];
   }, [items]);
 

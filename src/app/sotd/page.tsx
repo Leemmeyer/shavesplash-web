@@ -53,7 +53,7 @@ const STATS_LABELS: Record<string, string> = {
 };
 
 type ScoreEntry = { value: number; shortName: string } | number;
-type SelectedItem = { itemName?: string; plate?: string; bladeUses?: number };
+type SelectedItem = { itemName?: string; plate?: string; bladeUses?: number; categoryName?: string };
 type ReactionGroup = { count: number; reacted: boolean };
 
 interface Comment {
@@ -239,7 +239,7 @@ function SotdCard({ post, onReact, session }: {
                 <div key={catId} className="flex items-center gap-2 min-w-0">
                   <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24 flex items-center gap-1">
                     <CategoryIcon catId={catId} />
-                    {CATEGORY_LABELS[catId] ?? catId}
+                    {s.categoryName ?? CATEGORY_LABELS[catId] ?? catId}
                   </span>
                   <span className="text-gray-200 text-xs truncate">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
                 </div>

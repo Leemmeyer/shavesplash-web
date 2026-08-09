@@ -300,6 +300,9 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   // Preshave
   const [preshaveType, setPreshaveType] = useState<string>("");
 
+  // Size (oz for soaps/balms, mL for aftershaves/edpedt)
+  const [size, setSize] = useState("");
+
   // Catalog picker
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
   const [fromCatalog, setFromCatalog] = useState(false);
@@ -324,6 +327,9 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   const isAftershave = categoryId === "aftershaves";
   const isEdpEdt = categoryId === "edpedt";
   const isPreshave = categoryId === "preshaves";
+  const isBalm = categoryId === "balms";
+  const hasSize = isSoap || isAftershave || isEdpEdt || isBalm;
+  const sizeUnit = (isSoap || isBalm) ? "oz" : "mL";
   const isStraight = isRazor && edgeType === "Straight";
 
   const openAddPlate = () => {
@@ -429,6 +435,7 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
     if (isAftershave && aftershaveScentStrength > 0) data.aftershaveScentStrength = aftershaveScentStrength;
     if (isEdpEdt && edpedtScentStrength > 0) data.edpedtScentStrength = edpedtScentStrength;
     if (isPreshave && preshaveType) data.preshaveType = preshaveType;
+    if (hasSize && size.trim()) data.size = parseFloat(size);
 
     try {
       const newId = crypto.randomUUID();
@@ -701,6 +708,26 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
           <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
             <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Preshave Specs</h2>
             <SelectField label="Type" value={preshaveType} options={PRESHAVE_TYPE_OPTIONS} onChange={setPreshaveType} />
+          </div>
+        )}
+
+        {hasSize && (
+          <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider mb-4">Size</h2>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+                Size ({sizeUnit}) <span className="normal-case text-gray-600">(optional)</span>
+              </label>
+              <input
+                value={size}
+                onChange={(e) => setSize(e.target.value)}
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder={sizeUnit === "oz" ? "e.g. 4" : "e.g. 100"}
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors"
+              />
+            </div>
           </div>
         )}
 

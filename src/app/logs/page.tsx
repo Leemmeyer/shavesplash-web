@@ -106,7 +106,7 @@ function generateReportText(
     if (s.plate) extras.push(s.plate);
     if (catId === "blades" && s.bladeUses != null) extras.push(`${s.bladeUses}x`);
     const value = extras.length ? `${s.itemName} (${extras.join(", ")})` : s.itemName;
-    text += `${labels[catId] ?? catId}: ${value}\n`;
+    text += `${labels[catId] ?? s.categoryName ?? catId}: ${value}\n`;
   });
 
   if (opts.withScores) {
@@ -411,7 +411,10 @@ function LogForm({
     }
   };
 
-  const categories = CATEGORY_ORDER.filter((id) => itemsByCat[id]?.length);
+  const categories = [
+    ...CATEGORY_ORDER.filter((id) => itemsByCat[id]?.length),
+    ...Object.keys(itemsByCat).filter((id) => !CATEGORY_ORDER.includes(id) && itemsByCat[id]?.length),
+  ];
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto overflow-x-hidden">
@@ -472,7 +475,7 @@ function LogForm({
                     `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`)
                   );
                   const sel = selectedItems[catId];
-                  const label = CATEGORY_LABELS[catId] ?? catId;
+                  const label = CATEGORY_LABELS[catId] ?? itemsByCat[catId]?.[0]?._categoryName ?? catId;
                   return (
                     <div key={catId}>
                       <div className="flex items-center gap-2 min-w-0 overflow-hidden">

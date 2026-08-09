@@ -54,10 +54,11 @@ const labelCls = "block text-xs text-gray-500 font-medium uppercase tracking-wid
 interface Props {
   prefillTitle?: string;
   prefillCategory?: string;
+  prefillSize?: number;
   trigger?: React.ReactNode;
 }
 
-export default function CreateListingModal({ prefillTitle, prefillCategory, trigger }: Props = {}) {
+export default function CreateListingModal({ prefillTitle, prefillCategory, prefillSize, trigger }: Props = {}) {
   const { session } = useSession();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +81,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, trig
   const [condition, setCondition] = useState("");
   const [percentRemaining, setPercentRemaining] = useState("");
   const [ageMonths, setAgeMonths] = useState("");
+  const [size, setSize] = useState(prefillSize != null ? String(prefillSize) : "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -194,6 +196,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, trig
         : title.trim();
 
       const hasLiquidFields = ["soap", "aftershave", "edp"].includes(category);
+      const resolvedSize = hasLiquidFields && size ? parseFloat(size) : undefined;
       await api.post("/api/bst/listings", {
         title: resolvedTitle,
         brand: resolvedBrand,
@@ -205,6 +208,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, trig
         category,
         percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
         ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
+        size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
         photos: photos.map((data, order) => ({ data, order })),
       });
 
@@ -492,35 +496,49 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, trig
                 </div>
               )}
 
-              {/* Percent Remaining + Age — soap, aftershave, edp only */}
+              {/* Percent Remaining + Age + Size — soap, aftershave, edp only */}
               {["soap", "aftershave", "edp"].includes(category) && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>Percent Remaining</label>
-                    <select
-                      value={percentRemaining}
-                      onChange={(e) => setPercentRemaining(e.target.value)}
-                      className={selectCls}
-                    >
-                      <option value="">Not specified</option>
-                      {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
-                        <option key={p} value={String(p)}>{p}%</option>
-                      ))}
-                    </select>
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>Percent Remaining</label>
+                      <select
+                        value={percentRemaining}
+                        onChange={(e) => setPercentRemaining(e.target.value)}
+                        className={selectCls}
+                      >
+                        <option value="">Not specified</option>
+                        {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
+                          <option key={p} value={String(p)}>{p}%</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Approx. Age (months)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={ageMonths}
+                        onChange={(e) => setAgeMonths(e.target.value)}
+                        placeholder="e.g. 12"
+                        className={inputCls}
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className={labelCls}>Approx. Age (months)</label>
+                    <label className={labelCls}>Size ({category === "soap" ? "oz" : "mL"}) — optional</label>
                     <input
                       type="number"
                       min="0"
-                      step="1"
-                      value={ageMonths}
-                      onChange={(e) => setAgeMonths(e.target.value)}
-                      placeholder="e.g. 12"
+                      step="any"
+                      value={size}
+                      onChange={(e) => setSize(e.target.value)}
+                      placeholder={category === "soap" ? "e.g. 4" : "e.g. 100"}
                       className={inputCls}
                     />
                   </div>
-                </div>
+                </>
               )}
 
               {/* Description */}

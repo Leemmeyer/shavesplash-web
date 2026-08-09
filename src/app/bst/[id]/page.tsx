@@ -24,6 +24,7 @@ type Listing = {
   views: number;
   percentRemaining: number | null;
   ageMonths: number | null;
+  size: number | null;
   photos: Photo[];
   seller: Seller;
 };
@@ -150,6 +151,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               {listing.ageMonths != null && (
                 <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
                   ~{listing.ageMonths} {listing.ageMonths === 1 ? "month" : "months"} old
+                </span>
+              )}
+              {listing.size != null && (
+                <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
+                  {listing.size}{listing.category === "soap" ? " oz" : " mL"}
                 </span>
               )}
             </div>

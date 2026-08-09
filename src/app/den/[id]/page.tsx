@@ -67,6 +67,8 @@ type InventoryItem = {
   edpedtScentStrength?: number;
   // Preshave
   preshaveType?: string;
+  // Size: oz for soaps/balms, mL for aftershaves/edpedt
+  size?: number;
   // Scent info (soap & aftershave)
   topNotes?: string; heartNotes?: string; baseNotes?: string;
   scentDescription?: string; inspiration?: string; scentFamily?: string; familySubtype?: string;
@@ -137,6 +139,9 @@ function ItemDetailContent({ id }: { id: string }) {
   // Edit form — preshave
   const [editPreshaveType, setEditPreshaveType] = useState<string | undefined>(undefined);
 
+  // Edit form — size (oz for soaps/balms, mL for aftershaves/edpedt)
+  const [editSize, setEditSize] = useState("");
+
   // Edit form — scent info (soap & aftershave)
   const [editShaveSplashUrl, setEditShaveSplashUrl] = useState("");
   const [editTopNotes, setEditTopNotes] = useState("");
@@ -205,6 +210,7 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditAftershaveScentStrength(item.aftershaveScentStrength ?? 0);
     setEditEdpedtScentStrength(item.edpedtScentStrength ?? 0);
     setEditPreshaveType(item.preshaveType);
+    setEditSize(item.size != null ? String(item.size) : "");
     setEditShaveSplashUrl(item.shaveSplashUrl ?? "");
     setEditTopNotes(item.topNotes ?? "");
     setEditHeartNotes(item.heartNotes ?? "");
@@ -255,6 +261,7 @@ function ItemDetailContent({ id }: { id: string }) {
     const isAftershave = catId === "aftershaves";
     const isEdpEdt = catId === "edpedt";
     const isPreshave = catId === "preshaves";
+    const isBalm = catId === "balms";
     const isStraight = isRazor && editEdgeType === "Straight";
 
     const data: Record<string, unknown> = {};
@@ -311,6 +318,10 @@ function ItemDetailContent({ id }: { id: string }) {
     }
     if (isPreshave) {
       if (editPreshaveType) data.preshaveType = editPreshaveType;
+    }
+    if (isSoap || isAftershave || isEdpEdt || isBalm) {
+      const parsedSize = parseFloat(editSize);
+      if (!isNaN(parsedSize) && parsedSize > 0) data.size = parsedSize;
     }
 
     try {
@@ -374,6 +385,9 @@ function ItemDetailContent({ id }: { id: string }) {
   const isAftershave = item.categoryId === "aftershaves";
   const isEdpEdt = item.categoryId === "edpedt";
   const isPreshave = item.categoryId === "preshaves";
+  const isBalm = item.categoryId === "balms";
+  const hasSize = isSoap || isAftershave || isEdpEdt || isBalm;
+  const sizeUnit = (isSoap || isBalm) ? 'oz' : 'mL';
   const isStraight = isRazor && item.edgeType === "Straight";
   const editIsStraight = isRazor && editEdgeType === "Straight";
 
@@ -495,12 +509,19 @@ function ItemDetailContent({ id }: { id: string }) {
 
             {/* Preshave */}
             {item.preshaveType && <Spec label="Type" value={item.preshaveType} />}
+
+            {/* Size */}
+            {item.size != null && (() => {
+              const unit = ['soaps', 'balms'].includes(item.categoryId) ? 'oz' : 'mL';
+              return <Spec label={`Size (${unit})`} value={String(item.size)} />;
+            })()}
           </div>
 
           {isBSTEligible && !showEdit && (
             <CreateListingModal
               prefillTitle={[item.brand, item.name].filter(Boolean).join(' ')}
               prefillCategory={BST_CATEGORY_MAP[item.categoryId]}
+              prefillSize={item.size}
               trigger={
                 <button className="w-full border border-[#c9a050]/30 text-[#c9a050] py-3 rounded-xl hover:bg-[#c9a050]/10 transition-colors font-semibold text-sm">
                   🛒 List in Marketplace (BST)
@@ -805,6 +826,21 @@ function ItemDetailContent({ id }: { id: string }) {
             {isPreshave && (
               <Field label="Type">
                 <SegmentedControl options={PRESHAVE_TYPE_OPTIONS as unknown as string[]} value={editPreshaveType} onChange={setEditPreshaveType} />
+              </Field>
+            )}
+
+            {/* Size field */}
+            {hasSize && (
+              <Field label={`Size (${sizeUnit}) — optional`}>
+                <input
+                  type="number"
+                  value={editSize}
+                  onChange={(e) => setEditSize(e.target.value)}
+                  placeholder={sizeUnit === 'oz' ? 'e.g. 4' : 'e.g. 100'}
+                  className="w-full bg-[#2a2a2a] border border-white/10 rounded-xl px-4 py-2.5 text-[#f5f2eb] text-sm focus:outline-none focus:border-[#c9a050]/50"
+                  min="0"
+                  step="any"
+                />
               </Field>
             )}
           </div>

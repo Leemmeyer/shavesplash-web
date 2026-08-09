@@ -34,6 +34,7 @@ type Listing = {
   views: number;
   percentRemaining: number | null;
   ageMonths: number | null;
+  size: number | null;
   photos: Photo[];
   seller: Seller;
 };
@@ -188,6 +189,9 @@ function ListingCard({ listing }: { listing: Listing }) {
             {listing.condition}
             {listing.percentRemaining != null && (
               <span className="block text-[10px] text-[#c9a050]">{listing.percentRemaining}% left</span>
+            )}
+            {listing.size != null && (
+              <span className="block text-[10px] text-gray-400">{listing.size}{["soap"].includes(listing.category) ? "oz" : "mL"}</span>
             )}
           </div>
           {listing.isExpertListing && (

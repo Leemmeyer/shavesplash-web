@@ -220,8 +220,9 @@ function AnalyticsContent() {
 
           <div className="space-y-14">
             <PersonalRecordsSection
-              logs={logs} inventory={inventory}
+              logs={filteredLogs} inventory={inventory}
               resultOptions={resultOptions} scoreParameters={scoreParameters}
+              range={range}
             />
             <ResultTrendSection logs={filteredLogs} resultOptions={resultOptions} />
             <HeatmapSection logs={logs} resultOptions={resultOptions} />
@@ -1076,9 +1077,10 @@ function CorrelationSection({ logs, resultOptions, scoreParameters }: {
 }
 
 // ── Section: Personal Records ──────────────────────────────────────────────
-function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameters: _scoreParameters }: {
+function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameters: _scoreParameters, range }: {
   logs: ShaveLog[]; inventory: InventoryItem[];
   resultOptions: string[]; scoreParameters: ScoreParameter[];
+  range: Range;
 }) {
   const bestResultShave = useMemo(() => {
     return logs.reduce<ShaveLog | null>((best, log) => {
@@ -1135,7 +1137,7 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
     <section>
       <div className="mb-6">
         <h2 className="text-[#f5f2eb] font-semibold text-xl mb-1">Personal Records</h2>
-        <p className="text-gray-500 text-xs">Your best shaves of all time</p>
+        <p className="text-gray-500 text-xs">Your best shaves · {RANGE_OPTIONS.find(r => r.key === range)?.label ?? "All Time"}</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">

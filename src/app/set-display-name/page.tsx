@@ -66,12 +66,6 @@ function SetDisplayNameForm() {
           {saving ? "Saving…" : "Continue"}
         </button>
 
-        <button
-          onClick={() => router.replace(redirect)}
-          className="w-full text-gray-600 text-sm hover:text-gray-400 transition-colors"
-        >
-          Skip for now
-        </button>
       </div>
     </div>
   );

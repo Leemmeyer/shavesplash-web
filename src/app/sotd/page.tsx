@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
+import AdminRemoveButton from "@/components/AdminRemoveButton";
+
+const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
 const SOTD_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 const CATEGORY_ICONS: Record<string, string> = {
@@ -101,10 +104,12 @@ function resultColor(rank?: number, total?: number): string {
 }
 
 // ── SOTD Card ────────────────────────────────────────────────────────────────
-function SotdCard({ post, onReact, session }: {
+function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   post: SotdPost;
   onReact: (logId: string, emoji: string) => void;
   session: { user: { id: string } } | null;
+  isAdmin: boolean;
+  onRemoved: (id: string) => void;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentBody, setCommentBody] = useState("");
@@ -204,7 +209,16 @@ function SotdCard({ post, onReact, session }: {
       {/* Header: name + date + result */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3">
         <div>
-          <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
+            {isAdmin && (
+              <AdminRemoveButton
+                endpoint={`/api/sotd/${post.id}/admin`}
+                onRemoved={() => onRemoved(post.id)}
+                label="Remove"
+              />
+            )}
+          </div>
           <p className="text-gray-600 text-xs">{formatDate(post.date)}</p>
         </div>
         <span
@@ -523,6 +537,7 @@ function StatsSidebar() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SotdPage() {
   const { session } = useSession();
+  const admin = session?.user.email === ADMIN_EMAIL;
   const [posts, setPosts] = useState<SotdPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
@@ -594,7 +609,14 @@ export default function SotdPage() {
           ) : (
             <div className="space-y-4">
               {posts.map((post) => (
-                <SotdCard key={post.id} post={post} onReact={handleReact} session={session} />
+                <SotdCard
+                  key={post.id}
+                  post={post}
+                  onReact={handleReact}
+                  session={session}
+                  isAdmin={admin}
+                  onRemoved={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
+                />
               ))}
               {hasMore && (
                 <button

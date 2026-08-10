@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
+import AdminRemoveButton from "@/components/AdminRemoveButton";
+
+const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
 const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 
@@ -136,6 +139,7 @@ function EmojiReactions({ reactions, onReact, session }: {
 export default function ThreadPage() {
   const { id } = useParams<{ id: string }>();
   const { session } = useSession();
+  const isAdmin = session?.user.email === ADMIN_EMAIL;
   const router = useRouter();
   const [thread, setThread] = useState<Thread | null>(null);
   const [replyBody, setReplyBody] = useState("");
@@ -223,14 +227,23 @@ export default function ThreadPage() {
           <span className="text-xs bg-[#c9a050]/10 text-[#c9a050] px-3 py-1 rounded-full">
             {CATEGORY_LABELS[thread.category] ?? thread.category}
           </span>
-          {session?.user.id === thread.author.id && (
-            <button
-              onClick={handleDeleteThread}
-              className="text-xs text-red-500 hover:text-red-400 transition-colors"
-            >
-              Delete
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {session?.user.id === thread.author.id && (
+              <button
+                onClick={handleDeleteThread}
+                className="text-xs text-red-500 hover:text-red-400 transition-colors"
+              >
+                Delete
+              </button>
+            )}
+            {isAdmin && (
+              <AdminRemoveButton
+                endpoint={`/api/forum/threads/${id}/admin`}
+                onRemoved={() => router.push("/forum")}
+                label="Remove thread"
+              />
+            )}
+          </div>
         </div>
         <h1 className="font-[family-name:var(--font-fredericka)] text-2xl text-[#f5f2eb] mb-4 leading-snug">
           {thread.title}
@@ -264,14 +277,23 @@ export default function ThreadPage() {
                   <span>{timeAgo(reply.createdAt)}</span>
                   <span className="text-gray-700">#{i + 1}</span>
                 </div>
-                {session?.user.id === reply.author.id && (
-                  <button
-                    onClick={() => handleDeleteReply(reply.id)}
-                    className="text-xs text-red-500/60 hover:text-red-400 transition-colors"
-                  >
-                    Delete
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {session?.user.id === reply.author.id && (
+                    <button
+                      onClick={() => handleDeleteReply(reply.id)}
+                      className="text-xs text-red-500/60 hover:text-red-400 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <AdminRemoveButton
+                      endpoint={`/api/forum/replies/${reply.id}/admin`}
+                      onRemoved={() => setThread((t) => t ? { ...t, replies: t.replies.filter((r) => r.id !== reply.id) } : t)}
+                      label="Remove reply"
+                    />
+                  )}
+                </div>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-3">{reply.body}</p>
               {reply.photoUrl && (

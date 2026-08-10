@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ContactSellerButton from "@/components/ContactSellerButton";
 import SellerActions from "@/components/SellerActions";
+import AdminRemoveListing from "@/components/AdminRemoveListing";
 
 const BACKEND = "https://api.shavesplash.app";
 
@@ -196,6 +197,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
             {/* Seller controls (only shown to the listing owner) */}
             <SellerActions listingId={listing.id} sellerId={listing.seller.id} />
+
+            {/* Admin controls */}
+            <AdminRemoveListing listingId={listing.id} />
 
             {/* Contact CTA */}
             <ContactSellerButton

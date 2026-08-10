@@ -188,60 +188,61 @@ export default function ForumPage() {
           {threads.map((thread) => {
             const unread = isUnread(thread);
             return (
-            <div key={thread.id} className="relative">
-              <Link
-                href={`/forum/${thread.id}`}
-                onClick={() => markRead(thread.id)}
-                className={`flex items-start gap-4 rounded-2xl p-3 transition-colors group border-l-[3px] ${
-                  unread
-                    ? "bg-[#242424] hover:bg-[#2a2a2a] border border-white/5 border-l-[#c9a050]/50"
-                    : "bg-[#1c1c1c] hover:bg-[#222222] border border-white/5 border-l-transparent"
-                }`}
-              >
-                {thread.isPinned && (
-                  <span className="text-[#c9a050] text-xs mt-0.5 shrink-0">📌</span>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3 mb-1.5">
-                    <h2 className={`font-semibold group-hover:text-[#c9a050] transition-colors leading-snug flex items-center gap-2 ${unread ? "text-[#f5f2eb]" : "text-gray-400"}`}>
-                      {unread && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] shrink-0 inline-block" />}
-                      {thread.title}
-                    </h2>
-                    <span className="text-xs text-gray-600 shrink-0 mt-0.5">
+            <Link
+              key={thread.id}
+              href={`/forum/${thread.id}`}
+              onClick={() => markRead(thread.id)}
+              className={`flex items-start gap-4 rounded-2xl p-3 transition-colors group border-l-[3px] ${
+                unread
+                  ? "bg-[#242424] hover:bg-[#2a2a2a] border border-white/5 border-l-[#c9a050]/50"
+                  : "bg-[#1c1c1c] hover:bg-[#222222] border border-white/5 border-l-transparent"
+              }`}
+            >
+              {thread.isPinned && (
+                <span className="text-[#c9a050] text-xs mt-0.5 shrink-0">📌</span>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-3 mb-1.5">
+                  <h2 className={`flex-1 font-semibold group-hover:text-[#c9a050] transition-colors leading-snug flex items-center gap-2 ${unread ? "text-[#f5f2eb]" : "text-gray-400"}`}>
+                    {unread && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a050] shrink-0 inline-block" />}
+                    {thread.title}
+                  </h2>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-gray-600 mt-0.5">
                       {timeAgo(thread.updatedAt)}
                     </span>
+                    {isAdmin && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <AdminRemoveButton
+                          endpoint={`/api/forum/threads/${thread.id}/admin`}
+                          onRemoved={() => setThreads((prev) => prev.filter((t) => t.id !== thread.id))}
+                          label="Remove"
+                        />
+                      </div>
+                    )}
                   </div>
-                  <p className={`text-sm line-clamp-2 mb-3 ${unread ? "text-gray-500" : "text-gray-600"}`}>{thread.body}</p>
-                  <div className="flex items-center gap-3 text-xs text-gray-600 min-w-0">
-                    <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full shrink-0">
-                      {categoryLabel(thread.category)}
-                    </span>
-                    <span className="shrink-0">by {thread.author.profile?.displayName ?? thread.author.name}</span>
-                    <div className="ml-auto flex items-center gap-1.5 min-w-0 overflow-hidden">
-                      <span className="shrink-0">{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
-                      {thread.lastReply && (
-                        <span className="text-gray-700 truncate">
-                          · last reply by{" "}
-                          <span className="text-gray-500">
-                            {thread.lastReply.author.profile?.displayName ?? thread.lastReply.author.name}
-                          </span>
-                          {" "}· {timeAgo(thread.lastReply.createdAt)}
+                </div>
+                <p className={`text-sm line-clamp-2 mb-3 ${unread ? "text-gray-500" : "text-gray-600"}`}>{thread.body}</p>
+                <div className="flex items-center gap-3 text-xs text-gray-600 min-w-0">
+                  <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full shrink-0">
+                    {categoryLabel(thread.category)}
+                  </span>
+                  <span className="shrink-0">by {thread.author.profile?.displayName ?? thread.author.name}</span>
+                  <div className="ml-auto flex items-center gap-1.5 min-w-0 overflow-hidden">
+                    <span className="shrink-0">{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
+                    {thread.lastReply && (
+                      <span className="text-gray-700 truncate">
+                        · last reply by{" "}
+                        <span className="text-gray-500">
+                          {thread.lastReply.author.profile?.displayName ?? thread.lastReply.author.name}
                         </span>
-                      )}
-                    </div>
+                        {" "}· {timeAgo(thread.lastReply.createdAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </Link>
-              {isAdmin && (
-                <div className="absolute top-2 right-2">
-                  <AdminRemoveButton
-                    endpoint={`/api/forum/threads/${thread.id}/admin`}
-                    onRemoved={() => setThreads((prev) => prev.filter((t) => t.id !== thread.id))}
-                    label="Remove"
-                  />
-                </div>
-              )}
-            </div>
+              </div>
+            </Link>
             );
           })}
         </div>

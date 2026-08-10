@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyOTP } from "@/lib/auth";
 import { useSession } from "@/lib/session-context";
+import { api } from "@/lib/api";
 
 const NUM_DIGITS = 6;
 
@@ -75,6 +76,15 @@ function VerifyOTPForm() {
       setLoading(false);
     } else {
       refresh();
+      // Check if user has a display name; if not, send them to set one first
+      try {
+        const { profile } = await api.get<{ profile: { displayName?: string | null } }>("/api/bst/profile");
+        if (!profile.displayName) {
+          const dest = redirect || "/den";
+          router.replace(`/set-display-name?redirect=${encodeURIComponent(dest)}`);
+          return;
+        }
+      } catch { /* proceed normally if check fails */ }
       router.replace(redirect || "/den");
     }
   };

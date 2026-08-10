@@ -67,9 +67,9 @@ function CategoryIcon({ catId }: { catId: string }) {
 }
 
 type ScoreEntry = { value: number; shortName: string } | number;
-type SelectedItem = { itemId?: string; itemName?: string; plate?: string; bladeUses?: number };
+type SelectedItem = { itemId?: string; itemName?: string; plate?: string; bladeUses?: number; categoryName?: string };
 type RazorPlate = { name: string; type: string; bladeGap?: number; exposure?: number };
-type InventoryItem = { id: string; categoryId: string; name: string; brand: string; plates?: RazorPlate[] };
+type InventoryItem = { id: string; categoryId: string; name: string; brand: string; plates?: RazorPlate[]; _categoryName?: string };
 
 type ShaveLog = {
   id: string; date: number; result: string;

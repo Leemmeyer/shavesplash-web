@@ -7,6 +7,8 @@ import { signOut } from "@/lib/auth";
 import { useSession } from "@/lib/session-context";
 import { api } from "@/lib/api";
 
+const ADMIN_EMAIL = "leemeyernyc@gmail.com";
+
 const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/den", label: "My Den" },
   { href: "/logs", label: "History" },
@@ -22,6 +24,7 @@ export default function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { session, loading, refresh } = useSession();
+  const isAdmin = session?.user.email === ADMIN_EMAIL;
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [forumUnread, setForumUnread] = useState(0);
@@ -144,9 +147,17 @@ export default function AppNav() {
           </div>
         </div>
 
-        {/* Row 2: Upgrade only — desktop only */}
+        {/* Row 2: Admin + Upgrade — desktop only */}
         {session && (
-          <div className="hidden md:flex items-center justify-end max-w-7xl mx-auto w-full px-6 pt-2 pb-2 border-t border-white/5">
+          <div className="hidden md:flex items-center justify-between max-w-7xl mx-auto w-full px-6 pt-2 pb-2 border-t border-white/5">
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                className="text-xs text-red-400/60 hover:text-red-400 transition-colors font-medium"
+              >
+                Admin Panel
+              </Link>
+            ) : <span />}
             <Link
               href="/subscribe"
               className={`text-sm font-semibold whitespace-nowrap transition-colors ${
@@ -191,6 +202,14 @@ export default function AppNav() {
               </Link>
             ))}
             <div className="h-px bg-white/5 my-2" />
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="px-4 py-3 text-sm text-red-400/70 hover:text-red-400 transition-colors font-medium"
+              >
+                Admin Panel
+              </Link>
+            )}
             <div className="px-4 py-2 text-xs text-gray-600">{session.user.email}</div>
             <button
               onClick={handleSignOut}

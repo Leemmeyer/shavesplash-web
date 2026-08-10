@@ -15,7 +15,10 @@ const CAT_LABELS: Record<string, string> = {
   preshaves: "Pre-Shaves", edpedt: "EDP / EDT",
 };
 
-const SCORE_ORDER = ["efficiency", "comfort", "consistency", "easeofuse", "ease of use", "composite", "overall"];
+const FIXED_SCORE_KEYS = ["efficiency", "comfort", "consistency", "easeofuse"] as const;
+const FIXED_SCORE_LABELS: Record<string, string> = {
+  efficiency: "Eff", comfort: "Comf", consistency: "Cons", easeofuse: "Ease",
+};
 
 const PERIODS: { key: "week" | "month" | "all"; label: string }[] = [
   { key: "week", label: "This Week" },
@@ -99,16 +102,7 @@ export default function SotdGraphsPage() {
       .finally(() => setLoading(false));
   }, [period]);
 
-  const allScoreKeys = data
-    ? Array.from(
-        new Set(data.razorScores.flatMap(r => Object.keys(r.scores)))
-      ).filter(k => k.toLowerCase() !== "composite")
-       .sort((a, b) => {
-        const ai = SCORE_ORDER.indexOf(a.toLowerCase());
-        const bi = SCORE_ORDER.indexOf(b.toLowerCase());
-        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-      })
-    : [];
+  const allScoreKeys = FIXED_SCORE_KEYS;
 
   // Compute composite avg per razor as mean of all score avgs
   const razorsWithComposite = data
@@ -214,7 +208,7 @@ export default function SotdGraphsPage() {
                         {allScoreKeys.map(k => (
                           <SortTh
                             key={k}
-                            label={data.razorScores.find(r => r.scores[k])?.scores[k]?.shortName ?? k}
+                            label={FIXED_SCORE_LABELS[k] ?? k}
                             colKey={k}
                             sortKey={sortKey}
                             sortDir={sortDir}

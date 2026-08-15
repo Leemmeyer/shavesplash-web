@@ -155,6 +155,7 @@ function ItemDetailContent({ id }: { id: string }) {
   // Catalog picker (edit form)
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
 
   // Edit form — plates (razors)
   const [editPlates, setEditPlates] = useState<RazorPlate[]>([]);
@@ -222,6 +223,7 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditPlates(item.plates ? item.plates.map(p => ({ ...p })) : []);
     setEditingPlateIdx(null);
     setEditError(null);
+    setEditPhotoPreview(null);
     setShowEdit(true);
   };
 
@@ -338,6 +340,13 @@ function ItemDetailContent({ id }: { id: string }) {
         notes: editNotes.trim() || undefined,
         ...data,
       });
+      if (editPhotoPreview) {
+        try {
+          const r = await api.post<{ photoUrl: string }>(`/api/inventory/${item.id}/photo`, { data: editPhotoPreview });
+          setPhotoUrl(r.photoUrl);
+        } catch {}
+        setEditPhotoPreview(null);
+      }
       setShowEdit(false);
     } catch (e) {
       setEditError(e instanceof Error ? e.message : "Failed to save");
@@ -541,6 +550,39 @@ function ItemDetailContent({ id }: { id: string }) {
           </div>
 
           <div className="space-y-5">
+            {/* Photo */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Photo</label>
+              <div
+                className="relative aspect-square w-28 bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/10 cursor-pointer group"
+                onClick={() => (document.getElementById('den-photo-upload') as HTMLInputElement)?.click()}
+              >
+                {(editPhotoPreview ?? photoUrl)
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={editPhotoPreview ?? photoUrl!} alt="" className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">
+                      {CATEGORY_ICONS[item.categoryId] ?? "📦"}
+                    </div>
+                }
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                  <span className="text-white text-xs font-semibold">{(editPhotoPreview ?? photoUrl) ? "Change Photo" : "Add Photo"}</span>
+                </div>
+              </div>
+              <input
+                id="den-photo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => setEditPhotoPreview(reader.result as string);
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </div>
+
             {/* Catalog picker for soaps and aftershaves */}
             {(isSoap || isAftershave) && (
               <button

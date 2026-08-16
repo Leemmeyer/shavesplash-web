@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 const ACTION_LABELS: Record<string, string> = {
+  user_signup: "New User",
   forum_thread_create: "Forum Post",
   forum_reply: "Forum Reply",
   forum_reaction: "Forum Reaction",
@@ -15,6 +16,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
+  user_signup: "#4ade80",
   forum_thread_create: "#c9a050",
   forum_reply: "#f59e0b",
   forum_reaction: "#fbbf24",

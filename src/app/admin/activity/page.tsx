@@ -55,6 +55,7 @@ type UserRow = { userId: string; userEmail: string | null; displayName: string |
 type DailyPoint = { date: string; dau: number; totalEvents: number };
 type ActivityRow = { id: string; action: string; path: string | null; metadata: string | null; createdAt: string };
 type EventRow = { id: string; userId: string | null; userEmail: string | null; displayName: string | null; action: string; path: string | null; createdAt: string };
+type NewUserRow = { id: string; email: string; name: string | null; createdAt: string; profile: { displayName: string | null } | null };
 
 // ── Trend Chart ───────────────────────────────────────────────────────────────
 function TrendChart({ daily }: { daily: DailyPoint[] }) {
@@ -146,6 +147,8 @@ export default function ActivityPage() {
   const [loading, setLoading] = useState(true);
   const [showEvents, setShowEvents] = useState(false);
   const [events, setEvents] = useState<EventRow[] | null>(null);
+  const [showNewUsers, setShowNewUsers] = useState(false);
+  const [newUsers, setNewUsers] = useState<NewUserRow[] | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -182,6 +185,24 @@ export default function ActivityPage() {
             { label: "Events (30d)", value: summary.totalEvents30d },
           ].map(({ label, value }) => {
             const isEvents = label === "Events (30d)";
+            const isNewUsers = label === "New (30d)";
+            if (isNewUsers) return (
+              <button
+                key={label}
+                onClick={() => {
+                  setShowNewUsers((v) => !v);
+                  if (!newUsers) {
+                    api.get<{ users: NewUserRow[] }>("/api/admin/monitoring/new-users")
+                      .then((d) => setNewUsers(d.users))
+                      .catch(() => setNewUsers([]));
+                  }
+                }}
+                className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 text-center hover:border-[#c9a050]/30 transition-colors cursor-pointer"
+              >
+                <p className="text-2xl font-bold text-[#c9a050]">{value}</p>
+                <p className="text-gray-500 text-xs mt-1">{label} {showNewUsers ? "▲" : "▼"}</p>
+              </button>
+            );
             return isEvents ? (
               <button
                 key={label}
@@ -205,6 +226,28 @@ export default function ActivityPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* New users feed */}
+      {showNewUsers && (
+        <div className="bg-[#1e1e1e] border border-[#c9a050]/20 rounded-2xl p-5">
+          <h2 className="text-[#f5f2eb] font-semibold mb-4">New Users — Last 30 Days</h2>
+          {newUsers === null ? (
+            <div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" /></div>
+          ) : newUsers.length === 0 ? (
+            <p className="text-gray-600 text-sm">No new users in the last 30 days.</p>
+          ) : (
+            <div className="space-y-1 max-h-96 overflow-y-auto pr-1">
+              {newUsers.map((u) => (
+                <div key={u.id} className="flex items-center gap-3 py-2 border-b border-white/5">
+                  <span className="text-gray-600 text-[10px] whitespace-nowrap w-28 shrink-0">{formatDate(u.createdAt)}</span>
+                  <span className="text-[#f5f2eb] text-sm flex-1 truncate">{u.profile?.displayName ?? u.name ?? "—"}</span>
+                  <span className="text-gray-500 text-xs truncate max-w-48">{u.email}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

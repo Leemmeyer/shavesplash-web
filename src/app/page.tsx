@@ -31,7 +31,7 @@ export default function Home() {
               <AppleIcon />
               iOS App
             </Link>
-            <Link href="https://play.google.com/store/apps/details?id=com.shavesplash" target="_blank" className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm">
+            <Link href="https://play.google.com/store/apps/details?id=com.vibecode.shavesplash" target="_blank" className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm">
               <AndroidIcon />
               Android App
             </Link>

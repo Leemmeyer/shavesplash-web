@@ -54,6 +54,7 @@ type Summary = {
 type UserRow = { userId: string; userEmail: string | null; displayName: string | null; lastSeen: string; lastAction: string; count: number };
 type DailyPoint = { date: string; dau: number; totalEvents: number };
 type ActivityRow = { id: string; action: string; path: string | null; metadata: string | null; createdAt: string };
+type EventRow = { id: string; userId: string | null; userEmail: string | null; displayName: string | null; action: string; path: string | null; createdAt: string };
 
 // ── Trend Chart ───────────────────────────────────────────────────────────────
 function TrendChart({ daily }: { daily: DailyPoint[] }) {
@@ -143,6 +144,8 @@ export default function ActivityPage() {
   const [daily, setDaily] = useState<DailyPoint[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEvents, setShowEvents] = useState(false);
+  const [events, setEvents] = useState<EventRow[] | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -177,12 +180,54 @@ export default function ActivityPage() {
             { label: "WAU", value: summary.wau },
             { label: "DAU", value: summary.dau },
             { label: "Events (30d)", value: summary.totalEvents30d },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-[#c9a050]">{value}</p>
-              <p className="text-gray-500 text-xs mt-1">{label}</p>
+          ].map(({ label, value }) => {
+            const isEvents = label === "Events (30d)";
+            return isEvents ? (
+              <button
+                key={label}
+                onClick={() => {
+                  setShowEvents((v) => !v);
+                  if (!events) {
+                    api.get<{ events: EventRow[] }>("/api/admin/monitoring/events")
+                      .then((d) => setEvents(d.events))
+                      .catch(() => setEvents([]));
+                  }
+                }}
+                className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 text-center hover:border-[#c9a050]/30 transition-colors cursor-pointer"
+              >
+                <p className="text-2xl font-bold text-[#c9a050]">{value}</p>
+                <p className="text-gray-500 text-xs mt-1">{label} {showEvents ? "▲" : "▼"}</p>
+              </button>
+            ) : (
+              <div key={label} className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-[#c9a050]">{value}</p>
+                <p className="text-gray-500 text-xs mt-1">{label}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Events feed */}
+      {showEvents && (
+        <div className="bg-[#1e1e1e] border border-[#c9a050]/20 rounded-2xl p-5">
+          <h2 className="text-[#f5f2eb] font-semibold mb-4">Events — Last 30 Days</h2>
+          {events === null ? (
+            <div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" /></div>
+          ) : events.length === 0 ? (
+            <p className="text-gray-600 text-sm">No events found.</p>
+          ) : (
+            <div className="space-y-1 max-h-96 overflow-y-auto pr-1">
+              {events.map((e) => (
+                <div key={e.id} className="flex items-center gap-3 py-1.5 border-b border-white/5">
+                  <span className="text-gray-600 text-[10px] whitespace-nowrap w-28 shrink-0">{formatDate(e.createdAt)}</span>
+                  <span className="text-xs font-semibold shrink-0 w-24" style={{ color: actionColor(e.action) }}>{actionLabel(e.action)}</span>
+                  <span className="text-gray-400 text-xs truncate flex-1">{e.displayName ?? e.userEmail ?? e.userId ?? "—"}</span>
+                  {e.path && <span className="text-gray-600 text-[10px] truncate max-w-32">{e.path}</span>}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 

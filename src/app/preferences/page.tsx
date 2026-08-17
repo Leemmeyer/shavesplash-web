@@ -214,8 +214,11 @@ function PreferencesContent() {
         {/* Danger Zone */}
         <div className="bg-[#1e1e1e] rounded-2xl border border-red-500/20 p-6">
           <h2 className="text-red-400 font-semibold text-base mb-1">Danger Zone</h2>
-          <p className="text-gray-500 text-xs mb-4">
+          <p className="text-gray-500 text-xs mb-2">
             Permanently deletes selected data from the cloud. Your account is kept. This cannot be undone.
+          </p>
+          <p className="text-gray-600 text-xs mb-4">
+            To re-upload your data from your phone afterward, open ShaveSplash on your iPhone and go to <strong className="text-gray-500">Settings → Reset Cloud &amp; Re-sync</strong>.
           </p>
           {!showClearConfirm ? (
             <button

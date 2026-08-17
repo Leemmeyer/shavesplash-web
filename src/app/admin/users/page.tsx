@@ -36,7 +36,9 @@ function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending }:
   expertPending: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -46,17 +48,26 @@ function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending }:
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  function handleOpen() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setOpenUpward(rect.bottom + 160 > window.innerHeight);
+    }
+    setOpen((o) => !o);
+  }
+
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={btnRef}
+        onClick={handleOpen}
         className="text-gray-500 hover:text-white transition-colors px-2 py-1 rounded text-base leading-none"
         title="Actions"
       >
         ⋯
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 min-w-[160px] py-1 overflow-hidden">
+        <div className={`absolute right-0 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 min-w-[160px] py-1 overflow-hidden ${openUpward ? "bottom-full mb-1" : "top-full mt-1"}`}>
           <button
             onClick={() => { onToggleExpert(); setOpen(false); }}
             disabled={expertPending}

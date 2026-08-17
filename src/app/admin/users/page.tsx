@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
 type UserRow = {
@@ -28,12 +28,77 @@ function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending }: {
+  user: UserRow;
+  onDelete: () => void;
+  onClear: () => void;
+  onToggleExpert: () => void;
+  expertPending: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-gray-500 hover:text-white transition-colors px-2 py-1 rounded text-base leading-none"
+        title="Actions"
+      >
+        ⋯
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 min-w-[160px] py-1 overflow-hidden">
+          <button
+            onClick={() => { onToggleExpert(); setOpen(false); }}
+            disabled={expertPending}
+            className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors disabled:opacity-40"
+          >
+            {expertPending ? "…" : user.profile?.isExpert ? "Revoke Expert" : "Grant Expert"}
+          </button>
+          <div className="border-t border-white/5 my-1" />
+          <button
+            onClick={() => { onClear(); setOpen(false); }}
+            className="w-full text-left px-4 py-2.5 text-sm text-amber-400 hover:bg-white/5 transition-colors"
+          >
+            Clear Data
+          </button>
+          <button
+            onClick={() => { onDelete(); setOpen(false); }}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 transition-colors"
+          >
+            Delete User
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  // Delete user
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Clear data
+  const [confirmClearUser, setConfirmClearUser] = useState<UserRow | null>(null);
+  const [clearConfirmText, setClearConfirmText] = useState("");
+  const [clearing, setClearing] = useState(false);
+  const [clearResult, setClearResult] = useState<string | null>(null);
+
+  // Expert toggle
   const [expertPending, setExpertPending] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,7 +115,23 @@ export default function UsersPage() {
       setUsers((prev) => prev.filter((u) => u.id !== userId));
     } catch {}
     setDeleting(null);
-    setConfirmId(null);
+    setConfirmDeleteId(null);
+  }
+
+  async function handleClearData() {
+    if (!confirmClearUser || clearConfirmText !== "DELETE" || clearing) return;
+    setClearing(true);
+    try {
+      const r = await api.delete<{ deleted: { inventory: number; logs: number } }>(
+        `/api/admin/user-data/${confirmClearUser.id}`
+      );
+      setClearResult(`Cleared ${confirmClearUser.email}: ${r.deleted.inventory} den items and ${r.deleted.logs} shave logs deleted.`);
+    } catch {
+      setClearResult("Something went wrong.");
+    }
+    setClearing(false);
+    setConfirmClearUser(null);
+    setClearConfirmText("");
   }
 
   async function handleToggleExpert(userId: string, currentlyExpert: boolean) {
@@ -87,6 +168,13 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
 
+      {clearResult && (
+        <div className="p-4 rounded-xl bg-green-900/30 border border-green-700 text-green-300 text-sm">
+          {clearResult}
+          <button onClick={() => setClearResult(null)} className="ml-3 text-green-500 hover:text-green-300">✕</button>
+        </div>
+      )}
+
       {/* Header + search */}
       <div className="flex items-center justify-between gap-4">
         <p className="text-gray-500 text-sm">{users.length} total users</p>
@@ -118,10 +206,10 @@ export default function UsersPage() {
           <tbody className="divide-y divide-white/5">
             {filtered.map((u) => {
               const displayName = u.profile?.displayName ?? u.name;
-              const isConfirming = confirmId === u.id;
+              const isConfirmingDelete = confirmDeleteId === u.id;
               const isDeleting = deleting === u.id;
               return (
-                <tr key={u.id} className={`transition-colors ${isConfirming ? "bg-red-950/20" : "hover:bg-white/[0.02]"}`}>
+                <tr key={u.id} className="transition-colors hover:bg-white/[0.02]">
                   <td className="px-5 py-3">
                     <p className="text-[#f5f2eb] font-medium truncate max-w-[180px]">{displayName}</p>
                     <p className="text-gray-600 text-[11px] truncate max-w-[180px] md:hidden">{u.email}</p>
@@ -148,50 +236,37 @@ export default function UsersPage() {
                     <span className="text-gray-500 text-xs">{u.lastSeen ? formatDate(u.lastSeen) : <span className="text-gray-700">—</span>}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <div className="flex flex-col items-center gap-1.5">
-                      {u.profile?.isExpert ? (
-                        <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
-                      ) : (
-                        <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
-                      )}
-                      <button
-                        onClick={() => handleToggleExpert(u.id, !!u.profile?.isExpert)}
-                        disabled={expertPending === u.id}
-                        className={`text-[10px] font-semibold rounded-full px-2 py-0.5 border transition-colors cursor-pointer disabled:opacity-40 ${
-                          u.profile?.isExpert
-                            ? "text-gray-500 border-gray-700 hover:text-red-400 hover:border-red-700 bg-transparent"
-                            : "text-[#c9a050] border-[#c9a050]/30 hover:bg-[#c9a050]/10 bg-transparent"
-                        }`}
-                      >
-                        {expertPending === u.id ? "…" : u.profile?.isExpert ? "Revoke" : "Grant Expert"}
-                      </button>
-                    </div>
+                    {u.profile?.isExpert ? (
+                      <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
+                    ) : (
+                      <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {isConfirming ? (
+                    {isConfirmingDelete ? (
                       <span className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleDelete(u.id)}
                           disabled={isDeleting}
-                          className="text-[11px] font-semibold text-red-400 hover:text-red-300 bg-transparent border-none outline-none cursor-pointer disabled:opacity-50"
+                          className="text-[11px] font-semibold text-red-400 hover:text-red-300 cursor-pointer disabled:opacity-50"
                         >
                           {isDeleting ? "Deleting…" : "Confirm"}
                         </button>
                         <button
-                          onClick={() => setConfirmId(null)}
-                          className="text-[11px] text-gray-600 hover:text-gray-400 bg-transparent border-none outline-none cursor-pointer"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-[11px] text-gray-600 hover:text-gray-400 cursor-pointer"
                         >
                           Cancel
                         </button>
                       </span>
                     ) : (
-                      <button
-                        onClick={() => setConfirmId(u.id)}
-                        className="text-gray-700 hover:text-red-500 transition-colors bg-transparent border-none outline-none cursor-pointer text-xs"
-                        title="Delete user"
-                      >
-                        ✕
-                      </button>
+                      <ActionsMenu
+                        user={u}
+                        onDelete={() => setConfirmDeleteId(u.id)}
+                        onClear={() => { setConfirmClearUser(u); setClearConfirmText(""); }}
+                        onToggleExpert={() => handleToggleExpert(u.id, !!u.profile?.isExpert)}
+                        expertPending={expertPending === u.id}
+                      />
                     )}
                   </td>
                 </tr>
@@ -205,6 +280,44 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Clear Data modal */}
+      {confirmClearUser && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-white font-semibold mb-2">Clear Data</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              This will permanently delete all den items and shave logs for{" "}
+              <strong className="text-white">{confirmClearUser.email}</strong>. Their account stays active and data will re-sync from their device.
+            </p>
+            <p className="text-sm text-gray-400 mb-3">
+              Type <span className="font-mono font-bold text-red-400">DELETE</span> to confirm.
+            </p>
+            <input
+              type="text"
+              value={clearConfirmText}
+              onChange={(e) => setClearConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="w-full bg-[#242424] border border-red-500/20 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-red-500/40 mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setConfirmClearUser(null); setClearConfirmText(""); }}
+                className="flex-1 py-2 rounded-lg border border-white/10 text-gray-400 text-sm hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearData}
+                disabled={clearConfirmText !== "DELETE" || clearing}
+                className="flex-1 py-2 rounded-lg bg-red-700 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-40"
+              >
+                {clearing ? "Clearing…" : "Clear Data"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

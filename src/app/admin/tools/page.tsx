@@ -7,7 +7,7 @@ type UserRow = {
   id: string;
   email: string;
   name: string;
-  _count: { shaveLogs: number; inventoryItems: number };
+  _count: { shaveLogs: number; listings: number };
 };
 
 export default function AdminToolsPage() {
@@ -18,7 +18,7 @@ export default function AdminToolsPage() {
   const [result, setResult] = useState<{ email: string; inventory: number; logs: number } | null>(null);
 
   useEffect(() => {
-    api.get<{ users: UserRow[] }>("/api/admin/users").then((r) => {
+    api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users").then((r) => {
       setUsers(r.users);
       setLoading(false);
     });
@@ -51,7 +51,7 @@ export default function AdminToolsPage() {
 
       {result && (
         <div className="mb-6 p-4 rounded-lg bg-green-900/30 border border-green-700 text-green-300 text-sm">
-          Cleared <strong>{result.email}</strong>: {result.inventory} den items and {result.logs} shave logs deleted.
+          Cleared <strong>{result.email}</strong>: {result.inventory} den items and {result.logs} shave logs deleted. They will re-sync from their device on next open.
         </div>
       )}
 
@@ -67,7 +67,7 @@ export default function AdminToolsPage() {
               <div>
                 <p className="text-sm text-white font-medium">{u.email}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {u._count.inventoryItems} den items · {u._count.shaveLogs} shave logs
+                  {u._count.shaveLogs} shave logs · {u._count.listings} BST listings
                 </p>
               </div>
               <button

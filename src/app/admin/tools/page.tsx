@@ -13,15 +13,16 @@ type UserRow = {
 export default function AdminToolsPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [confirm, setConfirm] = useState<UserRow | null>(null);
   const [clearing, setClearing] = useState(false);
   const [result, setResult] = useState<{ email: string; inventory: number; logs: number } | null>(null);
 
   useEffect(() => {
-    api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users").then((r) => {
-      setUsers(r.users);
-      setLoading(false);
-    });
+    api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users")
+      .then((r) => { setUsers(r.users); })
+      .catch((e) => { setLoadError(e.message ?? "Failed to load users"); })
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleClear(user: UserRow) {
@@ -57,6 +58,8 @@ export default function AdminToolsPage() {
 
       {loading ? (
         <p className="text-gray-500 text-sm">Loading users…</p>
+      ) : loadError ? (
+        <p className="text-red-400 text-sm">Error: {loadError}</p>
       ) : (
         <div className="space-y-2">
           {users.map((u) => (

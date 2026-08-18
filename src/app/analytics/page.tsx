@@ -1216,7 +1216,7 @@ function SetupsTableSection({ filteredLogs, inventory }: { filteredLogs: ShaveLo
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-3 w-full text-left group mb-4"
       >
-        <h2 className="text-[#f5f2eb] font-semibold text-lg">Setups Table</h2>
+        <h2 className="text-[#f5f2eb] font-semibold text-lg">Shave Setups</h2>
         <span className="text-xs text-gray-600 font-normal">
           {tableLogs.length} shave{tableLogs.length !== 1 ? "s" : ""}
         </span>

@@ -224,6 +224,7 @@ function AnalyticsContent() {
               resultOptions={resultOptions} scoreParameters={scoreParameters}
               range={range}
             />
+            <SetupsTableSection filteredLogs={filteredLogs} inventory={inventory} />
             <ResultTrendSection logs={filteredLogs} resultOptions={resultOptions} />
             <HeatmapSection logs={logs} resultOptions={resultOptions} />
             <MostUsedGearSection logs={filteredLogs} inventory={inventory} />
@@ -1177,6 +1178,92 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
           ) : <p className="text-gray-600 text-sm">No data</p>}
         </div>
       </div>
+    </section>
+  );
+}
+
+// ── Section: Setups Table ─────────────────────────────────────────────────
+function SetupsTableSection({ filteredLogs, inventory }: { filteredLogs: ShaveLog[]; inventory: InventoryItem[] }) {
+  const [open, setOpen] = useState(false);
+
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const tableLogs = useMemo(() =>
+    [...filteredLogs]
+      .filter(l => l.date >= thirtyDaysAgo)
+      .sort((a, b) => b.date - a.date),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filteredLogs]
+  );
+
+  const activeCats = useMemo(
+    () => CATEGORY_ORDER.filter(c => inventory.some(i => i.categoryId === c)),
+    [inventory]
+  );
+
+  function cellValue(log: ShaveLog, catId: string): string {
+    const sel = log.selectedItems[catId];
+    if (!sel) return "—";
+    if (sel.itemId) {
+      const item = inventory.find(i => i.id === sel.itemId);
+      if (item) return `${item.brand} ${item.name}`.trim();
+    }
+    return sel.itemName ?? "—";
+  }
+
+  return (
+    <section>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-3 w-full text-left group mb-4"
+      >
+        <h2 className="text-[#f5f2eb] font-semibold text-lg">Setups Table</h2>
+        <span className="text-xs text-gray-600 font-normal">
+          {tableLogs.length} shave{tableLogs.length !== 1 ? "s" : ""}
+        </span>
+        <span className={`ml-auto text-gray-500 group-hover:text-gray-300 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
+          ▼
+        </span>
+      </button>
+
+      {open && (
+        tableLogs.length === 0 ? (
+          <p className="text-gray-600 text-sm">No shaves in this period.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-white/5">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-[#1a1a1a] border-b border-white/5">
+                  <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap sticky left-0 bg-[#1a1a1a] z-10">
+                    Date
+                  </th>
+                  {activeCats.map(catId => (
+                    <th key={catId} className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
+                      {CATEGORY_LABELS[catId] ?? catId}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {tableLogs.map((log) => (
+                  <tr key={log.id} className="bg-[#1e1e1e] hover:bg-[#242424] transition-colors">
+                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap sticky left-0 bg-inherit z-10">
+                      {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </td>
+                    {activeCats.map(catId => {
+                      const val = cellValue(log, catId);
+                      return (
+                        <td key={catId} className={`px-4 py-3 text-xs whitespace-nowrap max-w-[180px] truncate ${val === "—" ? "text-gray-700" : "text-gray-300"}`}>
+                          {val}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
     </section>
   );
 }

@@ -146,14 +146,57 @@ export default function ThreadPage() {
   const [replyPhotoDataUrl, setReplyPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [replySearch, setReplySearch] = useState("");
+  const [taggedReplyUsers, setTaggedReplyUsers] = useState<{ id: string; displayName: string }[]>([]);
+  const [replyMentionQuery, setReplyMentionQuery] = useState<string | null>(null);
+  const replySearchInputRef = useRef<HTMLInputElement>(null);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const replyAuthors = useMemo(() => {
+    if (!thread) return [];
+    const seen = new Set<string>();
+    const authors: { id: string; displayName: string }[] = [];
+    for (const r of [{ author: thread.author }, ...thread.replies]) {
+      if (!seen.has(r.author.id)) {
+        seen.add(r.author.id);
+        authors.push({ id: r.author.id, displayName: r.author.profile?.displayName ?? r.author.name });
+      }
+    }
+    return authors.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }, [thread]);
+
+  const replyMentionSuggestions = useMemo(() => {
+    if (replyMentionQuery === null) return [];
+    const q = replyMentionQuery.toLowerCase();
+    return replyAuthors
+      .filter((a) => a.displayName.toLowerCase().includes(q) && !taggedReplyUsers.some((u) => u.id === a.id))
+      .slice(0, 6);
+  }, [replyMentionQuery, replyAuthors, taggedReplyUsers]);
+
+  function handleReplySearchChange(value: string) {
+    setReplySearch(value);
+    const match = value.match(/@([a-zA-Z0-9_ ]*)$/);
+    setReplyMentionQuery(match ? match[1] : null);
+  }
+
+  function handleSelectReplyUser(user: { id: string; displayName: string }) {
+    setReplySearch((prev) => prev.replace(/@[a-zA-Z0-9_ ]*$/, "").trimEnd());
+    setReplyMentionQuery(null);
+    if (!taggedReplyUsers.some((u) => u.id === user.id)) {
+      setTaggedReplyUsers((prev) => [...prev, user]);
+    }
+    replySearchInputRef.current?.focus();
+  }
+
   const filteredReplies = useMemo(() => {
-    if (!thread || !replySearch.trim()) return thread?.replies ?? [];
-    const q = replySearch.toLowerCase();
-    return thread.replies.filter((r) => r.body.toLowerCase().includes(q));
-  }, [thread, replySearch]);
+    if (!thread) return [];
+    const textQuery = replySearch.replace(/@[a-zA-Z0-9_ ]*$/, "").toLowerCase().trim();
+    return thread.replies.filter((r) => {
+      if (taggedReplyUsers.length > 0 && !taggedReplyUsers.some((u) => u.id === r.author.id)) return false;
+      if (textQuery && !r.body.toLowerCase().includes(textQuery)) return false;
+      return true;
+    });
+  }, [thread, replySearch, taggedReplyUsers]);
 
   useEffect(() => {
     if (!id) return;
@@ -274,26 +317,46 @@ export default function ThreadPage() {
 
       {/* Reply search */}
       {thread.replies.length > 2 && (
-        <div className="flex gap-2 mb-4 items-center">
+        <div className="flex gap-2 mb-4 items-start">
           <div className="relative flex-1">
-            <input
-              type="text"
-              value={replySearch}
-              onChange={(e) => setReplySearch(e.target.value)}
-              placeholder="Search this thread…"
-              className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
-            />
-            {replySearch && (
-              <button
-                onClick={() => setReplySearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-xs"
-              >
-                ✕
-              </button>
+            <div
+              className="flex flex-wrap gap-1.5 items-center bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2 focus-within:border-[#c9a050]/40 cursor-text min-h-[38px]"
+              onClick={() => replySearchInputRef.current?.focus()}
+            >
+              {taggedReplyUsers.map((u) => (
+                <span key={u.id} className="flex items-center gap-1 bg-[#c9a050]/15 border border-[#c9a050]/30 text-[#c9a050] text-xs font-medium rounded-full px-2.5 py-1 shrink-0">
+                  @{u.displayName}
+                  <button onMouseDown={(e) => { e.preventDefault(); setTaggedReplyUsers((prev) => prev.filter((t) => t.id !== u.id)); }} className="text-[#c9a050]/60 hover:text-[#c9a050] leading-none ml-0.5">✕</button>
+                </span>
+              ))}
+              <input
+                ref={replySearchInputRef}
+                type="text"
+                value={replySearch}
+                onChange={(e) => handleReplySearchChange(e.target.value)}
+                placeholder={taggedReplyUsers.length === 0 ? "Search this thread… (type @ to filter by user)" : ""}
+                className="flex-1 min-w-[120px] bg-transparent text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none py-0.5"
+              />
+              {(replySearch || taggedReplyUsers.length > 0) && (
+                <button onMouseDown={(e) => { e.preventDefault(); setReplySearch(""); setTaggedReplyUsers([]); setReplyMentionQuery(null); }} className="text-gray-600 hover:text-gray-400 text-xs shrink-0">✕</button>
+              )}
+            </div>
+            {replyMentionSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+                {replyMentionSuggestions.map((u) => (
+                  <button
+                    key={u.id}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelectReplyUser(u); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                  >
+                    <span className="text-[#c9a050]">@</span>{u.displayName}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-          {replySearch && (
-            <span className="text-xs text-gray-600 shrink-0">
+          {(replySearch || taggedReplyUsers.length > 0) && (
+            <span className="text-xs text-gray-600 shrink-0 pt-2.5">
               {filteredReplies.length} of {thread.replies.length}
             </span>
           )}

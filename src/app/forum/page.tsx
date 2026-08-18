@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
@@ -59,6 +59,9 @@ export default function ForumPage() {
   const [readState, setReadState] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
   const [searchScope, setSearchScope] = useState<"all" | "category">("all");
+  const [taggedUsers, setTaggedUsers] = useState<{ id: string; displayName: string }[]>([]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setReadState(loadReadState()); }, []);
 
@@ -111,14 +114,50 @@ export default function ForumPage() {
   const categoryLabel = (value: string) =>
     CATEGORIES.find((c) => c.value === value)?.label ?? value;
 
+  const threadAuthors = useMemo(() => {
+    const seen = new Set<string>();
+    const authors: { id: string; displayName: string }[] = [];
+    for (const t of threads) {
+      if (!seen.has(t.author.id)) {
+        seen.add(t.author.id);
+        authors.push({ id: t.author.id, displayName: t.author.profile?.displayName ?? t.author.name });
+      }
+    }
+    return authors.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }, [threads]);
+
+  const mentionSuggestions = useMemo(() => {
+    if (mentionQuery === null) return [];
+    const q = mentionQuery.toLowerCase();
+    return threadAuthors
+      .filter((a) => a.displayName.toLowerCase().includes(q) && !taggedUsers.some((u) => u.id === a.id))
+      .slice(0, 6);
+  }, [mentionQuery, threadAuthors, taggedUsers]);
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    const match = value.match(/@([a-zA-Z0-9_ ]*)$/);
+    setMentionQuery(match ? match[1] : null);
+  }
+
+  function handleSelectUser(user: { id: string; displayName: string }) {
+    setSearch((prev) => prev.replace(/@[a-zA-Z0-9_ ]*$/, "").trimEnd());
+    setMentionQuery(null);
+    if (!taggedUsers.some((u) => u.id === user.id)) {
+      setTaggedUsers((prev) => [...prev, user]);
+    }
+    searchInputRef.current?.focus();
+  }
+
   const displayedThreads = useMemo(() => {
-    if (!search.trim()) return threads;
-    const q = search.toLowerCase();
+    const textQuery = search.replace(/@[a-zA-Z0-9_ ]*$/, "").toLowerCase().trim();
     return threads.filter((t) => {
       if (searchScope === "category" && activeCategory && t.category !== activeCategory) return false;
-      return t.title.toLowerCase().includes(q) || t.body.toLowerCase().includes(q);
+      if (taggedUsers.length > 0 && !taggedUsers.some((u) => u.id === t.author.id)) return false;
+      if (textQuery && !t.title.toLowerCase().includes(textQuery) && !t.body.toLowerCase().includes(textQuery)) return false;
+      return true;
     });
-  }, [threads, search, searchScope, activeCategory]);
+  }, [threads, search, searchScope, activeCategory, taggedUsers]);
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
@@ -179,27 +218,52 @@ export default function ForumPage() {
       </div>
 
       {/* Search bar */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 mb-6 flex-wrap items-start">
         <div className="relative flex-1 min-w-[200px]">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search forum…"
-            className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-xs"
-            >
-              ✕
-            </button>
+          {/* Input area with chips */}
+          <div
+            className="flex flex-wrap gap-1.5 items-center bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2 focus-within:border-[#c9a050]/40 cursor-text min-h-[42px]"
+            onClick={() => searchInputRef.current?.focus()}
+          >
+            {taggedUsers.map((u) => (
+              <span key={u.id} className="flex items-center gap-1 bg-[#c9a050]/15 border border-[#c9a050]/30 text-[#c9a050] text-xs font-medium rounded-full px-2.5 py-1 shrink-0">
+                @{u.displayName}
+                <button onClick={(e) => { e.stopPropagation(); setTaggedUsers((prev) => prev.filter((t) => t.id !== u.id)); }} className="text-[#c9a050]/60 hover:text-[#c9a050] leading-none ml-0.5">✕</button>
+              </span>
+            ))}
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Escape") { setMentionQuery(null); setSearch(""); setTaggedUsers([]); } }}
+              placeholder={taggedUsers.length === 0 ? "Search forum… (type @ to filter by user)" : ""}
+              className="flex-1 min-w-[120px] bg-transparent text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none py-0.5"
+            />
+            {(search || taggedUsers.length > 0) && (
+              <button onClick={() => { setSearch(""); setTaggedUsers([]); setMentionQuery(null); }} className="text-gray-600 hover:text-gray-400 text-xs shrink-0">✕</button>
+            )}
+          </div>
+
+          {/* Mention dropdown */}
+          {mentionSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+              {mentionSuggestions.map((u) => (
+                <button
+                  key={u.id}
+                  onMouseDown={(e) => { e.preventDefault(); handleSelectUser(u); }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                >
+                  <span className="text-[#c9a050]">@</span>{u.displayName}
+                </button>
+              ))}
+            </div>
           )}
         </div>
+
         <button
           onClick={() => setSearchScope("all")}
-          className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+          className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
             searchScope === "all"
               ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
               : "border-white/10 text-gray-500 hover:text-gray-300"
@@ -210,7 +274,7 @@ export default function ForumPage() {
         <button
           onClick={() => activeCategory && setSearchScope(searchScope === "category" ? "all" : "category")}
           disabled={!activeCategory}
-          className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+          className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
             searchScope === "category" && activeCategory
               ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
               : "border-white/10 text-gray-500 hover:text-gray-300"

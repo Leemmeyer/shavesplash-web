@@ -57,6 +57,8 @@ export default function ForumPage() {
   const [fetching, setFetching] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [readState, setReadState] = useState<Record<string, number>>({});
+  const [search, setSearch] = useState("");
+  const [searchScope, setSearchScope] = useState<"all" | "category">("all");
 
   useEffect(() => { setReadState(loadReadState()); }, []);
 
@@ -109,6 +111,15 @@ export default function ForumPage() {
   const categoryLabel = (value: string) =>
     CATEGORIES.find((c) => c.value === value)?.label ?? value;
 
+  const displayedThreads = useMemo(() => {
+    if (!search.trim()) return threads;
+    const q = search.toLowerCase();
+    return threads.filter((t) => {
+      if (searchScope === "category" && activeCategory && t.category !== activeCategory) return false;
+      return t.title.toLowerCase().includes(q) || t.body.toLowerCase().includes(q);
+    });
+  }, [threads, search, searchScope, activeCategory]);
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       {/* Header */}
@@ -130,7 +141,7 @@ export default function ForumPage() {
       {/* Category filters */}
       <div className="flex gap-2 flex-wrap mb-8">
         <button
-          onClick={() => setActiveCategory(null)}
+          onClick={() => { setActiveCategory(null); setSearchScope("all"); }}
           className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
             activeCategory === null
               ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
@@ -167,25 +178,76 @@ export default function ForumPage() {
         })}
       </div>
 
+      {/* Search bar */}
+      <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search forum…"
+            className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-xs"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => setSearchScope("all")}
+          className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+            searchScope === "all"
+              ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
+              : "border-white/10 text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          All Forum
+        </button>
+        <button
+          onClick={() => activeCategory && setSearchScope(searchScope === "category" ? "all" : "category")}
+          disabled={!activeCategory}
+          className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+            searchScope === "category" && activeCategory
+              ? "bg-[#c9a050]/10 border-[#c9a050]/30 text-[#c9a050]"
+              : "border-white/10 text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          This Category
+        </button>
+      </div>
+
       {/* Thread list */}
       {fetching ? (
         <div className="text-gray-500 text-sm">Loading…</div>
-      ) : threads.length === 0 ? (
+      ) : displayedThreads.length === 0 ? (
         <div className="text-center py-20 text-gray-500">
-          <p className="text-lg mb-2">No threads yet</p>
-          {session ? (
-            <Link href="/forum/new" className="text-[#c9a050] hover:underline text-sm">
-              Start the first thread
-            </Link>
+          {search ? (
+            <p className="text-lg mb-2">No results for &ldquo;{search}&rdquo;</p>
           ) : (
-            <Link href="/sign-in" className="text-[#c9a050] hover:underline text-sm">
-              Sign in to post
-            </Link>
+            <>
+              <p className="text-lg mb-2">No threads yet</p>
+              {session ? (
+                <Link href="/forum/new" className="text-[#c9a050] hover:underline text-sm">
+                  Start the first thread
+                </Link>
+              ) : (
+                <Link href="/sign-in" className="text-[#c9a050] hover:underline text-sm">
+                  Sign in to post
+                </Link>
+              )}
+            </>
           )}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {threads.map((thread) => {
+          {search && (
+            <p className="text-xs text-gray-600 mb-2">{displayedThreads.length} result{displayedThreads.length !== 1 ? "s" : ""} for &ldquo;{search}&rdquo;</p>
+          )}
+          {displayedThreads.map((thread) => {
             const unread = isUnread(thread);
             return (
             <Link

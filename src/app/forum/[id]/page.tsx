@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -145,8 +145,15 @@ export default function ThreadPage() {
   const [replyBody, setReplyBody] = useState("");
   const [replyPhotoDataUrl, setReplyPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [replySearch, setReplySearch] = useState("");
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const filteredReplies = useMemo(() => {
+    if (!thread || !replySearch.trim()) return thread?.replies ?? [];
+    const q = replySearch.toLowerCase();
+    return thread.replies.filter((r) => r.body.toLowerCase().includes(q));
+  }, [thread, replySearch]);
 
   useEffect(() => {
     if (!id) return;
@@ -265,10 +272,38 @@ export default function ThreadPage() {
         <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} />
       </div>
 
+      {/* Reply search */}
+      {thread.replies.length > 2 && (
+        <div className="flex gap-2 mb-4 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={replySearch}
+              onChange={(e) => setReplySearch(e.target.value)}
+              placeholder="Search this thread…"
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
+            />
+            {replySearch && (
+              <button
+                onClick={() => setReplySearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {replySearch && (
+            <span className="text-xs text-gray-600 shrink-0">
+              {filteredReplies.length} of {thread.replies.length}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Replies */}
       {thread.replies.length > 0 && (
         <div className="flex flex-col gap-3 mb-4">
-          {thread.replies.map((reply, i) => (
+          {(replySearch ? filteredReplies : thread.replies).map((reply, i) => (
             <div key={reply.id} className="bg-[#1e1e1e] border border-white/5 rounded-2xl p-5">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2 text-xs text-gray-500">

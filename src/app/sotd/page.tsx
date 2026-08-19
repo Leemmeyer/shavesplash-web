@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
@@ -543,19 +543,37 @@ export default function SotdPage() {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Author search
+  const [searchInput, setSearchInput] = useState("");
+  const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const LIMIT = 20;
 
-  const fetchPosts = useCallback(async (off: number, append = false) => {
+  const fetchPosts = useCallback(async (off: number, append = false, author?: string | null) => {
     if (off === 0) setLoading(true); else setLoadingMore(true);
     try {
-      const d = await api.get<{ posts: SotdPost[]; hasMore: boolean }>(`/api/sotd?limit=${LIMIT}&offset=${off}`);
+      const authorParam = (author ?? selectedAuthor) ? `&author=${encodeURIComponent((author ?? selectedAuthor)!)}` : "";
+      const d = await api.get<{ posts: SotdPost[]; hasMore: boolean }>(`/api/sotd?limit=${LIMIT}&offset=${off}${authorParam}`);
       setPosts((prev) => append ? [...prev, ...d.posts] : d.posts);
       setHasMore(d.hasMore);
       setOffset(off + d.posts.length);
     } catch { /* ignore */ } finally { setLoading(false); setLoadingMore(false); }
-  }, []);
+  }, [selectedAuthor]);
 
   useEffect(() => { fetchPosts(0); }, [fetchPosts]);
+
+  // Close suggestion dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleReact = async (logId: string, emoji: string) => {
     try {
@@ -564,10 +582,45 @@ export default function SotdPage() {
     } catch { /* ignore */ }
   };
 
+  // Build suggestions from loaded posts (unique non-anonymous authors)
+  const authorSuggestions = useMemo(() => {
+    const mentionQuery = searchInput.match(/@([^@]*)$/)?.[1]?.toLowerCase() ?? "";
+    const seen = new Set<string>();
+    const names: string[] = [];
+    for (const p of posts) {
+      if (!p.isAnonymous && p.authorName && !seen.has(p.authorName)) {
+        seen.add(p.authorName);
+        if (p.authorName.toLowerCase().includes(mentionQuery)) names.push(p.authorName);
+      }
+    }
+    return names.slice(0, 6);
+  }, [posts, searchInput]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
+    setShowSuggestions(val.includes("@"));
+  };
+
+  const handleSelectAuthor = (name: string) => {
+    setSelectedAuthor(name);
+    setSearchInput("");
+    setShowSuggestions(false);
+    fetchPosts(0, false, name);
+  };
+
+  const clearAuthor = () => {
+    setSelectedAuthor(null);
+    setSearchInput("");
+    setShowSuggestions(false);
+    fetchPosts(0, false, "");
+  };
+
+  const mentionQuery = searchInput.match(/@([^@]*)$/)?.[1] ?? "";
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Header */}
-      <div className="flex items-end justify-between mb-8">
+      <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="font-[family-name:var(--font-fredericka)] text-4xl text-[#c9a050] mb-1">
             Shave of the Day
@@ -587,6 +640,62 @@ export default function SotdPage() {
       <div className="flex gap-6 items-start">
         {/* Feed */}
         <div className="flex-1 min-w-0">
+          {/* Author search bar */}
+          <div ref={searchRef} className="relative mb-5">
+            <div className="flex items-center gap-2 bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-[#c9a050]/40 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
+                <circle cx="6" cy="6" r="4.5"/>
+                <line x1="9.5" y1="9.5" x2="13" y2="13"/>
+              </svg>
+              {selectedAuthor && (
+                <span className="flex items-center gap-1 bg-[#c9a050]/15 border border-[#c9a050]/40 text-[#c9a050] text-xs font-semibold px-2.5 py-1 rounded-full shrink-0">
+                  @{selectedAuthor}
+                  <button onClick={clearAuthor} className="hover:text-white transition-colors ml-0.5">✕</button>
+                </span>
+              )}
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => searchInput.includes("@") && setShowSuggestions(true)}
+                placeholder={selectedAuthor ? "" : "Type @ to search by user…"}
+                className="flex-1 bg-transparent text-sm text-[#f5f2eb] placeholder-gray-600 outline-none min-w-0"
+              />
+              {searchInput && (
+                <button onClick={() => setSearchInput("")} className="text-gray-600 hover:text-gray-400 transition-colors text-sm shrink-0">✕</button>
+              )}
+            </div>
+
+            {/* Suggestions dropdown */}
+            {showSuggestions && authorSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl">
+                <p className="text-[10px] text-gray-600 uppercase tracking-wider px-3 pt-2.5 pb-1">
+                  {mentionQuery ? `Users matching "@${mentionQuery}"` : "Users in this feed"}
+                </p>
+                {authorSuggestions.map((name) => (
+                  <button
+                    key={name}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelectAuthor(name); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-white/5 transition-colors text-left"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-[#c9a050]/15 flex items-center justify-center shrink-0">
+                      <span className="text-[#c9a050] text-xs font-bold">{name[0]?.toUpperCase()}</span>
+                    </div>
+                    <span className="text-sm text-[#f5f2eb]">{name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Selected author label */}
+          {selectedAuthor && !loading && (
+            <p className="text-gray-500 text-xs mb-4">
+              Showing all public shaves from <span className="text-[#c9a050] font-semibold">@{selectedAuthor}</span>
+              {" · "}<button onClick={clearAuthor} className="hover:text-gray-300 transition-colors underline">clear</button>
+            </p>
+          )}
+
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="w-8 h-8 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
@@ -594,16 +703,20 @@ export default function SotdPage() {
           ) : posts.length === 0 ? (
             <div className="text-center py-20 text-gray-600">
               <p className="text-5xl mb-4">🪒</p>
-              <p className="text-lg mb-2">No shaves shared yet</p>
-              <p className="text-sm mb-6">Be the first — share a shave from your History page.</p>
-              {session ? (
-                <Link href="/logs" className="inline-block bg-[#c9a050] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#b8903f] transition-colors text-sm">
-                  Go to History
-                </Link>
-              ) : (
-                <Link href="/sign-in" className="inline-block bg-[#c9a050] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#b8903f] transition-colors text-sm">
-                  Sign in to share
-                </Link>
+              <p className="text-lg mb-2">{selectedAuthor ? `No public shaves from @${selectedAuthor}` : "No shaves shared yet"}</p>
+              {!selectedAuthor && (
+                <>
+                  <p className="text-sm mb-6">Be the first — share a shave from your History page.</p>
+                  {session ? (
+                    <Link href="/logs" className="inline-block bg-[#c9a050] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#b8903f] transition-colors text-sm">
+                      Go to History
+                    </Link>
+                  ) : (
+                    <Link href="/sign-in" className="inline-block bg-[#c9a050] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#b8903f] transition-colors text-sm">
+                      Sign in to share
+                    </Link>
+                  )}
+                </>
               )}
             </div>
           ) : (

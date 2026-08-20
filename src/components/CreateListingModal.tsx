@@ -594,7 +594,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                   <label className={labelCls}>
                     {listingType === "for_sale" ? "Price (USD)" : "Willing to Pay (USD)"}
                     {listingType === "for_sale" && <span className="text-[#c9a050]"> *</span>}
-                    {listingType === "wtb" && <span className="text-gray-600 normal-case font-normal ml-1">· optional</span>}
+                    {listingType === "wtb" && <span className="text-gray-600 normal-case font-normal ml-2.5">· optional</span>}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c9a050] font-bold text-base">$</span>
@@ -616,7 +616,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                 <label className={labelCls}>
                   Condition
                   {conditionRequired && <span className="text-[#c9a050]"> *</span>}
-                  {!conditionRequired && <span className="text-gray-600 normal-case font-normal ml-1">· optional</span>}
+                  {!conditionRequired && <span className="text-gray-600 normal-case font-normal ml-2.5">· optional</span>}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {CONDITIONS.map((c) => (

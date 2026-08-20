@@ -224,7 +224,7 @@ function AnalyticsContent() {
               resultOptions={resultOptions} scoreParameters={scoreParameters}
               range={range}
             />
-            <SetupsTableSection filteredLogs={filteredLogs} inventory={inventory} />
+            <SetupsTableSection filteredLogs={filteredLogs} inventory={inventory} scoreParameters={scoreParameters} />
             <ResultTrendSection logs={filteredLogs} resultOptions={resultOptions} />
             <HeatmapSection logs={logs} resultOptions={resultOptions} />
             <MostUsedGearSection logs={filteredLogs} inventory={inventory} />
@@ -1183,8 +1183,13 @@ function PersonalRecordsSection({ logs, inventory, resultOptions, scoreParameter
 }
 
 // ── Section: Setups Table ─────────────────────────────────────────────────
-function SetupsTableSection({ filteredLogs, inventory }: { filteredLogs: ShaveLog[]; inventory: InventoryItem[] }) {
+function SetupsTableSection({ filteredLogs, inventory, scoreParameters }: {
+  filteredLogs: ShaveLog[];
+  inventory: InventoryItem[];
+  scoreParameters: ScoreParameter[];
+}) {
   const [open, setOpen] = useState(false);
+  const [selectedScoreLog, setSelectedScoreLog] = useState<ShaveLog | null>(null);
 
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const tableLogs = useMemo(() =>
@@ -1210,6 +1215,14 @@ function SetupsTableSection({ filteredLogs, inventory }: { filteredLogs: ShaveLo
     return sel.itemName ?? "—";
   }
 
+  function cellItemId(log: ShaveLog, catId: string): string | null {
+    return log.selectedItems[catId]?.itemId ?? null;
+  }
+
+  function scoreSum(log: ShaveLog): number {
+    return Object.values(log.scores ?? {}).reduce((acc: number, s) => acc + getScoreValue(s), 0);
+  }
+
   return (
     <section>
       <button
@@ -1229,39 +1242,105 @@ function SetupsTableSection({ filteredLogs, inventory }: { filteredLogs: ShaveLo
         tableLogs.length === 0 ? (
           <p className="text-gray-600 text-sm">No shaves in this period.</p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/5">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-[#1a1a1a] border-b border-white/5">
-                  <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap sticky left-0 bg-[#1a1a1a] z-10">
-                    Date
-                  </th>
-                  {activeCats.map(catId => (
-                    <th key={catId} className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
-                      {CATEGORY_LABELS[catId] ?? catId}
+          <>
+            <div className="overflow-x-auto rounded-2xl border border-white/5">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-[#1a1a1a] border-b border-white/5">
+                    <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap sticky left-0 bg-[#1a1a1a] z-10">
+                      Date
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {tableLogs.map((log) => (
-                  <tr key={log.id} className="bg-[#1e1e1e] hover:bg-[#242424] transition-colors">
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap sticky left-0 bg-inherit z-10">
-                      {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </td>
-                    {activeCats.map(catId => {
-                      const val = cellValue(log, catId);
-                      return (
-                        <td key={catId} className={`px-4 py-3 text-xs whitespace-nowrap max-w-[180px] truncate ${val === "—" ? "text-gray-700" : "text-gray-300"}`}>
-                          {val}
+                    {activeCats.map(catId => (
+                      <th key={catId} className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
+                        {CATEGORY_LABELS[catId] ?? catId}
+                      </th>
+                    ))}
+                    <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
+                      Score
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {tableLogs.map((log) => {
+                    const hasScores = Object.keys(log.scores ?? {}).length > 0;
+                    const sum = hasScores ? scoreSum(log) : null;
+                    return (
+                      <tr key={log.id} className="bg-[#1e1e1e] hover:bg-[#242424] transition-colors">
+                        <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap sticky left-0 bg-inherit z-10">
+                          {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </td>
+                        {activeCats.map(catId => {
+                          const val = cellValue(log, catId);
+                          const itemId = cellItemId(log, catId);
+                          return (
+                            <td key={catId} className={`px-4 py-3 text-xs whitespace-nowrap max-w-[180px] truncate ${val === "—" ? "text-gray-700" : "text-gray-300"}`}>
+                              {itemId ? (
+                                <a href={`/den/${itemId}`} className="hover:text-[#c9a050] hover:underline transition-colors">
+                                  {val}
+                                </a>
+                              ) : val}
+                            </td>
+                          );
+                        })}
+                        <td className="px-4 py-3 text-xs whitespace-nowrap">
+                          {sum !== null ? (
+                            <button
+                              onClick={() => setSelectedScoreLog(log)}
+                              className="text-[#f5f2eb] font-bold hover:text-[#c9a050] transition-colors"
+                            >
+                              {sum}
+                            </button>
+                          ) : (
+                            <span className="text-gray-700">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedScoreLog && (
+              <div
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75"
+                onClick={() => setSelectedScoreLog(null)}
+              >
+                <div
+                  className="bg-[#1e1e1e] rounded-t-2xl sm:rounded-2xl border border-white/10 w-full max-w-sm mx-auto pb-8"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10">
+                    <div>
+                      <p className="text-[#f5f2eb] font-semibold text-base">Score Breakdown</p>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {new Date(selectedScoreLog.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                    </div>
+                    <button onClick={() => setSelectedScoreLog(null)} className="text-gray-500 hover:text-gray-300 text-xl leading-none">×</button>
+                  </div>
+                  <div className="px-6 pt-4 space-y-3">
+                    {scoreParameters.map(p => {
+                      const entry = selectedScoreLog.scores?.[p.id];
+                      const val = entry !== undefined ? getScoreValue(entry) : null;
+                      return (
+                        <div key={p.id} className="flex items-center justify-between">
+                          <span className="text-gray-400 text-sm">{p.name}</span>
+                          <span className={`text-sm font-semibold ${val !== null ? "text-[#f5f2eb]" : "text-gray-700"}`}>
+                            {val !== null ? val : "—"}
+                          </span>
+                        </div>
                       );
                     })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    <div className="border-t border-white/10 pt-3 flex items-center justify-between">
+                      <span className="text-[#f5f2eb] text-sm font-semibold">Composite</span>
+                      <span className="text-[#c9a050] text-lg font-bold">{scoreSum(selectedScoreLog)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )
       )}
     </section>

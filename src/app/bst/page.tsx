@@ -28,6 +28,7 @@ type Listing = {
   condition: string;
   category: string;
   status: string;
+  listingType: string;
   isExpertListing: boolean;
   createdAt: string;
   expiresAt: string | null;
@@ -225,9 +226,19 @@ function ListingCard({ listing }: { listing: Listing }) {
             </>
           )}
           <div className="flex items-center justify-between mt-2">
-            <span className="text-[#c9a050] font-bold text-base">
-              ${listing.price.toFixed(2)}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {listing.listingType === "wtb" && (
+                <span className="bg-blue-900/40 text-blue-400 border border-blue-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">WTB</span>
+              )}
+              {listing.listingType === "for_trade" && (
+                <span className="bg-green-900/40 text-green-400 border border-green-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">TRADE</span>
+              )}
+              {listing.price > 0 ? (
+                <span className="text-[#c9a050] font-bold text-base">${listing.price.toFixed(2)}</span>
+              ) : listing.listingType === "for_sale" ? (
+                <span className="text-gray-500 text-sm">Price TBD</span>
+              ) : null}
+            </div>
             <span className="text-gray-600 text-xs">{sellerName}</span>
           </div>
           <div className="flex items-center gap-3 mt-1.5">

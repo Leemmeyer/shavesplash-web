@@ -19,6 +19,7 @@ type Listing = {
   condition: string;
   category: string;
   status: string;
+  listingType: string;
   isExpertListing: boolean;
   createdAt: string;
   expiresAt: string | null;
@@ -137,10 +138,22 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             )}
 
             <div className="flex items-center flex-wrap gap-2 mb-6">
-              <span className="text-[#c9a050] text-3xl font-bold">${listing.price.toFixed(2)}</span>
-              <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
-                {listing.condition}
-              </span>
+              {listing.listingType === "wtb" && (
+                <span className="bg-blue-950 border border-blue-700/50 text-blue-400 rounded-lg px-3 py-1 text-sm font-bold">WTB</span>
+              )}
+              {listing.listingType === "for_trade" && (
+                <span className="bg-green-950 border border-green-700/50 text-green-400 rounded-lg px-3 py-1 text-sm font-bold">For Trade</span>
+              )}
+              {listing.price > 0 ? (
+                <span className="text-[#c9a050] text-3xl font-bold">${listing.price.toFixed(2)}</span>
+              ) : listing.listingType === "for_sale" ? (
+                <span className="text-gray-500 text-xl font-semibold">Price TBD</span>
+              ) : null}
+              {listing.condition && (
+                <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
+                  {listing.condition}
+                </span>
+              )}
               <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400 capitalize">
                 {listing.category}
               </span>

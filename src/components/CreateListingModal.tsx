@@ -82,6 +82,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const [percentRemaining, setPercentRemaining] = useState("");
   const [ageMonths, setAgeMonths] = useState("");
   const [size, setSize] = useState(prefillSize != null ? String(prefillSize) : "");
+  const [listingType, setListingType] = useState<"for_sale" | "wtb" | "for_trade">("for_sale");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -146,6 +147,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
     setCondition("");
     setPercentRemaining("");
     setAgeMonths("");
+    setListingType("for_sale");
     setError(null);
     setSubmitting(false);
   };
@@ -164,17 +166,22 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const displayNameValid = cleanDisplayName.length > 0 && !cleanDisplayName.includes("@");
   const isRazor = category === "razor";
 
+  const priceRequired = listingType === "for_sale";
+  const conditionRequired = listingType === "for_sale";
+
   const canSubmit =
-    category && price.trim() && condition && displayNameValid && !submitting &&
+    category && displayNameValid && !submitting &&
     (isRazor || title.trim()) &&
-    (!isRazor || !isCustomBrand || customBrandInput.trim().length > 0);
+    (!isRazor || !isCustomBrand || customBrandInput.trim().length > 0) &&
+    (!priceRequired || price.trim()) &&
+    (!conditionRequired || condition);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     if (cleanDisplayName.includes("@")) { setError("Display name cannot be an email address"); return; }
     const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) { setError("Enter a valid price"); return; }
+    if (priceRequired && (isNaN(priceNum) || priceNum <= 0)) { setError("Enter a valid price"); return; }
 
     setSubmitting(true);
     setError(null);
@@ -203,9 +210,10 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
         model: resolvedModel,
         material: material || undefined,
         description: description.trim() || title.trim(),
-        price: priceNum,
-        condition,
+        price: !isNaN(priceNum) && priceNum > 0 ? priceNum : 0,
+        condition: condition || undefined,
         category,
+        listingType,
         percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
         ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
         size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
@@ -261,6 +269,33 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                 />
                 <p className="text-gray-600 text-xs mt-1">Public username shown to buyers — your email is never shared</p>
                 {cleanDisplayName.includes("@") && <p className="text-red-400 text-xs mt-0.5">Cannot use an email address as your display name</p>}
+              </div>
+
+              {/* Listing Type */}
+              <div>
+                <label className={labelCls}>Listing Type <span className="text-[#c9a050]">*</span></label>
+                <div className="flex gap-2">
+                  {([ { value: "for_sale", label: "For Sale" }, { value: "wtb", label: "WTB" }, { value: "for_trade", label: "For Trade" } ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => { setListingType(opt.value); setPrice(""); setCondition(""); }}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                        listingType === opt.value
+                          ? "bg-[#c9a050]/10 border-[#c9a050] text-[#c9a050]"
+                          : "border-white/10 text-gray-400 hover:border-white/20"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {listingType === "wtb" && (
+                  <p className="text-gray-600 text-xs mt-1.5">WTB = Willing to Buy. Post what you&apos;re looking for.</p>
+                )}
+                {listingType === "for_trade" && (
+                  <p className="text-gray-600 text-xs mt-1.5">Post what you&apos;re offering to trade.</p>
+                )}
               </div>
 
               {/* Photos */}
@@ -554,31 +589,41 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
               </div>
 
               {/* Price */}
-              <div className="max-w-[180px]">
-                <label className={labelCls}>Price (USD) <span className="text-[#c9a050]">*</span></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c9a050] font-bold text-base">$</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="0.00"
-                    className={`${inputCls} pl-7`}
-                  />
+              {listingType !== "for_trade" && (
+                <div className="max-w-[220px]">
+                  <label className={labelCls}>
+                    {listingType === "for_sale" ? "Price (USD)" : "Willing to Pay (USD)"}
+                    {listingType === "for_sale" && <span className="text-[#c9a050]"> *</span>}
+                    {listingType === "wtb" && <span className="text-gray-600 normal-case font-normal ml-1">· optional</span>}
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c9a050] font-bold text-base">$</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.00"
+                      className={`${inputCls} pl-7`}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Condition */}
               <div>
-                <label className={labelCls}>Condition <span className="text-[#c9a050]">*</span></label>
+                <label className={labelCls}>
+                  Condition
+                  {conditionRequired && <span className="text-[#c9a050]"> *</span>}
+                  {!conditionRequired && <span className="text-gray-600 normal-case font-normal ml-1">· optional</span>}
+                </label>
                 <div className="flex gap-2 flex-wrap">
                   {CONDITIONS.map((c) => (
                     <button
                       key={c}
                       type="button"
-                      onClick={() => setCondition(c)}
+                      onClick={() => setCondition(condition === c ? "" : c)}
                       className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                         condition === c
                           ? "bg-[#c9a050]/10 border-[#c9a050] text-[#c9a050]"

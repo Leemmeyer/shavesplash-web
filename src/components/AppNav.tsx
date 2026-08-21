@@ -22,7 +22,7 @@ const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/den", label: "My Den" },
   { href: "/logs", label: "History" },
-  { href: "/analytics", label: "Analytics" },
+  { href: "/analytics", label: "Analysis" },
   { href: "/bst", label: "Marketplace" },
   { href: "/messages", label: "Messages" },
   { href: "/forum", label: "Forum" },

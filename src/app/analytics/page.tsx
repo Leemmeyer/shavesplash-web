@@ -1223,80 +1223,81 @@ function SetupsTableSection({ filteredLogs, inventory, scoreParameters }: {
     return Object.values(log.scores ?? {}).reduce((acc: number, s) => acc + getScoreValue(s), 0);
   }
 
+  const visibleLogs = open ? tableLogs : tableLogs.slice(0, 3);
+
   return (
     <section>
       <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-3 w-full text-left group mb-4"
+        onClick={() => tableLogs.length > 0 ? setOpen(o => !o) : undefined}
+        className={`flex items-center gap-3 w-full text-left group mb-4 ${tableLogs.length === 0 ? "cursor-default" : ""}`}
       >
         <h2 className="text-[#f5f2eb] font-semibold text-lg">Shave Setups</h2>
         <span className="text-xs text-gray-600 font-normal">
           {tableLogs.length} shave{tableLogs.length !== 1 ? "s" : ""}
         </span>
-        <span className={`ml-auto text-gray-500 group-hover:text-gray-300 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
-          ▼
-        </span>
+        {tableLogs.length > 0 && (
+          <span className={`ml-auto text-gray-500 group-hover:text-gray-300 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
+            ▼
+          </span>
+        )}
       </button>
 
-      {open && (
-        tableLogs.length === 0 ? (
-          <p className="text-gray-600 text-sm">No shaves in this period.</p>
-        ) : (
-          <>
-            <div className="overflow-x-auto rounded-2xl border border-white/5 pb-px">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="bg-[#1a1a1a] border-b border-white/5">
-                    <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap sticky left-0 bg-[#1a1a1a] z-10">
-                      Date
+      {tableLogs.length > 0 && (
+        <>
+          <div className="overflow-x-auto rounded-2xl border border-white/5 pb-px">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-[#1a1a1a] border-b border-white/5">
+                  <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap sticky left-0 bg-[#1a1a1a] z-10">
+                    Date
+                  </th>
+                  {activeCats.map(catId => (
+                    <th key={catId} className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
+                      {CATEGORY_LABELS[catId] ?? catId}
                     </th>
-                    {activeCats.map(catId => (
-                      <th key={catId} className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
-                        {CATEGORY_LABELS[catId] ?? catId}
-                      </th>
-                    ))}
-                    <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
-                      Score
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {tableLogs.map((log) => {
-                    const hasScores = Object.keys(log.scores ?? {}).length > 0;
-                    const sum = hasScores ? scoreSum(log) : null;
-                    return (
-                      <tr key={log.id} className="bg-[#1e1e1e] hover:bg-[#242424] transition-colors">
-                        <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap sticky left-0 bg-inherit z-10">
-                          {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </td>
-                        {activeCats.map(catId => {
-                          const val = cellValue(log, catId);
-                          const itemId = cellItemId(log, catId);
-                          return (
-                            <td key={catId} className={`px-4 py-3 text-xs whitespace-nowrap max-w-[180px] truncate ${val === "—" ? "text-gray-700" : "text-gray-300"}`}>
-                              {itemId ? (
-                                <a href={`/den/${itemId}`} className="hover:text-[#c9a050] hover:underline transition-colors">
-                                  {val}
-                                </a>
-                              ) : val}
-                            </td>
-                          );
-                        })}
-                        <td className="px-4 py-3 text-xs whitespace-nowrap">
-                          {sum !== null ? (
-                            <button
-                              onClick={() => setSelectedScoreLog(log)}
-                              className="text-[#f5f2eb] font-bold hover:text-[#c9a050] transition-colors"
-                            >
-                              {sum}
-                            </button>
-                          ) : (
-                            <span className="text-gray-700">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  ))}
+                  <th className="text-left px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wide whitespace-nowrap">
+                    Score
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {visibleLogs.map((log) => {
+                  const hasScores = Object.keys(log.scores ?? {}).length > 0;
+                  const sum = hasScores ? scoreSum(log) : null;
+                  return (
+                    <tr key={log.id} className="bg-[#1e1e1e] hover:bg-[#242424] transition-colors">
+                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap sticky left-0 bg-inherit z-10">
+                        {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+                      {activeCats.map(catId => {
+                        const val = cellValue(log, catId);
+                        const itemId = cellItemId(log, catId);
+                        return (
+                          <td key={catId} className={`px-4 py-3 text-xs whitespace-nowrap max-w-[180px] truncate ${val === "—" ? "text-gray-700" : "text-gray-300"}`}>
+                            {itemId ? (
+                              <a href={`/den/${itemId}`} className="hover:text-[#c9a050] hover:underline transition-colors">
+                                {val}
+                              </a>
+                            ) : val}
+                          </td>
+                        );
+                      })}
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        {sum !== null ? (
+                          <button
+                            onClick={() => setSelectedScoreLog(log)}
+                            className="text-[#f5f2eb] font-bold hover:text-[#c9a050] transition-colors"
+                          >
+                            {sum}
+                          </button>
+                        ) : (
+                          <span className="text-gray-700">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
                 </tbody>
               </table>
             </div>
@@ -1341,9 +1342,14 @@ function SetupsTableSection({ filteredLogs, inventory, scoreParameters }: {
               </div>
             )}
           </>
-        )
-      )}
-    </section>
+        )}
+
+        {!open && tableLogs.length > 3 && (
+          <p className="text-xs text-gray-600 text-center mt-2 cursor-pointer hover:text-gray-400 transition-colors" onClick={() => setOpen(true)}>
+            +{tableLogs.length - 3} more
+          </p>
+        )}
+      </section>
   );
 }
 

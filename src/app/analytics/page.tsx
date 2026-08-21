@@ -1243,7 +1243,7 @@ function SetupsTableSection({ filteredLogs, inventory, scoreParameters }: {
           <p className="text-gray-600 text-sm">No shaves in this period.</p>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-white/5">
+            <div className="overflow-x-auto rounded-2xl border border-white/5 pb-px">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-[#1a1a1a] border-b border-white/5">

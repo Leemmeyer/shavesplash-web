@@ -6,6 +6,8 @@ import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import SyncNote from "@/components/SyncNote";
 
+const CATEGORY_ORDER_KEY = "shavesplash-den-category-order";
+
 const DEFAULT_CATEGORIES = [
   { id: "razors",      label: "Razors",       icon: "🪒" },
   { id: "blades",      label: "Blades",        icon: null },
@@ -95,6 +97,16 @@ function DenContent() {
   const [collapsed, setCollapsed] = useState<Set<string>>(
     new Set(DEFAULT_CATEGORIES.map((c) => c.id))
   );
+  const [isReordering, setIsReordering] = useState(false);
+  const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(CATEGORY_ORDER_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES.map((c) => c.id);
+    } catch {
+      return DEFAULT_CATEGORIES.map((c) => c.id);
+    }
+  });
+  const dragSrc = useRef<number | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -107,7 +119,7 @@ function DenContent() {
   }, []);
 
   // Build category list: defaults first, then any custom categories from items
-  const categories = useMemo(() => {
+  const allCategories = useMemo(() => {
     const defaultIds = new Set(DEFAULT_CATEGORIES.map((c) => c.id));
     const customIds = [...new Set(items.map((i) => i.categoryId).filter((id) => !defaultIds.has(id)))];
     const customs = customIds.map((id) => {
@@ -117,14 +129,28 @@ function DenContent() {
     return [...DEFAULT_CATEGORIES, ...customs];
   }, [items]);
 
+  // Apply saved order, appending any new categories at the end
+  const categories = useMemo(() => {
+    const byId = Object.fromEntries(allCategories.map((c) => [c.id, c]));
+    const ordered = categoryOrder.filter((id) => byId[id]).map((id) => byId[id]);
+    const unordered = allCategories.filter((c) => !categoryOrder.includes(c.id));
+    return [...ordered, ...unordered];
+  }, [allCategories, categoryOrder]);
+
+  // Reorder list used in drag mode (mirrors categories but editable)
+  const [reorderList, setReorderList] = useState<typeof allCategories>([]);
+  useEffect(() => {
+    if (isReordering) setReorderList(categories);
+  }, [isReordering]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Collapse any custom categories discovered after load
   useEffect(() => {
     setCollapsed((prev) => {
       const next = new Set(prev);
-      for (const cat of categories) next.add(cat.id);
+      for (const cat of allCategories) next.add(cat.id);
       return next;
     });
-  }, [categories]);
+  }, [allCategories]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
@@ -141,6 +167,26 @@ function DenContent() {
       (i) => i.name.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q)
     );
   }, [items, search]);
+
+  const saveCategoryOrder = (list: typeof allCategories) => {
+    const ids = list.map((c) => c.id);
+    setCategoryOrder(ids);
+    try { localStorage.setItem(CATEGORY_ORDER_KEY, JSON.stringify(ids)); } catch {}
+    setIsReordering(false);
+  };
+
+  const handleDragStart = (index: number) => { dragSrc.current = index; };
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragSrc.current === null || dragSrc.current === index) return;
+    setReorderList((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragSrc.current!, 1);
+      next.splice(index, 0, moved);
+      dragSrc.current = index;
+      return next;
+    });
+  };
 
   const totalItems = items.length;
 
@@ -163,100 +209,170 @@ function DenContent() {
           <p className="text-gray-500 text-sm">{totalItems} item{totalItems !== 1 ? "s" : ""} in your collection</p>
           <SyncNote />
         </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-10">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search your den..."
-          className="flex-1 bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
-        />
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 cursor-pointer"
+        <button
+          onClick={() => setIsReordering((v) => !v)}
+          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#c9a050] transition-colors border border-white/10 hover:border-[#c9a050]/40 rounded-lg px-3 py-1.5"
         >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+          {isReordering ? (
+            <span className="text-[#c9a050] font-semibold">Done</span>
+          ) : (
+            <>
+              <PencilIcon />
+              <span>Reorder</span>
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Categories */}
-      <div className="space-y-8">
-        {categories.map((cat) => {
-          const catItems = sortItems(
-            filteredItems.filter((i) => i.categoryId === cat.id),
-            sort,
-            usageCounts
-          );
-          const isCollapsed = collapsed.has(cat.id);
-          const isEmpty = catItems.length === 0;
-
-          return (
-            <section key={cat.id}>
-              {/* Category Header */}
-              <div className="flex items-center gap-3 mb-4">
-                <button
-                  onClick={() => toggleCollapse(cat.id)}
-                  className="flex-1 flex items-center gap-3 group min-w-0"
-                >
-                  <span className="text-xl flex items-center">{cat.icon ?? <CategoryIcon id={cat.id} />}</span>
-                  <h2 className="text-[#f5f2eb] font-semibold text-base group-hover:text-[#c9a050] transition-colors">
-                    {cat.label}
-                  </h2>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    isEmpty
-                      ? "bg-white/5 text-gray-600"
-                      : "bg-[#c9a050]/15 text-[#c9a050]"
-                  }`}>
-                    {catItems.length}
-                  </span>
-                  <div className="flex-1 h-px bg-white/5" />
-                  <span className="text-gray-600 text-xs">{isCollapsed ? "▶" : "▼"}</span>
-                </button>
-                <Link
-                  href={`/den/new?category=${cat.id}`}
-                  className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 hover:border-[#c9a050]/50 hover:text-[#c9a050] transition-colors text-base"
-                  title={`Add ${cat.label}`}
-                >
-                  +
-                </Link>
+      {isReordering ? (
+        /* Reorder mode */
+        <div>
+          <p className="text-gray-600 text-sm mb-4">Drag categories to reorder. Click <span className="text-[#c9a050] font-medium">Done</span> when finished.</p>
+          <div className="space-y-2">
+            {reorderList.map((cat, index) => (
+              <div
+                key={cat.id}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => e.preventDefault()}
+                className="flex items-center gap-3 bg-[#1e1e1e] border border-white/5 rounded-xl px-4 py-3 cursor-grab active:cursor-grabbing select-none hover:border-[#c9a050]/20 transition-colors"
+              >
+                <GripIcon />
+                <span className="text-lg flex items-center w-6">{cat.icon ?? <CategoryIcon id={cat.id} />}</span>
+                <span className="text-[#f5f2eb] text-sm font-medium flex-1">{cat.label}</span>
               </div>
-
-              {/* Category Content */}
-              {!isCollapsed && (
-                isEmpty ? (
-                  <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 py-10 text-center">
-                    <p className="text-4xl mb-3 opacity-30">{cat.icon ?? <CategoryIcon id={cat.id} />}</p>
-                    <p className="text-gray-600 text-sm">
-                      {search ? "No items match your search" : "No items yet — add them in the app"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {catItems.map((item) => (
-                      <ItemCard key={item.id} item={item} />
-                    ))}
-                  </div>
-                )
-              )}
-            </section>
-          );
-        })}
-      </div>
-
-      {totalItems === 0 && !loading && (
-        <div className="text-center py-20 text-gray-600 mt-4">
-          <p className="text-5xl mb-4">🪒</p>
-          <p className="text-lg mb-2">Your den is empty</p>
-          <p className="text-sm">Add items in the ShaveSplash mobile app — they&apos;ll sync here automatically.</p>
+            ))}
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => saveCategoryOrder(reorderList)}
+              className="flex-1 bg-[#c9a050] text-[#111] font-semibold text-sm rounded-xl py-2.5 hover:bg-[#d4aa5a] transition-colors"
+            >
+              Save Order
+            </button>
+            <button
+              onClick={() => setIsReordering(false)}
+              className="px-5 bg-[#242424] border border-white/10 text-gray-400 text-sm rounded-xl py-2.5 hover:text-[#f5f2eb] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
+      ) : (
+        <>
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-10">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search your den..."
+              className="flex-1 bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+            />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Categories */}
+          <div className="space-y-8">
+            {categories.map((cat) => {
+              const catItems = sortItems(
+                filteredItems.filter((i) => i.categoryId === cat.id),
+                sort,
+                usageCounts
+              );
+              const isCollapsed = collapsed.has(cat.id);
+              const isEmpty = catItems.length === 0;
+
+              return (
+                <section key={cat.id}>
+                  {/* Category Header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <button
+                      onClick={() => toggleCollapse(cat.id)}
+                      className="flex-1 flex items-center gap-3 group min-w-0"
+                    >
+                      <span className="text-xl flex items-center">{cat.icon ?? <CategoryIcon id={cat.id} />}</span>
+                      <h2 className="text-[#f5f2eb] font-semibold text-base group-hover:text-[#c9a050] transition-colors">
+                        {cat.label}
+                      </h2>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        isEmpty
+                          ? "bg-white/5 text-gray-600"
+                          : "bg-[#c9a050]/15 text-[#c9a050]"
+                      }`}>
+                        {catItems.length}
+                      </span>
+                      <div className="flex-1 h-px bg-white/5" />
+                      <span className="text-gray-600 text-xs">{isCollapsed ? "▶" : "▼"}</span>
+                    </button>
+                    <Link
+                      href={`/den/new?category=${cat.id}`}
+                      className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 hover:border-[#c9a050]/50 hover:text-[#c9a050] transition-colors text-base"
+                      title={`Add ${cat.label}`}
+                    >
+                      +
+                    </Link>
+                  </div>
+
+                  {/* Category Content */}
+                  {!isCollapsed && (
+                    isEmpty ? (
+                      <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 py-10 text-center">
+                        <p className="text-4xl mb-3 opacity-30">{cat.icon ?? <CategoryIcon id={cat.id} />}</p>
+                        <p className="text-gray-600 text-sm">
+                          {search ? "No items match your search" : "No items yet — add them in the app"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                        {catItems.map((item) => (
+                          <ItemCard key={item.id} item={item} />
+                        ))}
+                      </div>
+                    )
+                  )}
+                </section>
+              );
+            })}
+          </div>
+
+          {totalItems === 0 && !loading && (
+            <div className="text-center py-20 text-gray-600 mt-4">
+              <p className="text-5xl mb-4">🪒</p>
+              <p className="text-lg mb-2">Your den is empty</p>
+              <p className="text-sm">Add items in the ShaveSplash mobile app — they&apos;ll sync here automatically.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+    </svg>
+  );
+}
+
+function GripIcon() {
+  return (
+    <svg width="14" height="20" viewBox="0 0 14 20" fill="#555">
+      <circle cx="4" cy="5" r="1.5" /><circle cx="10" cy="5" r="1.5" />
+      <circle cx="4" cy="10" r="1.5" /><circle cx="10" cy="10" r="1.5" />
+      <circle cx="4" cy="15" r="1.5" /><circle cx="10" cy="15" r="1.5" />
+    </svg>
   );
 }
 

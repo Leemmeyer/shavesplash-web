@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-1">
           Privacy Policy
         </h1>
-        <p className="text-gray-600 text-sm mb-10">Last Updated: July 2026</p>
+        <p className="text-gray-600 text-sm mb-10">Last Updated: August 2026</p>
 
         <Body>
           ShaveSplash ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and safeguard your information depending on how you choose to use the app.
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
           <Body>Your data is stored on servers provided by Railway (hosting) and Turso (database). Both are located in the United States.</Body>
 
           <p className="text-[#f5f2eb] text-sm font-medium mb-1">Payments</p>
-          <Body>If you subscribe to the Expert tier, payments are processed by Stripe. We do not store your payment card details. Stripe's privacy policy applies to payment data.</Body>
+          <Body>If you subscribe to the Expert tier, payments are processed by Stripe (web) and RevenueCat (iOS and Android). We do not store your payment card details. Stripe and RevenueCat's privacy policies apply to payment data.</Body>
 
           <Body>We do not sell, rent, or share your personal data with any other third parties for marketing or advertising purposes.</Body>
         </Section>

@@ -63,7 +63,8 @@ function BrushSvg() {
 function CategoryIcon({ catId }: { catId: string }) {
   if (catId === 'blades') return <BladeSvg />;
   if (catId === 'brushes') return <BrushSvg />;
-  return <span>{CATEGORY_ICONS[catId] ?? '📦'}</span>;
+  const lookupId = catId === 'razorsSecondary' ? 'razors' : catId;
+  return <span>{CATEGORY_ICONS[lookupId] ?? '📦'}</span>;
 }
 
 type ScoreEntry = { value: number; shortName: string } | number;
@@ -90,9 +91,9 @@ function generateReportText(
   });
   let text = `Shave Report - ${date}\n\n`;
 
-  const order = ["razors","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
+  const order = ["razors","razorsSecondary","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
   const labels: Record<string,string> = {
-    razors:"Razor", blades:"Blade", brushes:"Brush", soaps:"Soap",
+    razors:"Razor", razorsSecondary:"Razor (also used)", blades:"Blade", brushes:"Brush", soaps:"Soap",
     aftershaves:"Aftershave", balms:"Balm", preshaves:"Preshave", edpedt:"EDP/EDT",
   };
   const allKeys = [
@@ -328,6 +329,7 @@ function LogForm({
     return s;
   });
   const [selectedItems, setSelectedItems] = useState<Record<string, SelectedItem>>(() => initial?.selectedItems ?? {});
+  const [showSecondaryRazor, setShowSecondaryRazor] = useState(() => !!initial?.selectedItems?.razorsSecondary?.itemId);
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -351,6 +353,12 @@ function LogForm({
 
   const selectedRazor = useMemo(() => {
     const sel = selectedItems["razors"];
+    if (!sel?.itemId) return null;
+    return inventory.find((i) => i.id === sel.itemId) ?? null;
+  }, [selectedItems, inventory]);
+
+  const selectedSecondaryRazor = useMemo(() => {
+    const sel = selectedItems["razorsSecondary"];
     if (!sel?.itemId) return null;
     return inventory.find((i) => i.id === sel.itemId) ?? null;
   }, [selectedItems, inventory]);
@@ -520,6 +528,77 @@ function LogForm({
                             ))}
                           </select>
                         </div>
+                      )}
+
+                      {/* Secondary razor */}
+                      {catId === "razors" && (
+                        showSecondaryRazor ? (
+                          <div className="mt-2">
+                            <div className="flex items-center gap-2 mb-1.5 px-1">
+                              <div className="flex-1 h-px bg-white/5" />
+                              <span className="text-[10px] text-gray-600 font-semibold tracking-wide uppercase">Also used</span>
+                              <div className="flex-1 h-px bg-white/5" />
+                              <button
+                                type="button"
+                                onClick={() => { clearItem("razorsSecondary"); setShowSecondaryRazor(false); }}
+                                className="text-gray-600 hover:text-red-400 transition-colors text-xs"
+                              >✕</button>
+                            </div>
+                            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                              <span className="w-6 flex-shrink-0 flex items-center justify-center"><CategoryIcon catId="razors" /></span>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <select
+                                  value={selectedItems["razorsSecondary"]?.itemId ?? ""}
+                                  onChange={(e) => {
+                                    const item = (itemsByCat["razors"] ?? []).find((i) => i.id === e.target.value);
+                                    if (item) setItemSelection("razorsSecondary", item.id, `${item.brand} ${item.name}`);
+                                    else clearItem("razorsSecondary");
+                                  }}
+                                  style={{ width: "100%", display: "block", boxSizing: "border-box" }}
+                                  className="bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                                >
+                                  <option value="">Razor (secondary)…</option>
+                                  {(itemsByCat["razors"] ?? [])
+                                    .slice()
+                                    .sort((a, b) => `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`))
+                                    .map((item) => (
+                                      <option key={item.id} value={item.id}>{item.brand} {item.name}</option>
+                                    ))}
+                                </select>
+                              </div>
+                              {selectedItems["razorsSecondary"]?.itemId && (
+                                <button type="button" onClick={() => clearItem("razorsSecondary")}
+                                  className="text-gray-600 hover:text-red-400 transition-colors text-sm flex-shrink-0">✕</button>
+                              )}
+                            </div>
+                            {selectedSecondaryRazor?.plates && selectedSecondaryRazor.plates.length > 0 && (
+                              <div className="ml-8 mt-1.5">
+                                <select
+                                  value={selectedItems["razorsSecondary"]?.plate ?? ""}
+                                  onChange={(e) => setSelectedItems((prev) => ({
+                                    ...prev,
+                                    razorsSecondary: { ...prev.razorsSecondary, plate: e.target.value || undefined },
+                                  }))}
+                                  className="w-full bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                                >
+                                  <option value="">Plate (optional)</option>
+                                  {selectedSecondaryRazor.plates.map((p) => (
+                                    <option key={p.name} value={p.name}>{p.type} – {p.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowSecondaryRazor(true)}
+                            className="flex items-center gap-1.5 mt-2 text-gray-600 hover:text-gray-400 transition-colors text-xs"
+                          >
+                            <span className="text-base leading-none">+</span>
+                            <span>add second razor</span>
+                          </button>
+                        )
                       )}
 
                       {/* Blade uses */}
@@ -866,9 +945,14 @@ function LogsContent() {
                   const avg = avgScore(log.scores);
                   const isExpanded = expanded === log.id;
                   const color = resultColor(log.result, resultOptions);
+                  const gearSortOrder = (key: string) => {
+                    if (key === 'razorsSecondary') return CATEGORY_ORDER.indexOf('razors') + 0.5;
+                    const idx = CATEGORY_ORDER.indexOf(key);
+                    return idx >= 0 ? idx : CATEGORY_ORDER.length;
+                  };
                   const usedItems = Object.entries(log.selectedItems)
                     .filter(([, s]) => s.itemName)
-                    .sort(([a], [b]) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b));
+                    .sort(([a], [b]) => gearSortOrder(a) - gearSortOrder(b));
 
                   return (
                     <div key={log.id} className="bg-[#1e1e1e] rounded-xl border border-white/5 overflow-hidden hover:border-white/10 transition-colors">
@@ -884,7 +968,7 @@ function LogsContent() {
                         <span className="text-[#f5f2eb] text-sm font-medium w-36 flex-shrink-0">{formatDate(log.date)}</span>
                         <span className="text-sm font-bold w-20 flex-shrink-0" style={{ color }}>{log.result}</span>
                         <span className="text-gray-500 text-sm truncate flex-1 hidden sm:block">
-                          {usedItems.slice(0,3).map(([,s])=>s.itemName).join(" · ")}
+                          {usedItems.filter(([k]) => k !== 'razorsSecondary').slice(0,3).map(([,s])=>s.itemName).join(" · ")}
                         </span>
                         {log.hasPhoto && (
                           <LogThumbnail logId={log.id} photoCache={photoCache} setPhotoCache={setPhotoCache} />

@@ -38,6 +38,11 @@ function PreferencesContent() {
   const [clearLogs, setClearLogs] = useState(true);
   const [clearPreferences, setClearPreferences] = useState(true);
 
+  // Den sharing
+  const [denShareToken, setDenShareToken] = useState<string | null | undefined>(undefined);
+  const [denShareLoading, setDenShareLoading] = useState(false);
+  const [denLinkCopied, setDenLinkCopied] = useState(false);
+
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -70,6 +75,41 @@ function PreferencesContent() {
       setClearError("Something went wrong. Please try again.");
       setClearing(false);
     }
+  };
+
+  useEffect(() => {
+    api.get<{ token: string | null }>("/api/den/share/status")
+      .then((d) => setDenShareToken(d.token))
+      .catch(() => setDenShareToken(null));
+  }, []);
+
+  const denShareUrl = denShareToken ? `${window.location.origin}/den/share/${denShareToken}` : null;
+
+  const handleGenerateDenLink = async () => {
+    setDenShareLoading(true);
+    try {
+      const d = await api.post<{ token: string }>("/api/den/share", {});
+      setDenShareToken(d.token);
+    } finally {
+      setDenShareLoading(false);
+    }
+  };
+
+  const handleRevokeDenLink = async () => {
+    setDenShareLoading(true);
+    try {
+      await api.delete("/api/den/share");
+      setDenShareToken(null);
+    } finally {
+      setDenShareLoading(false);
+    }
+  };
+
+  const handleCopyDenLink = () => {
+    if (!denShareUrl) return;
+    navigator.clipboard.writeText(denShareUrl);
+    setDenLinkCopied(true);
+    setTimeout(() => setDenLinkCopied(false), 2000);
   };
 
   useEffect(() => {
@@ -197,6 +237,47 @@ function PreferencesContent() {
           <p className="text-gray-500 text-xs leading-relaxed">
             <strong className="text-gray-400">To update these:</strong> Change your Result Options or Score Parameters in the ShaveSplash mobile app (Settings → Score Parameters / Result Options), then press Sync. The web app will pick up the changes automatically.
           </p>
+        </div>
+
+        {/* Share My Den */}
+        <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+          <h2 className="text-[#f5f2eb] font-semibold text-base mb-1">Share My Den</h2>
+          <p className="text-gray-500 text-xs mb-4">
+            Generate a private link to share your gear collection with a friend. Anyone with the link can view your Den — no account required.
+          </p>
+          {denShareToken === undefined ? (
+            <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+          ) : denShareToken ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 overflow-hidden">
+                <span className="text-[#f5f2eb] text-sm truncate flex-1 font-mono text-xs">{denShareUrl}</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={handleCopyDenLink}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${denLinkCopied ? "bg-green-500 text-white" : "bg-[#c9a050] text-black hover:bg-[#b8903f]"}`}
+                >
+                  {denLinkCopied ? "✓ Copied" : "Copy Link"}
+                </button>
+                <button
+                  onClick={handleRevokeDenLink}
+                  disabled={denShareLoading}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-40"
+                >
+                  {denShareLoading ? "Stopping…" : "Stop Sharing"}
+                </button>
+              </div>
+              <p className="text-gray-600 text-xs">Stopping sharing immediately invalidates this link.</p>
+            </div>
+          ) : (
+            <button
+              onClick={handleGenerateDenLink}
+              disabled={denShareLoading}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#c9a050] text-black hover:bg-[#b8903f] transition-colors disabled:opacity-40"
+            >
+              {denShareLoading ? "Generating…" : "Share My Den"}
+            </button>
+          )}
         </div>
 
         {/* Import data */}

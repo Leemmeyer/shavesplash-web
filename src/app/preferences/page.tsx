@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
@@ -42,6 +42,13 @@ function PreferencesContent() {
   const [denShareToken, setDenShareToken] = useState<string | null | undefined>(undefined);
   const [denShareLoading, setDenShareLoading] = useState(false);
   const [denLinkCopied, setDenLinkCopied] = useState(false);
+  const [showDenMsgSearch, setShowDenMsgSearch] = useState(false);
+  const [denMsgQuery, setDenMsgQuery] = useState("");
+  const [denMsgResults, setDenMsgResults] = useState<{ id: string; displayName: string }[]>([]);
+  const [denMsgSearching, setDenMsgSearching] = useState(false);
+  const [denMsgSending, setDenMsgSending] = useState<string | null>(null);
+  const [denMsgSent, setDenMsgSent] = useState<string | null>(null);
+  const denMsgSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -110,6 +117,40 @@ function PreferencesContent() {
     navigator.clipboard.writeText(denShareUrl);
     setDenLinkCopied(true);
     setTimeout(() => setDenLinkCopied(false), 2000);
+  };
+
+  useEffect(() => {
+    if (!showDenMsgSearch) { setDenMsgQuery(""); setDenMsgResults([]); setDenMsgSent(null); }
+  }, [showDenMsgSearch]);
+
+  useEffect(() => {
+    if (denMsgSearchRef.current) clearTimeout(denMsgSearchRef.current);
+    if (denMsgQuery.trim().length < 2) { setDenMsgResults([]); return; }
+    setDenMsgSearching(true);
+    denMsgSearchRef.current = setTimeout(async () => {
+      try {
+        const d = await api.get<{ users: { id: string; displayName: string }[] }>(`/api/bst/users/search?q=${encodeURIComponent(denMsgQuery)}`);
+        setDenMsgResults(d.users);
+      } catch {
+        setDenMsgResults([]);
+      } finally {
+        setDenMsgSearching(false);
+      }
+    }, 300);
+  }, [denMsgQuery]);
+
+  const handleSendDenViaMessage = async (recipientId: string, displayName: string) => {
+    if (denMsgSending || !denShareUrl) return;
+    setDenMsgSending(recipientId);
+    try {
+      const { conversation } = await api.post<{ conversation: { id: string } }>("/api/bst/conversations/direct", { recipientId });
+      await api.post(`/api/bst/conversations/${conversation.id}/messages`, { body: `Check out my Den: ${denShareUrl}` });
+      setDenMsgSent(displayName);
+    } catch {
+      // leave as-is, user can retry
+    } finally {
+      setDenMsgSending(null);
+    }
   };
 
   useEffect(() => {
@@ -260,6 +301,12 @@ function PreferencesContent() {
                   {denLinkCopied ? "✓ Copied" : "Copy Link"}
                 </button>
                 <button
+                  onClick={() => setShowDenMsgSearch((v) => !v)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${showDenMsgSearch ? "bg-white/10 border-white/20 text-[#f5f2eb]" : "bg-[#242424] border-white/10 text-[#f5f2eb] hover:border-white/20"}`}
+                >
+                  Send via Message
+                </button>
+                <button
                   onClick={handleRevokeDenLink}
                   disabled={denShareLoading}
                   className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-40"
@@ -267,6 +314,46 @@ function PreferencesContent() {
                   {denShareLoading ? "Stopping…" : "Stop Sharing"}
                 </button>
               </div>
+
+              {showDenMsgSearch && (
+                <div className="bg-[#242424] border border-white/10 rounded-xl p-4 space-y-3">
+                  {denMsgSent ? (
+                    <p className="text-green-400 text-sm">✓ Link sent to {denMsgSent}!</p>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={denMsgQuery}
+                        onChange={(e) => setDenMsgQuery(e.target.value)}
+                        placeholder="Search by username…"
+                        autoFocus
+                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/40"
+                      />
+                      {denMsgSearching && <p className="text-gray-500 text-xs">Searching…</p>}
+                      {denMsgResults.length > 0 && (
+                        <div className="divide-y divide-white/5">
+                          {denMsgResults.map((u) => (
+                            <div key={u.id} className="flex items-center justify-between py-2">
+                              <span className="text-[#f5f2eb] text-sm">{u.displayName}</span>
+                              <button
+                                onClick={() => handleSendDenViaMessage(u.id, u.displayName)}
+                                disabled={!!denMsgSending}
+                                className="text-[#c9a050] text-xs font-semibold hover:underline disabled:opacity-40"
+                              >
+                                {denMsgSending === u.id ? "Sending…" : "Send"}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {denMsgQuery.length >= 2 && !denMsgSearching && denMsgResults.length === 0 && (
+                        <p className="text-gray-600 text-xs">No users found.</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               <p className="text-gray-600 text-xs">Stopping sharing immediately invalidates this link.</p>
             </div>
           ) : (

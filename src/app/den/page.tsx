@@ -209,19 +209,28 @@ function DenContent() {
           <p className="text-gray-500 text-sm">{totalItems} item{totalItems !== 1 ? "s" : ""} in your collection</p>
           <SyncNote />
         </div>
-        <button
-          onClick={() => setIsReordering((v) => !v)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#c9a050] transition-colors border border-white/10 hover:border-[#c9a050]/40 rounded-lg px-3 py-1.5"
-        >
-          {isReordering ? (
-            <span className="text-[#c9a050] font-semibold">Done</span>
-          ) : (
-            <>
-              <PencilIcon />
-              <span>Reorder</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/preferences#den-sharing"
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#c9a050] transition-colors border border-white/10 hover:border-[#c9a050]/40 rounded-lg px-3 py-1.5"
+          >
+            <ShareIcon />
+            <span>Share Den</span>
+          </Link>
+          <button
+            onClick={() => setIsReordering((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#c9a050] transition-colors border border-white/10 hover:border-[#c9a050]/40 rounded-lg px-3 py-1.5"
+          >
+            {isReordering ? (
+              <span className="text-[#c9a050] font-semibold">Done</span>
+            ) : (
+              <>
+                <PencilIcon />
+                <span>Reorder</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {isReordering ? (
@@ -355,6 +364,15 @@ function DenContent() {
         </>
       )}
     </div>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
   );
 }
 

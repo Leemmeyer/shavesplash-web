@@ -290,7 +290,7 @@ function PreferencesContent() {
         </div>
 
         {/* Share My Den */}
-        <div id="den-sharing" className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+        <div id="den-sharing" style={{ scrollMarginTop: "2rem" }} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
           <h2 className="text-[#f5f2eb] font-semibold text-base mb-1">Share My Den</h2>
           <p className="text-gray-500 text-xs mb-4">
             Generate a private link to share your gear collection with a friend. Anyone with the link can view your Den — no account required.

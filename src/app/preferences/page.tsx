@@ -171,6 +171,15 @@ function PreferencesContent() {
       .catch(() => {});
   }, [session]);
 
+  // Scroll to hash anchor after page finishes loading
+  useEffect(() => {
+    if (loading) return;
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const el = document.getElementById(hash);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading]);
+
   const handleSaveName = async () => {
     if (!displayName.trim() || savingName) return;
     setSavingName(true);

@@ -6,6 +6,22 @@ import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
+function LinkedBody({ body, isMe }: { body: string; isMe: boolean }) {
+  const parts = body.split(/(https?:\/\/[^\s]+)/);
+  return (
+    <p className="px-4 py-3">
+      {parts.map((part, i) =>
+        part.startsWith("http://") || part.startsWith("https://") ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+            className={`underline ${isMe ? "text-blue-900" : "text-blue-400"}`}>
+            {part}
+          </a>
+        ) : part
+      )}
+    </p>
+  );
+}
+
 interface Message {
   id: string;
   body: string;
@@ -185,7 +201,7 @@ export default function ConversationPage() {
                 {msg.imageData && (
                   <img src={msg.imageData} alt="attachment" className="w-full max-w-xs object-cover" />
                 )}
-                {msg.body.trim() && <p className="px-4 py-3">{msg.body}</p>}
+                {msg.body.trim() && <LinkedBody body={msg.body} isMe={isMe} />}
                 <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
                   <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

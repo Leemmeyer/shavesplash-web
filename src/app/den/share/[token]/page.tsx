@@ -377,7 +377,7 @@ export default function SharedDenPage() {
       {data.categories.length > 1 && (
         <div className="sticky top-0 z-10 bg-[#111]/95 backdrop-blur border-b border-white/5">
           <div className="max-w-2xl mx-auto px-4">
-            <div className="flex gap-0 overflow-x-auto scrollbar-none">
+            <div className="flex gap-0 overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
               <button
                 onClick={() => setActiveTab(null)}
                 className={`flex-shrink-0 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${activeTab === null ? "border-[#c9a050] text-[#c9a050]" : "border-transparent text-gray-500 hover:text-gray-300"}`}

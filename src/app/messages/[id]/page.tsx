@@ -13,7 +13,7 @@ function LinkedBody({ body, isMe }: { body: string; isMe: boolean }) {
       {parts.map((part, i) =>
         part.startsWith("http://") || part.startsWith("https://") ? (
           <a key={i} href={part} target="_blank" rel="noopener noreferrer"
-            className={`underline ${isMe ? "text-blue-900" : "text-blue-400"}`}>
+            className={`underline break-all ${isMe ? "text-blue-900" : "text-blue-400"}`}>
             {part}
           </a>
         ) : part

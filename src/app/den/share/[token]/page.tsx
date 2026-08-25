@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
   razors: "Razors", blades: "Blades", brushes: "Brushes", soaps: "Soaps",
@@ -259,7 +258,7 @@ function ItemCard({ item, categoryId }: { item: DenItem; categoryId: string }) {
         </div>
         {hasDetails && (
           <span className="text-gray-600 flex-shrink-0">
-            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {expanded ? "▲" : "▼"}
           </span>
         )}
       </button>
@@ -282,7 +281,7 @@ function CategorySection({ cat, defaultOpen }: { cat: DenCategory; defaultOpen: 
         <span className="text-lg">{icon}</span>
         <h2 className="text-[#f5f2eb] font-semibold text-sm flex-1 text-left">{label}</h2>
         <span className="text-gray-600 text-xs mr-2">{cat.items.length}</span>
-        <span className="text-gray-600">{open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+        <span className="text-gray-600">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="border-t border-white/5">

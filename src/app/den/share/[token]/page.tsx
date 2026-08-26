@@ -42,7 +42,7 @@ type DenItem = {
     scentDescription?: string; scentFamily?: string; familySubtype?: string;
   };
 };
-type DenCategory = { id: string; items: DenItem[] };
+type DenCategory = { id: string; name?: string | null; items: DenItem[] };
 type DenData = { ownerName: string; categories: DenCategory[]; totalItems: number };
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -269,7 +269,7 @@ function ItemCard({ item, categoryId }: { item: DenItem; categoryId: string }) {
 
 function CategorySection({ cat, defaultOpen }: { cat: DenCategory; defaultOpen: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
-  const label = CATEGORY_LABELS[cat.id] ?? cat.id;
+  const label = cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id;
   const icon = CATEGORY_ICONS[cat.id] ?? "📦";
 
   return (
@@ -366,7 +366,7 @@ export default function SharedDenPage() {
             {data.categories.map((cat) => (
               <div key={cat.id} className="flex items-center gap-1.5 bg-white/5 rounded-full px-3 py-1">
                 <span className="text-sm">{CATEGORY_ICONS[cat.id] ?? "📦"}</span>
-                <span className="text-gray-400 text-xs">{cat.items.length} {CATEGORY_LABELS[cat.id] ?? cat.id}</span>
+                <span className="text-gray-400 text-xs">{cat.items.length} {cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id}</span>
               </div>
             ))}
           </div>
@@ -391,7 +391,7 @@ export default function SharedDenPage() {
                   className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${activeTab === cat.id ? "border-[#c9a050] text-[#c9a050]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
                   <span>{CATEGORY_ICONS[cat.id] ?? "📦"}</span>
-                  {CATEGORY_LABELS[cat.id] ?? cat.id}
+                  {cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id}
                 </button>
               ))}
             </div>

@@ -233,7 +233,12 @@ function ListingCard({ listing }: { listing: Listing }) {
               {listing.listingType === "for_trade" && (
                 <span className="bg-green-900/40 text-green-400 border border-green-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">TRADE</span>
               )}
-              {listing.price > 0 ? (
+              {listing.listingType === "pif" && (
+                <span className="bg-purple-900/40 text-purple-400 border border-purple-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">PIF</span>
+              )}
+              {listing.listingType === "pif" ? (
+                <span className="text-purple-400 text-xs font-medium">Free · Shipping by {(listing as any).shippingPaidBy ?? "receiver"}</span>
+              ) : listing.price > 0 ? (
                 <span className="text-[#c9a050] font-bold text-base">${listing.price.toFixed(2)}</span>
               ) : listing.listingType === "for_sale" ? (
                 <span className="text-gray-500 text-sm">Price TBD</span>

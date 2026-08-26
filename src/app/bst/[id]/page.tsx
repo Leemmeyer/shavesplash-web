@@ -20,6 +20,7 @@ type Listing = {
   category: string;
   status: string;
   listingType: string;
+  shippingPaidBy?: string | null;
   isExpertListing: boolean;
   createdAt: string;
   expiresAt: string | null;
@@ -144,11 +145,21 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               {listing.listingType === "for_trade" && (
                 <span className="bg-green-950 border border-green-700/50 text-green-400 rounded-lg px-3 py-1 text-sm font-bold">For Trade</span>
               )}
-              {listing.price > 0 ? (
+              {listing.listingType === "pif" && (
+                <span className="bg-purple-950 border border-purple-700/50 text-purple-400 rounded-lg px-3 py-1 text-sm font-bold">Pay it Forward</span>
+              )}
+              {listing.listingType === "pif" ? (
+                <span className="text-purple-400 text-2xl font-bold">Free</span>
+              ) : listing.price > 0 ? (
                 <span className="text-[#c9a050] text-3xl font-bold">${listing.price.toFixed(2)}</span>
               ) : listing.listingType === "for_sale" ? (
                 <span className="text-gray-500 text-xl font-semibold">Price TBD</span>
               ) : null}
+              {listing.listingType === "pif" && listing.shippingPaidBy && (
+                <span className="bg-purple-950 border border-purple-700/30 rounded-lg px-3 py-1 text-sm text-purple-300 capitalize">
+                  Shipping paid by {listing.shippingPaidBy}
+                </span>
+              )}
               {listing.condition && (
                 <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
                   {listing.condition}

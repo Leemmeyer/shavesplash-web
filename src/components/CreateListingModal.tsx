@@ -82,7 +82,8 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const [percentRemaining, setPercentRemaining] = useState("");
   const [ageMonths, setAgeMonths] = useState("");
   const [size, setSize] = useState(prefillSize != null ? String(prefillSize) : "");
-  const [listingType, setListingType] = useState<"for_sale" | "wtb" | "for_trade">("for_sale");
+  const [listingType, setListingType] = useState<"for_sale" | "wtb" | "for_trade" | "pif">("for_sale");
+  const [shippingPaidBy, setShippingPaidBy] = useState<"giver" | "receiver">("receiver");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -168,6 +169,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
 
   const priceRequired = listingType === "for_sale";
   const conditionRequired = listingType === "for_sale";
+  const isPif = listingType === "pif";
 
   const canSubmit =
     category && displayNameValid && !submitting &&
@@ -214,6 +216,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
         condition: condition || undefined,
         category,
         listingType,
+        ...(listingType === "pif" ? { shippingPaidBy } : {}),
         percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
         ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
         size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
@@ -274,13 +277,13 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
               {/* Listing Type */}
               <div>
                 <label className={labelCls}>Listing Type <span className="text-[#c9a050]">*</span></label>
-                <div className="flex gap-2">
-                  {([ { value: "for_sale", label: "For Sale" }, { value: "wtb", label: "WTB" }, { value: "for_trade", label: "For Trade" } ] as const).map((opt) => (
+                <div className="flex gap-2 flex-wrap">
+                  {([ { value: "for_sale", label: "For Sale" }, { value: "wtb", label: "WTB" }, { value: "for_trade", label: "For Trade" }, { value: "pif", label: "PIF" } ] as const).map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => { setListingType(opt.value); setPrice(""); setCondition(""); }}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                      className={`px-4 py-2 rounded-xl text-base font-medium border transition-colors ${
                         listingType === opt.value
                           ? "bg-[#c9a050]/10 border-[#c9a050] text-[#c9a050]"
                           : "border-white/10 text-gray-400 hover:border-white/20"
@@ -295,6 +298,28 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                 )}
                 {listingType === "for_trade" && (
                   <p className="text-gray-600 text-xs mt-1.5">Post what you&apos;re offering to trade.</p>
+                )}
+                {listingType === "pif" && (
+                  <div className="mt-2">
+                    <p className="text-gray-600 text-xs mb-2">PIF = Pay it Forward. Give an item away for free.</p>
+                    <p className="text-gray-500 text-xs font-medium mb-1.5">Shipping paid by</p>
+                    <div className="flex gap-2">
+                      {(["giver", "receiver"] as const).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setShippingPaidBy(opt)}
+                          className={`flex-1 px-4 py-2 rounded-xl text-base font-medium border transition-colors capitalize ${
+                            shippingPaidBy === opt
+                              ? "bg-[#c9a050]/10 border-[#c9a050] text-[#c9a050]"
+                              : "border-white/10 text-gray-400 hover:border-white/20"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -589,7 +614,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
               </div>
 
               {/* Price */}
-              {listingType !== "for_trade" && (
+              {listingType !== "for_trade" && listingType !== "pif" && (
                 <div className="max-w-[220px]">
                   <label className={labelCls}>
                     {listingType === "for_sale" ? "Price (USD)" : "Willing to Pay (USD)"}

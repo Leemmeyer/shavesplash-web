@@ -376,11 +376,11 @@ export default function SharedDenPage() {
       {/* Tab filter */}
       {data.categories.length > 1 && (
         <div className="sticky top-0 z-10 bg-[#111]/95 backdrop-blur border-b border-white/5">
-          <div className="max-w-2xl mx-auto">
-            <div
-              className="flex gap-0 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ scrollbarWidth: 'none', touchAction: 'pan-x' }}
+          <div
+              className="overflow-x-auto [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: 'none' }}
             >
+            <div className="flex w-max px-4">
               <button
                 onClick={() => setActiveTab(null)}
                 className={`flex-shrink-0 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${activeTab === null ? "border-[#c9a050] text-[#c9a050]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
@@ -397,8 +397,6 @@ export default function SharedDenPage() {
                   {cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id}
                 </button>
               ))}
-              {/* Right padding sentinel so last tab isn't flush against edge */}
-              <div className="flex-shrink-0 w-4" />
             </div>
           </div>
         </div>

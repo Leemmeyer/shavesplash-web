@@ -361,46 +361,39 @@ export default function SharedDenPage() {
             </div>
           </div>
 
-          {/* Category stat pills */}
+          {/* Category selector pills */}
           <div className="flex flex-wrap gap-2 mt-5">
-            {data.categories.map((cat) => (
-              <div key={cat.id} className="flex items-center gap-1.5 bg-white/5 rounded-full px-3 py-1">
-                <span className="text-sm">{CATEGORY_ICONS[cat.id] ?? "📦"}</span>
-                <span className="text-gray-400 text-xs">{cat.items.length} {cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id}</span>
-              </div>
-            ))}
+            {data.categories.map((cat) => {
+              const active = activeTab === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveTab(cat.id)}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors border ${
+                    active
+                      ? "bg-[#c9a050] border-[#c9a050] text-black"
+                      : "bg-white/5 border-transparent text-gray-400 hover:border-[#c9a050]/40 hover:text-[#c9a050]"
+                  }`}
+                >
+                  <span className="text-sm">{CATEGORY_ICONS[cat.id] ?? "📦"}</span>
+                  {cat.items.length} {cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setActiveTab(null)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors border ${
+                activeTab === null
+                  ? "bg-[#c9a050] border-[#c9a050] text-black"
+                  : "bg-white/5 border-transparent text-gray-400 hover:border-[#c9a050]/40 hover:text-[#c9a050]"
+              }`}
+            >
+              All Items
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Tab filter */}
-      {data.categories.length > 1 && (
-        <div className="sticky top-0 z-10 bg-[#111]/95 backdrop-blur border-b border-white/5">
-          <div
-              className="overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ scrollbarWidth: 'none' }}
-            >
-            <div className="flex w-max px-4">
-              <button
-                onClick={() => setActiveTab(null)}
-                className={`flex-shrink-0 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${activeTab === null ? "border-[#c9a050] text-[#c9a050]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
-              >
-                All
-              </button>
-              {data.categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveTab(cat.id)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${activeTab === cat.id ? "border-[#c9a050] text-[#c9a050]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
-                >
-                  <span>{CATEGORY_ICONS[cat.id] ?? "📦"}</span>
-                  {cat.name ?? CATEGORY_LABELS[cat.id] ?? cat.id}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">

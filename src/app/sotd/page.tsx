@@ -160,7 +160,11 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   const avg = avgScore(post.scores);
   const usedItems = Object.entries(post.selectedItems)
     .filter(([, s]) => s.itemName)
-    .sort(([a], [b]) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b));
+    .sort(([a], [b]) => {
+      const ia = CATEGORY_ORDER.indexOf(a) + 1 || Infinity;
+      const ib = CATEGORY_ORDER.indexOf(b) + 1 || Infinity;
+      return ia - ib;
+    });
 
   const scoreEntries = Object.entries(post.scores)
     .map(([, v]) => getScoreValue(v))

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
@@ -88,9 +88,12 @@ export default function DenPage() {
   );
 }
 
+type CustomCategory = { id: string; name: string };
+
 function DenContent() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
+  const [savedCustomCats, setSavedCustomCats] = useState<CustomCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("name");
@@ -106,28 +109,52 @@ function DenContent() {
       return DEFAULT_CATEGORIES.map((c) => c.id);
     }
   });
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [addingCat, setAddingCat] = useState(false);
   const dragSrc = useRef<number | null>(null);
 
   useEffect(() => {
     Promise.all([
       api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
       api.get<{ counts: Record<string, number> }>("/api/inventory/usage-counts").then((d) => d.counts).catch(() => ({} as Record<string, number>)),
-    ]).then(([inv, counts]) => {
+      api.get<{ categories: CustomCategory[] }>("/api/den/custom-categories").then((d) => d.categories).catch(() => [] as CustomCategory[]),
+    ]).then(([inv, counts, customCats]) => {
       setItems(inv);
       setUsageCounts(counts);
+      setSavedCustomCats(customCats);
     }).finally(() => setLoading(false));
   }, []);
 
-  // Build category list: defaults first, then any custom categories from items
+  const handleAddCategory = async () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    setAddingCat(true);
+    try {
+      const { category } = await api.post<{ category: CustomCategory }>("/api/den/custom-categories", { name });
+      setSavedCustomCats((prev) => [...prev, category]);
+      setNewCatName("");
+      setShowAddCategory(false);
+    } finally {
+      setAddingCat(false);
+    }
+  };
+
+  // Build category list: defaults first, then custom categories (from items + saved)
   const allCategories = useMemo(() => {
     const defaultIds = new Set(DEFAULT_CATEGORIES.map((c) => c.id));
-    const customIds = [...new Set(items.map((i) => i.categoryId).filter((id) => !defaultIds.has(id)))];
-    const customs = customIds.map((id) => {
+    // Custom categories from items (mobile-synced)
+    const itemCustomIds = [...new Set(items.map((i) => i.categoryId).filter((id) => !defaultIds.has(id)))];
+    const itemCustoms = itemCustomIds.map((id) => {
       const catName = items.find((i) => i.categoryId === id)?._categoryName;
       return { id, label: catName || id, icon: "📦" };
     });
-    return [...DEFAULT_CATEGORIES, ...customs];
-  }, [items]);
+    // Custom categories from server (web-created, may be empty)
+    const serverCustoms = savedCustomCats
+      .filter((sc) => !defaultIds.has(sc.id) && !itemCustomIds.includes(sc.id))
+      .map((sc) => ({ id: sc.id, label: sc.name, icon: "📦" }));
+    return [...DEFAULT_CATEGORIES, ...itemCustoms, ...serverCustoms];
+  }, [items, savedCustomCats]);
 
   // Apply saved order, appending any new categories at the end
   const categories = useMemo(() => {
@@ -218,6 +245,13 @@ function DenContent() {
             <span>Share Den</span>
           </Link>
           <button
+            onClick={() => { setShowAddCategory(true); setNewCatName(""); }}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#c9a050] transition-colors border border-white/10 hover:border-[#c9a050]/40 rounded-lg px-3 py-1.5"
+          >
+            <PlusIcon />
+            <span>Add Category</span>
+          </button>
+          <button
             onClick={() => setIsReordering((v) => !v)}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#c9a050] transition-colors border border-white/10 hover:border-[#c9a050]/40 rounded-lg px-3 py-1.5"
           >
@@ -232,6 +266,41 @@ function DenContent() {
           </button>
         </div>
       </div>
+
+      {/* Add Category Modal */}
+      {showAddCategory && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 className="text-[#f5f2eb] font-semibold text-lg mb-1">New Category</h2>
+            <p className="text-gray-500 text-sm mb-4">Create a custom category for your den.</p>
+            <input
+              type="text"
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleAddCategory(); if (e.key === "Escape") setShowAddCategory(false); }}
+              placeholder="e.g. Vintage Razors, Travel Kit…"
+              autoFocus
+              maxLength={50}
+              className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddCategory}
+                disabled={!newCatName.trim() || addingCat}
+                className="flex-1 bg-[#c9a050] text-[#111] font-semibold text-sm rounded-xl py-2.5 hover:bg-[#d4aa5a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {addingCat ? "Adding…" : "Add Category"}
+              </button>
+              <button
+                onClick={() => setShowAddCategory(false)}
+                className="px-5 bg-[#242424] border border-white/10 text-gray-400 text-sm rounded-xl py-2.5 hover:text-[#f5f2eb] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isReordering ? (
         /* Reorder mode */
@@ -364,6 +433,14 @@ function DenContent() {
         </>
       )}
     </div>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   );
 }
 

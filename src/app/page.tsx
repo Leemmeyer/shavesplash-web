@@ -49,6 +49,20 @@ export default function Home() {
           <p className="text-gray-600 text-xs mt-3 italic">The gentlemen's waiting room</p>
         </div>
 
+        {/* Features section */}
+        <div className="flex flex-col items-center px-6 pb-12 text-center">
+          <h2 className="font-[family-name:var(--font-fredericka)] text-lg text-[#c9a050] mb-4">
+            Everything in one place
+          </h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-3xl">
+            <Feature icon="🏠" title="My Den" description="Catalog your collection" href="/den" />
+            <Feature icon="📊" title="Analytics" description="Visualize your shave history" href="/logs" />
+            <Feature icon="💬" title="Forum" description="Community discussions" href="/forum" />
+            <Feature icon="🛒" title="Marketplace" description="Buy, sell, and trade gear" href="/bst" />
+          </div>
+        </div>
+
         {/* Support banner */}
         <div className="flex justify-center px-6 pb-10">
           <a
@@ -64,20 +78,6 @@ export default function Home() {
             </div>
             <span className="text-gray-600 group-hover:text-[#c9a050] transition-colors text-xs">→</span>
           </a>
-        </div>
-
-        {/* Features section */}
-        <div className="flex flex-col items-center px-6 pb-12 text-center">
-          <h2 className="font-[family-name:var(--font-fredericka)] text-lg text-[#c9a050] mb-4">
-            Everything in one place
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-3xl">
-            <Feature icon="🏠" title="My Den" description="Catalog your collection" href="/den" />
-            <Feature icon="📊" title="Analytics" description="Visualize your shave history" href="/logs" />
-            <Feature icon="💬" title="Forum" description="Community discussions" href="/forum" />
-            <Feature icon="🛒" title="Marketplace" description="Buy, sell, and trade gear" href="/bst" />
-          </div>
         </div>
 
       </main>

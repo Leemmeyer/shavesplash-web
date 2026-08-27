@@ -71,7 +71,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="flex items-center gap-3 bg-[#242424] border border-[#c9a050]/20 hover:border-[#c9a050]/50 rounded-2xl px-6 py-4 transition-colors group max-w-md w-full"
           >
-            <span className="text-2xl">☕</span>
+            <span className="text-3xl">☕</span>
             <div className="flex-1">
               <p className="font-[family-name:var(--font-fredericka)] text-lg text-[#c9a050] group-hover:text-white transition-colors">Support ShaveSplash</p>
               <p className="text-[#c9a050]/70 group-hover:text-white/70 text-xs mt-0.5 transition-colors">Built by a wet shaver, for wet shavers. Help keep it going.</p>

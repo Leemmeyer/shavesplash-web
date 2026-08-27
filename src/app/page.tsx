@@ -73,10 +73,10 @@ export default function Home() {
           >
             <span className="text-2xl">☕</span>
             <div className="flex-1">
-              <p className="text-[#f5f2eb] text-sm font-semibold group-hover:text-[#c9a050] transition-colors">Support ShaveSplash</p>
-              <p className="text-gray-500 text-xs mt-0.5">Built by a wet shaver, for wet shavers. Help keep it going.</p>
+              <p className="font-[family-name:var(--font-fredericka)] text-lg text-[#c9a050] group-hover:text-white transition-colors">Support ShaveSplash</p>
+              <p className="text-[#c9a050]/70 group-hover:text-white/70 text-xs mt-0.5 transition-colors">Built by a wet shaver, for wet shavers. Help keep it going.</p>
             </div>
-            <span className="text-gray-600 group-hover:text-[#c9a050] transition-colors text-xs">→</span>
+            <span className="text-[#c9a050] group-hover:text-white transition-colors text-xs">→</span>
           </a>
         </div>
 

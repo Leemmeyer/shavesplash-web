@@ -47,10 +47,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               />
               <span className="font-[family-name:var(--font-fredericka)] text-xl text-[#c9a050]">ShaveSplash</span>
             </div>
-            <div className="flex gap-5">
+            <div className="flex gap-5 items-center">
               <a href="https://shavesplash.com" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">ShaveSplash.com</a>
               <a href="/about" className="hover:text-gray-400 transition-colors">About</a>
               <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</a>
+              <a href="https://buymeacoffee.com/shavesplash" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#c9a050] hover:text-[#b8903f] transition-colors font-medium">
+                <span>☕</span> Support
+              </a>
             </div>
           </footer>
         </SessionProvider>

@@ -16,10 +16,14 @@ export default function Home() {
             Move Your Shave to the Cloud
           </p>
 
-          <p className="text-gray-500 text-sm max-w-md mb-6 leading-relaxed">
+          <p className="text-gray-500 text-sm max-w-md mb-2 leading-relaxed">
             Web companion to{" "}
             <span className="text-gray-400 font-medium">ShaveSplash: The Rabbit Hole</span>
             {" "}— the iOS and Android app for Wetshaving.
+          </p>
+          <p className="text-gray-500 text-sm max-w-md mb-6 leading-relaxed">
+            For news and reviews visit{" "}
+            <a href="https://shavesplash.com" target="_blank" rel="noopener noreferrer" className="text-[#c9a050] hover:text-white transition-colors">ShaveSplash.com</a>
           </p>
 
           {/* CTAs */}
@@ -55,11 +59,12 @@ export default function Home() {
             Everything in one place
           </h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-3xl">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full max-w-4xl">
             <Feature icon="🏠" title="My Den" description="Catalog your collection" href="/den" />
             <Feature icon="📊" title="Analytics" description="Visualize your shave history" href="/logs" />
             <Feature icon="💬" title="Forum" description="Community discussions" href="/forum" />
             <Feature icon="🛒" title="Marketplace" description="Buy, sell, and trade gear" href="/bst" />
+            <Feature icon="📰" title="News & Reviews" description="Visit ShaveSplash.com" href="https://shavesplash.com" external />
           </div>
         </div>
 
@@ -86,9 +91,9 @@ export default function Home() {
   );
 }
 
-function Feature({ icon, title, description, href }: { icon: string; title: string; description: string; href: string }) {
+function Feature({ icon, title, description, href, external }: { icon: string; title: string; description: string; href: string; external?: boolean }) {
   return (
-    <Link href={href} className="group block">
+    <Link href={href} className="group block" {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
       <div className="bg-[#242424] rounded-xl p-4 border border-white/5 hover:border-[#c9a050]/30 transition-colors h-full text-left">
         <div className="text-2xl mb-2">{icon}</div>
         <h3 className="text-[#f5f2eb] font-semibold text-sm mb-1 group-hover:text-[#c9a050] transition-colors">{title}</h3>

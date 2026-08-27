@@ -341,6 +341,7 @@ function LogForm({
   }, [initial?.id, initial?.hasPhoto]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState("");
 
   const itemsByCat = useMemo(() => {
     const map: Record<string, InventoryItem[]> = {};
@@ -407,6 +408,7 @@ function LogForm({
       if (photoDataUrl) {
         await api.post(`/api/logs/${logId}/photo`, { data: photoDataUrl });
       }
+      setProductSearch("");
       onSave({
         ...body,
         hasPhoto: !!photoDataUrl || (isEdit && !!initial?.hasPhoto),
@@ -477,11 +479,38 @@ function LogForm({
           {categories.length > 0 && (
             <div>
               <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Gear Used</label>
+
+              {/* Universal search */}
+              <div className="relative mb-3">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+                <input
+                  type="text"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Search gear…"
+                  className="w-full bg-[#242424] border border-white/10 rounded-lg pl-8 pr-8 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                />
+                {productSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setProductSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-sm"
+                  >✕</button>
+                )}
+              </div>
+
               <div className="space-y-2">
                 {categories.map((catId) => {
-                  const items = (itemsByCat[catId] ?? []).slice().sort((a, b) =>
+                  const allItems = (itemsByCat[catId] ?? []).slice().sort((a, b) =>
                     `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`)
                   );
+                  const q = productSearch.toLowerCase();
+                  const items = q
+                    ? allItems.filter((i) =>
+                        `${i.brand} ${i.name}`.toLowerCase().includes(q) ||
+                        selectedItems[catId]?.itemId === i.id
+                      )
+                    : allItems;
                   const sel = selectedItems[catId];
                   const label = CATEGORY_LABELS[catId] ?? itemsByCat[catId]?.[0]?._categoryName ?? catId;
                   return (

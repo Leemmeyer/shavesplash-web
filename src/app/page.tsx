@@ -27,7 +27,7 @@ export default function Home() {
             <Link href="/bst" className="flex items-center gap-2 bg-[#c9a050] text-black font-bold px-6 py-3 rounded-2xl hover:bg-[#b8903f] transition-colors text-sm">
               Browse Marketplace
             </Link>
-            <Link href="https://apps.apple.com/app/shavesplash" target="_blank" className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm">
+            <Link href="https://apps.apple.com/us/app/shavesplash-the-rabbit-hole/id6758178614" target="_blank" className="flex items-center gap-2 border border-[#c9a050]/30 text-[#c9a050] px-6 py-3 rounded-2xl hover:bg-[#c9a050]/10 transition-colors text-sm">
               <AppleIcon />
               iOS App
             </Link>

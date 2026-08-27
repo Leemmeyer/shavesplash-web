@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
+function stripHtml(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&rsquo;/g, "'").replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"').replace(/&ldquo;/g, '"')
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
+    .trim();
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   razors: "Razors", blades: "Blades", brushes: "Brushes", soaps: "Soaps",
   aftershaves: "Aftershaves", balms: "Balms", preshaves: "Pre-Shaves", edpedt: "Fragrances",
@@ -22,6 +33,7 @@ type DenItem = {
     metal?: string; finish?: string; weight?: number; construction?: string;
     handleModel?: string; bladeGap?: number; exposure?: number; edgeType?: string;
     straightWidth?: string; straightPoint?: string; straightHollow?: string;
+    plates?: Array<{ name: string; type: string }>;
     // Blade
     bladeFormat?: string; sharpness?: number;
     bladeModel?: string; bladeCountryOfOrigin?: string; bladeCoating?: string;
@@ -69,7 +81,7 @@ function ItemDetail({ item, categoryId }: { item: DenItem; categoryId: string })
 
   const hasSoapScores = categoryId === "soaps" && (d.soapDensity || d.soapCushion || d.soapSlickness || d.soapStability);
   const hasScentNotes = d.topNotes || d.heartNotes || d.baseNotes;
-  const hasRazorSpecs = d.metal || d.finish || d.construction || d.handleModel || d.bladeGap || d.exposure;
+  const hasRazorSpecs = d.metal || d.finish || d.construction || d.handleModel || d.bladeGap || d.exposure || d.plates?.length;
   const hasBrushSpecs = d.knot || d.diameter;
 
   return (
@@ -94,6 +106,7 @@ function ItemDetail({ item, categoryId }: { item: DenItem; categoryId: string })
           {d.straightWidth && <Chip label={d.straightWidth} />}
           {d.straightPoint && <Chip label={d.straightPoint} />}
           {d.straightHollow && <Chip label={d.straightHollow} />}
+          {d.plates?.map((p) => <Chip key={p.name} label={`${p.name} (${p.type})`} />)}
         </div>
       )}
 
@@ -191,7 +204,7 @@ function ItemDetail({ item, categoryId }: { item: DenItem; categoryId: string })
       )}
 
       {d.scentDescription && (
-        <p className="text-gray-500 text-xs leading-relaxed">{d.scentDescription}</p>
+        <p className="text-gray-500 text-xs leading-relaxed">{stripHtml(d.scentDescription)}</p>
       )}
 
       {/* Catalog links */}

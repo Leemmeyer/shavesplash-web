@@ -4,6 +4,17 @@ import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
+
+function stripHtml(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&rsquo;/g, "'").replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"').replace(/&ldquo;/g, '"')
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
+    .trim();
+}
 import { api } from "@/lib/api";
 import CatalogPicker, { CatalogEntry } from "@/components/CatalogPicker";
 import CreateListingModal from "@/components/CreateListingModal";
@@ -502,7 +513,7 @@ function ItemDetailContent({ id }: { id: string }) {
             {item.scentDescription && (
               <div className="pt-1 border-t border-white/5 mt-1">
                 <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Description</p>
-                <p className="text-[#f5f2eb] text-xs leading-relaxed">{item.scentDescription}</p>
+                <p className="text-[#f5f2eb] text-xs leading-relaxed">{stripHtml(item.scentDescription)}</p>
               </div>
             )}
 
@@ -577,7 +588,19 @@ function ItemDetailContent({ id }: { id: string }) {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   const reader = new FileReader();
-                  reader.onload = () => setEditPhotoPreview(reader.result as string);
+                  reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const MAX = 800;
+                      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+                      const canvas = document.createElement('canvas');
+                      canvas.width = Math.round(img.width * scale);
+                      canvas.height = Math.round(img.height * scale);
+                      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+                      setEditPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = reader.result as string;
+                  };
                   reader.readAsDataURL(file);
                 }}
               />

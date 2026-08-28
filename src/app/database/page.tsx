@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
@@ -554,11 +554,16 @@ function GearCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+const DB_SORT_KEY = "shavesplash-db-sort";
+
 function DatabasePageContent() {
   const [items, setItems] = useState<GearItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"brand" | "name">(() => {
+    try { return (localStorage.getItem(DB_SORT_KEY) as "brand" | "name") ?? "brand"; } catch { return "brand"; }
+  });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editItem, setEditItem] = useState<GearItem | null>(null);
   const [viewItem, setViewItem] = useState<GearItem | null>(null);
@@ -601,6 +606,14 @@ function DatabasePageContent() {
   // Derive unique brands for current filter
   const brands = [...new Set(items.map((i) => i.brand))].sort();
 
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) =>
+      sort === "brand"
+        ? a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
+        : a.name.localeCompare(b.name) || a.brand.localeCompare(b.brand)
+    );
+  }, [items, sort]);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 pb-32">
       {/* Header */}
@@ -642,12 +655,29 @@ function DatabasePageContent() {
         ))}
       </div>
 
-      {/* Stats */}
+      {/* Stats + Sort */}
       {!loading && (
-        <p className="text-gray-600 text-xs mb-4">
-          {items.length} item{items.length !== 1 ? "s" : ""}
-          {brands.length > 0 ? ` · ${brands.length} brand${brands.length !== 1 ? "s" : ""}` : ""}
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-gray-600 text-xs">
+            {items.length} item{items.length !== 1 ? "s" : ""}
+            {brands.length > 0 ? ` · ${brands.length} brand${brands.length !== 1 ? "s" : ""}` : ""}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-600 text-xs">Sort</span>
+            <select
+              value={sort}
+              onChange={(e) => {
+                const v = e.target.value as "brand" | "name";
+                setSort(v);
+                try { localStorage.setItem(DB_SORT_KEY, v); } catch {}
+              }}
+              className="bg-[#1e1e1e] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:border-[#c9a050]/40 cursor-pointer"
+            >
+              <option value="brand">Brand A–Z</option>
+              <option value="name">Name A–Z</option>
+            </select>
+          </div>
+        </div>
       )}
 
       {/* Grid */}
@@ -664,7 +694,7 @@ function DatabasePageContent() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {items.map((item) => (
+          {sortedItems.map((item) => (
             <GearCard
               key={item.id}
               item={item}

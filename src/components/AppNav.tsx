@@ -27,6 +27,7 @@ const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/messages", label: "Messages" },
   { href: "/forum", label: "Forum" },
   { href: "/sotd", label: "SOTD" },
+  { href: "/database", label: "Database" },
   { href: "/preferences", label: "Preferences" },
 ];
 

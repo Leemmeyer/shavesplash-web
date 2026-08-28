@@ -582,6 +582,7 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
                   img.onerror = () => setError('Could not read photo. Please try a JPEG or PNG file.');
                   img.src = reader.result as string;
                 };
+                reader.onerror = () => setError('Could not read photo. Please try a JPEG or PNG file.');
                 reader.readAsDataURL(file);
               }}
             />

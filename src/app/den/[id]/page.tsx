@@ -609,6 +609,7 @@ function ItemDetailContent({ id }: { id: string }) {
                     img.onerror = () => setEditError('Could not read photo. Please try a JPEG or PNG file.');
                     img.src = reader.result as string;
                   };
+                  reader.onerror = () => setEditError('Could not read photo. Please try a JPEG or PNG file.');
                   reader.readAsDataURL(file);
                 }}
               />

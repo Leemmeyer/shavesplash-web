@@ -40,6 +40,7 @@ export default function AppNav() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [forumUnread, setForumUnread] = useState(0);
   const [isExpert, setIsExpert] = useState(false);
+  const [adminPending, setAdminPending] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [notifUnread, setNotifUnread] = useState(0);
@@ -66,6 +67,19 @@ export default function AppNav() {
       .then((d) => setIsExpert(d.isExpert))
       .catch(() => {});
   }, [session]);
+
+  // Fetch admin pending count (admin only)
+  useEffect(() => {
+    if (!isAdmin) { setAdminPending(0); return; }
+    const fetch = () => {
+      api.get<{ total: number }>("/api/admin/pending-counts")
+        .then((d) => setAdminPending(d.total))
+        .catch(() => {});
+    };
+    fetch();
+    const id = setInterval(fetch, 60_000);
+    return () => clearInterval(id);
+  }, [isAdmin]);
 
   // Poll unread message count every 30 s
   useEffect(() => {
@@ -264,9 +278,14 @@ export default function AppNav() {
             {isAdmin ? (
               <Link
                 href="/admin"
-                className="text-xs text-red-400/60 hover:text-red-400 transition-colors font-medium"
+                className="relative inline-flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 transition-colors font-medium"
               >
                 Admin Panel
+                {adminPending > 0 && (
+                  <span className="min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 leading-none">
+                    {adminPending > 99 ? "99+" : adminPending}
+                  </span>
+                )}
               </Link>
             ) : <span />}
             <Link
@@ -316,9 +335,14 @@ export default function AppNav() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className="px-4 py-3 text-sm text-red-400/70 hover:text-red-400 transition-colors font-medium"
+                className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70 hover:text-red-400 transition-colors font-medium"
               >
                 Admin Panel
+                {adminPending > 0 && (
+                  <span className="min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 leading-none">
+                    {adminPending > 99 ? "99+" : adminPending}
+                  </span>
+                )}
               </Link>
             )}
             <div className="px-4 py-2 text-xs text-gray-600">{session.user.email}</div>

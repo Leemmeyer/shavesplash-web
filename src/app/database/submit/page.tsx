@@ -210,18 +210,12 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (bladeFormat) data.bladeFormat = bladeFormat;
       if (bladeCountryOfOrigin.trim()) data.bladeCountryOfOrigin = bladeCountryOfOrigin.trim();
       if (bladeCoating.trim()) data.bladeCoating = bladeCoating.trim();
-      if (sharpness > 0) data.sharpness = sharpness;
     }
     if (isBrush) {
       if (knot) data.knot = knot;
       if (diameter) data.diameter = diameter;
     }
     if (isSoap) {
-      if (soapDensity > 0) data.soapDensity = soapDensity;
-      if (soapCushion > 0) data.soapCushion = soapCushion;
-      if (soapSlickness > 0) data.soapSlickness = soapSlickness;
-      if (soapStability > 0) data.soapStability = soapStability;
-      if (soapScentStrength > 0) data.soapScentStrength = soapScentStrength;
       if (soapHasMenthol !== undefined) data.soapHasMenthol = soapHasMenthol;
       if (soapIsTallow !== undefined) data.soapIsTallow = soapIsTallow;
     }
@@ -234,7 +228,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (familySubtype.trim()) data.familySubtype = familySubtype.trim();
       if (inspiration.trim()) data.inspiration = inspiration.trim();
     }
-    if (isAftershave && aftershaveScentStrength > 0) data.aftershaveScentStrength = aftershaveScentStrength;
     if (isEdpEdt && edpedtScentStrength > 0) data.edpedtScentStrength = edpedtScentStrength;
     if (isPreshave && preshaveType) data.preshaveType = preshaveType;
     if (hasSize && size.trim()) data.size = parseFloat(size);
@@ -404,7 +397,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
           <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
             <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Blade Specs</h2>
             <SelectField label="Format" value={bladeFormat} options={BLADE_FORMAT_OPTIONS} onChange={setBladeFormat} />
-            <RatingField label="Sharpness" value={sharpness} onChange={setSharpness} />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Country of Origin</label>
@@ -429,15 +421,10 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
           </div>
         )}
 
-        {/* Soap ratings */}
+        {/* Soap specs */}
         {isSoap && (
           <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
-            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Soap Ratings</h2>
-            <RatingField label="Density" value={soapDensity} onChange={setSoapDensity} />
-            <RatingField label="Cushion" value={soapCushion} onChange={setSoapCushion} />
-            <RatingField label="Slickness" value={soapSlickness} onChange={setSoapSlickness} />
-            <RatingField label="Stability" value={soapStability} onChange={setSoapStability} />
-            <RatingField label="Scent Strength" value={soapScentStrength} onChange={setSoapScentStrength} />
+            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Soap Specs</h2>
             <div>
               <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Menthol</label>
               <div className="flex gap-2">
@@ -463,13 +450,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
           </div>
         )}
 
-        {/* Aftershave ratings */}
-        {isAftershave && (
-          <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
-            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Aftershave Ratings</h2>
-            <RatingField label="Scent Strength" value={aftershaveScentStrength} onChange={setAftershaveScentStrength} />
-          </div>
-        )}
 
         {/* EDP/EDT ratings */}
         {isEdpEdt && (

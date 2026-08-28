@@ -344,20 +344,21 @@ function ItemDetailContent({ id }: { id: string }) {
         notes: editNotes.trim() || undefined,
         data,
       });
+      let newPhotoUrl = photoUrl;
+      if (editPhotoPreview) {
+        const r = await api.post<{ photoUrl: string }>(`/api/inventory/${item.id}/photo`, { data: editPhotoPreview });
+        newPhotoUrl = r.photoUrl;
+        setPhotoUrl(r.photoUrl);
+        setEditPhotoPreview(null);
+      }
       setItem({
         ...item,
         name: editName.trim(),
         brand: editBrand.trim(),
         notes: editNotes.trim() || undefined,
+        hasPhoto: newPhotoUrl != null ? true : item.hasPhoto,
         ...data,
       });
-      if (editPhotoPreview) {
-        try {
-          const r = await api.post<{ photoUrl: string }>(`/api/inventory/${item.id}/photo`, { data: editPhotoPreview });
-          setPhotoUrl(r.photoUrl);
-        } catch {}
-        setEditPhotoPreview(null);
-      }
       setShowEdit(false);
     } catch (e) {
       setEditError(e instanceof Error ? e.message : "Failed to save");

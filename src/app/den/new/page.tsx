@@ -252,6 +252,7 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   // Razor
   const [edgeType, setEdgeType] = useState<string>("");
@@ -448,6 +449,9 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
         createdAt: Date.now(),
         data,
       });
+      if (photoPreview) {
+        await api.post(`/api/inventory/${newId}/photo`, { data: photoPreview });
+      }
       const isMatchable = isSoap || isAftershave || isEdpEdt;
       if (isMatchable && !fromCatalog) {
         setPendingMatch({ id: newId, brand: brand.trim(), name: name.trim() });
@@ -521,6 +525,58 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
               rows={3}
               placeholder="Any notes about this item..."
               className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Photo</label>
+            <div
+              className="relative w-28 aspect-square bg-[#242424] rounded-xl overflow-hidden border border-white/10 cursor-pointer group"
+              onClick={() => (document.getElementById('new-item-photo-upload') as HTMLInputElement)?.click()}
+            >
+              {photoPreview
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={photoPreview} alt="" className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">
+                    {CATEGORY_ICONS[categoryId] ?? "📦"}
+                  </div>
+              }
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-xs font-semibold">{photoPreview ? "Change" : "Add Photo"}</span>
+              </div>
+            </div>
+            {photoPreview && (
+              <button
+                type="button"
+                onClick={() => setPhotoPreview(null)}
+                className="mt-1.5 text-xs text-gray-500 hover:text-red-400 transition-colors"
+              >
+                Remove
+              </button>
+            )}
+            <input
+              id="new-item-photo-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const img = new Image();
+                  img.onload = () => {
+                    const MAX = 800;
+                    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
+                  };
+                  img.src = reader.result as string;
+                };
+                reader.readAsDataURL(file);
+              }}
             />
           </div>
         </div>

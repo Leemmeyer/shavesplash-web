@@ -220,10 +220,10 @@ function DetailModal({ item, selected, onToggle, onEdit, onClose }: {
         <div className="overflow-y-auto flex-1 px-5 pb-5">
           {/* Photo */}
           {item.hasPhoto && (
-            <div className="aspect-video bg-[#161616] rounded-xl overflow-hidden mt-4">
+            <div className="aspect-square bg-[#161616] rounded-xl overflow-hidden mt-4">
               {photoUrl
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={photoUrl} alt={item.name} className="w-full h-full object-cover" />
+                ? <img src={photoUrl} alt={item.name} className="w-full h-full object-contain" />
                 : <div className="w-full h-full flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
                   </div>

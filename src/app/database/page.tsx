@@ -655,30 +655,27 @@ function DatabasePageContent() {
         ))}
       </div>
 
-      {/* Stats + Sort */}
-      {!loading && (
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-gray-600 text-xs">
-            {items.length} item{items.length !== 1 ? "s" : ""}
-            {brands.length > 0 ? ` · ${brands.length} brand${brands.length !== 1 ? "s" : ""}` : ""}
-          </p>
-          <div className="flex items-center gap-1.5">
-            <span className="text-gray-600 text-xs">Sort</span>
-            <select
-              value={sort}
-              onChange={(e) => {
-                const v = e.target.value as "brand" | "name";
-                setSort(v);
-                try { localStorage.setItem(DB_SORT_KEY, v); } catch {}
-              }}
-              className="bg-[#1e1e1e] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:border-[#c9a050]/40 cursor-pointer"
-            >
-              <option value="brand">Brand A–Z</option>
-              <option value="name">Name A–Z</option>
-            </select>
-          </div>
+      {/* Sort + Stats row */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-gray-600 text-xs">
+          {loading ? "" : `${items.length} item${items.length !== 1 ? "s" : ""}${brands.length > 0 ? ` · ${brands.length} brand${brands.length !== 1 ? "s" : ""}` : ""}`}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 text-sm">Sort by</span>
+          <select
+            value={sort}
+            onChange={(e) => {
+              const v = e.target.value as "brand" | "name";
+              setSort(v);
+              try { localStorage.setItem(DB_SORT_KEY, v); } catch {}
+            }}
+            className="bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-1.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/40 cursor-pointer"
+          >
+            <option value="brand">Brand A–Z</option>
+            <option value="name">Name A–Z</option>
+          </select>
         </div>
-      )}
+      </div>
 
       {/* Grid */}
       {loading ? (

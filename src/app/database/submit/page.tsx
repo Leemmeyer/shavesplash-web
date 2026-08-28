@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
@@ -65,7 +65,7 @@ function RatingField({ label, value, onChange }: { label: string; value: number;
   );
 }
 
-function SubmitForm({ defaultCategory }: { defaultCategory: string }) {
+function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; fromDenId?: string | null }) {
   const router = useRouter();
   const [categoryId, setCategoryId] = useState(defaultCategory || "razors");
   const [brand, setBrand] = useState("");
@@ -74,6 +74,7 @@ function SubmitForm({ defaultCategory }: { defaultCategory: string }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [prefilling, setPrefilling] = useState(!!fromDenId);
 
   // Razor
   const [edgeType, setEdgeType] = useState("");
@@ -116,6 +117,60 @@ function SubmitForm({ defaultCategory }: { defaultCategory: string }) {
   const [preshaveType, setPreshaveType] = useState("");
   // Size
   const [size, setSize] = useState("");
+
+  // Pre-fill from a Den item when ?from= is present
+  useEffect(() => {
+    if (!fromDenId) return;
+    api.get<{ items: Record<string, unknown>[] }>("/api/inventory")
+      .then((d) => {
+        const item = d.items.find((i) => i.id === fromDenId) as Record<string, unknown> | undefined;
+        if (!item) return;
+        if (item.categoryId) setCategoryId(item.categoryId as string);
+        if (item.brand) setBrand(item.brand as string);
+        if (item.name) setName(item.name as string);
+        if (item.edgeType) setEdgeType(item.edgeType as string);
+        if (item.construction) setConstruction(item.construction as string);
+        if (item.bladeGap != null) setBladeGap(String(item.bladeGap));
+        if (item.exposure != null) setExposure(String(item.exposure));
+        if (item.weight != null) setWeight(String(item.weight));
+        if (item.metal) setMetal(item.metal as string);
+        if (item.finish) setFinish(item.finish as string);
+        if (item.straightWidth) setStraightWidth(item.straightWidth as string);
+        if (item.straightPoint) setStraightPoint(item.straightPoint as string);
+        if (item.straightHollow) setStraightHollow(item.straightHollow as string);
+        if (item.bladeFormat) setBladeFormat(item.bladeFormat as string);
+        if (item.bladeCountryOfOrigin) setBladeCountryOfOrigin(item.bladeCountryOfOrigin as string);
+        if (item.bladeCoating) setBladeCoating(item.bladeCoating as string);
+        if (item.sharpness) setSharpness(item.sharpness as number);
+        if (item.knot) setKnot(item.knot as string);
+        if (item.diameter) setDiameter(item.diameter as string);
+        if (item.soapDensity) setSoapDensity(item.soapDensity as number);
+        if (item.soapCushion) setSoapCushion(item.soapCushion as number);
+        if (item.soapSlickness) setSoapSlickness(item.soapSlickness as number);
+        if (item.soapStability) setSoapStability(item.soapStability as number);
+        if (item.soapScentStrength) setSoapScentStrength(item.soapScentStrength as number);
+        if (item.soapHasMenthol != null) setSoapHasMenthol(item.soapHasMenthol as boolean);
+        if (item.soapIsTallow != null) setSoapIsTallow(item.soapIsTallow as boolean);
+        if (item.topNotes) setTopNotes(item.topNotes as string);
+        if (item.heartNotes) setHeartNotes(item.heartNotes as string);
+        if (item.baseNotes) setBaseNotes(item.baseNotes as string);
+        if (item.scentDescription) setScentDescription(item.scentDescription as string);
+        if (item.scentFamily) setScentFamily(item.scentFamily as string);
+        if (item.familySubtype) setFamilySubtype(item.familySubtype as string);
+        if (item.inspiration) setInspiration(item.inspiration as string);
+        if (item.aftershaveScentStrength) setAftershaveScentStrength(item.aftershaveScentStrength as number);
+        if (item.edpedtScentStrength) setEdpedtScentStrength(item.edpedtScentStrength as number);
+        if (item.preshaveType) setPreshaveType(item.preshaveType as string);
+        if (item.size != null) setSize(String(item.size));
+        if (item.hasPhoto) {
+          api.get<{ photoUrl: string | null }>(`/api/inventory/${fromDenId}/photo`)
+            .then((p) => { if (p.photoUrl) setPhotoPreview(p.photoUrl); })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPrefilling(false));
+  }, [fromDenId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isRazor = categoryId === "razors";
   const isBlade = categoryId === "blades";
@@ -197,6 +252,17 @@ function SubmitForm({ defaultCategory }: { defaultCategory: string }) {
     }
   };
 
+  if (prefilling) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-6 h-6 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">Loading item from your Den…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (done) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
@@ -225,6 +291,12 @@ function SubmitForm({ defaultCategory }: { defaultCategory: string }) {
       <div className="mb-8">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">Submit Gear Item</h1>
         <p className="text-gray-500 text-sm mt-1">Contributions are reviewed before appearing in the database.</p>
+        {fromDenId && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-xl px-3 py-2">
+            <span>📦</span>
+            <span>Pre-filled from your Den — review and edit before submitting.</span>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -464,7 +536,8 @@ function SubmitForm({ defaultCategory }: { defaultCategory: string }) {
 
 function SubmitPageContent() {
   const searchParams = useSearchParams();
-  return <SubmitForm defaultCategory={searchParams.get("category") ?? "razors"} />;
+  const from = searchParams.get("from");
+  return <SubmitForm defaultCategory={searchParams.get("category") ?? "razors"} fromDenId={from} />;
 }
 
 export default function SubmitPage() {

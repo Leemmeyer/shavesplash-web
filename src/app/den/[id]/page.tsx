@@ -551,6 +551,14 @@ function ItemDetailContent({ id }: { id: string }) {
               }
             />
           )}
+          {!showEdit && (
+            <Link
+              href={`/database/submit?from=${item.id}`}
+              className="w-full block text-center border border-white/10 text-gray-400 py-3 rounded-xl hover:border-white/20 hover:text-[#f5f2eb] transition-colors font-semibold text-sm mt-2"
+            >
+              🗂️ Submit to Gear Database
+            </Link>
+          )}
         </div>
       </div>
 

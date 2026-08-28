@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import SyncNote from "@/components/SyncNote";
 
 const CATEGORY_ORDER_KEY = "shavesplash-den-category-order";
+const SORT_KEY = "shavesplash-den-sort";
 
 const DEFAULT_CATEGORIES = [
   { id: "razors",      label: "Razors",       icon: "🪒" },
@@ -96,7 +97,9 @@ function DenContent() {
   const [savedCustomCats, setSavedCustomCats] = useState<CustomCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("name");
+  const [sort, setSort] = useState(() => {
+    try { return localStorage.getItem(SORT_KEY) ?? "name"; } catch { return "name"; }
+  });
   const [collapsed, setCollapsed] = useState<Set<string>>(
     new Set(DEFAULT_CATEGORIES.map((c) => c.id))
   );
@@ -357,7 +360,7 @@ function DenContent() {
             />
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) => { setSort(e.target.value); try { localStorage.setItem(SORT_KEY, e.target.value); } catch {} }}
               className="bg-[#242424] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50 cursor-pointer"
             >
               {SORT_OPTIONS.map((o) => (

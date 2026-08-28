@@ -105,7 +105,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [scentFamily, setScentFamily] = useState("");
   const [familySubtype, setFamilySubtype] = useState("");
   const [inspiration, setInspiration] = useState("");
-  const [edpedtScentStrength, setEdpedtScentStrength] = useState(0);
   // Preshave
   const [preshaveType, setPreshaveType] = useState("");
   // Size
@@ -145,7 +144,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.scentFamily) setScentFamily(item.scentFamily as string);
         if (item.familySubtype) setFamilySubtype(item.familySubtype as string);
         if (item.inspiration) setInspiration(item.inspiration as string);
-        if (item.edpedtScentStrength) setEdpedtScentStrength(item.edpedtScentStrength as number);
         if (item.preshaveType) setPreshaveType(item.preshaveType as string);
         if (item.size != null) setSize(String(item.size));
         if (item.hasPhoto) {
@@ -214,7 +212,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (familySubtype.trim()) data.familySubtype = familySubtype.trim();
       if (inspiration.trim()) data.inspiration = inspiration.trim();
     }
-    if (isEdpEdt && edpedtScentStrength > 0) data.edpedtScentStrength = edpedtScentStrength;
     if (isPreshave && preshaveType) data.preshaveType = preshaveType;
     if (hasSize && size.trim()) data.size = parseFloat(size);
 
@@ -437,13 +434,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         )}
 
 
-        {/* EDP/EDT ratings */}
-        {isEdpEdt && (
-          <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
-            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Fragrance Ratings</h2>
-            <RatingField label="Scent Strength" value={edpedtScentStrength} onChange={setEdpedtScentStrength} />
-          </div>
-        )}
 
         {/* Scent profile */}
         {hasScent && (

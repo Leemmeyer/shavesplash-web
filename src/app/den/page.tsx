@@ -114,7 +114,7 @@ function DenContent() {
   const [addingCat, setAddingCat] = useState(false);
   const dragSrc = useRef<number | null>(null);
 
-  useEffect(() => {
+  const fetchInventory = useCallback(() => {
     Promise.all([
       api.get<{ items: InventoryItem[] }>("/api/inventory").then((d) => d.items).catch(() => [] as InventoryItem[]),
       api.get<{ counts: Record<string, number> }>("/api/inventory/usage-counts").then((d) => d.counts).catch(() => ({} as Record<string, number>)),
@@ -125,6 +125,13 @@ function DenContent() {
       setSavedCustomCats(customCats);
     }).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchInventory();
+    const onFocus = () => fetchInventory();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchInventory]);
 
   const handleAddCategory = async () => {
     const name = newCatName.trim();

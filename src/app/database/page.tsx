@@ -179,7 +179,7 @@ function DetailSpecs({ item }: { item: GearItem }) {
   return (
     <div className="mt-4">
       {rows.map((r) => <SpecRow key={r.label} {...r} />)}
-      {d.scentDescription && (
+      {!!d.scentDescription && (
         <div className="mt-3 pt-3 border-t border-white/5">
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-1.5">Description</p>
           <p className="text-[#f5f2eb] text-sm leading-relaxed">{String(d.scentDescription)}</p>

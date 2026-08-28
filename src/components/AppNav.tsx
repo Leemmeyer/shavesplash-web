@@ -19,7 +19,7 @@ type AppNotification = {
 
 const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
-const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
+const NAV_LINKS: { href: string; label: string; external?: boolean; gold?: boolean }[] = [
   { href: "/den", label: "My Den" },
   { href: "/logs", label: "History" },
   { href: "/analytics", label: "Analysis" },
@@ -27,7 +27,8 @@ const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
   { href: "/messages", label: "Messages" },
   { href: "/forum", label: "Forum" },
   { href: "/sotd", label: "SOTD" },
-  { href: "/database", label: "Database" },
+  { href: "/database", label: "Gear Database" },
+  { href: "https://shavesplash.com", label: "News & Reviews", external: true },
   { href: "/preferences", label: "Preferences" },
 ];
 
@@ -246,29 +247,33 @@ export default function AppNav() {
         {/* Row 2: Nav links — desktop only, wraps to two lines if needed */}
         {session && (
           <div className="hidden md:flex flex-wrap justify-center items-center gap-0.5 max-w-7xl mx-auto px-6 pb-2 border-t border-white/5 pt-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  pathname.startsWith(link.href)
-                    ? "text-[#c9a050] bg-[#c9a050]/10"
-                    : "text-gray-400 hover:text-[#f5f2eb]"
-                }`}
-              >
-                {link.label}
-                {link.href === "/messages" && unreadCount > 0 && (
-                  <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                {link.href === "/forum" && forumUnread > 0 && (
-                  <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                    {forumUnread > 99 ? "99+" : forumUnread}
-                  </span>
-                )}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive = !link.external && pathname.startsWith(link.href);
+              const cls = `relative px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${isActive ? "text-[#c9a050] bg-[#c9a050]/10" : "text-gray-400 hover:text-[#f5f2eb]"}`;
+              const badges = (
+                <>
+                  {link.href === "/messages" && unreadCount > 0 && (
+                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  {link.href === "/forum" && forumUnread > 0 && (
+                    <span className="absolute top-0.5 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                      {forumUnread > 99 ? "99+" : forumUnread}
+                    </span>
+                  )}
+                </>
+              );
+              return link.external ? (
+                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} className={cls}>
+                  {link.label}{badges}
+                </Link>
+              );
+            })}
           </div>
         )}
 
@@ -306,31 +311,33 @@ export default function AppNav() {
       {session && menuOpen && (
         <div className="md:hidden fixed top-[53px] inset-x-0 z-40 bg-[#1a1a1a] border-b border-white/10 shadow-xl">
           <div className="px-4 py-3 flex flex-col">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  pathname.startsWith(link.href)
-                    ? "text-[#c9a050] bg-[#c9a050]/10"
-                    : link.gold
-                    ? "text-[#c9a050]/70"
-                    : "text-gray-400"
-                }`}
-              >
-                {link.label}
-                {link.href === "/messages" && unreadCount > 0 && (
-                  <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                {link.href === "/forum" && forumUnread > 0 && (
-                  <span className="min-w-[18px] h-[18px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[10px] font-bold flex items-center justify-center px-1 leading-none">
-                    {forumUnread > 99 ? "99+" : forumUnread}
-                  </span>
-                )}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive = !link.external && pathname.startsWith(link.href);
+              const cls = `flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? "text-[#c9a050] bg-[#c9a050]/10" : link.gold ? "text-[#c9a050]/70" : "text-gray-400"}`;
+              const badges = (
+                <>
+                  {link.href === "/messages" && unreadCount > 0 && (
+                    <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  {link.href === "/forum" && forumUnread > 0 && (
+                    <span className="min-w-[18px] h-[18px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[10px] font-bold flex items-center justify-center px-1 leading-none">
+                      {forumUnread > 99 ? "99+" : forumUnread}
+                    </span>
+                  )}
+                </>
+              );
+              return link.external ? (
+                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} className={cls}>
+                  {link.label}{badges}
+                </Link>
+              );
+            })}
             <div className="h-px bg-white/5 my-2" />
             {isAdmin && (
               <Link

@@ -245,7 +245,7 @@ export default function AppNav() {
 
         {/* Row 2: Nav links — desktop only, wraps to two lines if needed */}
         {session && (
-          <div className="hidden md:flex flex-wrap items-center gap-0.5 max-w-7xl mx-auto px-6 pb-2 border-t border-white/5 pt-1">
+          <div className="hidden md:flex flex-wrap justify-center items-center gap-0.5 max-w-7xl mx-auto px-6 pb-2 border-t border-white/5 pt-1">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

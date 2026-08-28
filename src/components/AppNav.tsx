@@ -34,7 +34,7 @@ const NAV_LINKS: { href: string; label: string; gold?: boolean }[] = [
 export default function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { session, loading, refresh } = useSession();
+  const { session, refresh } = useSession();
   const isAdmin = session?.user.email === ADMIN_EMAIL;
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -165,96 +165,94 @@ export default function AppNav() {
           )}
 
           <div className="flex items-center gap-3 shrink-0">
-            {!loading && (
-              session ? (
-                <>
-                  <span className="text-gray-600 text-xs hidden md:block truncate max-w-[180px]">{session.user.email}</span>
+            {session ? (
+              <>
+                <span className="text-gray-600 text-xs hidden md:block truncate max-w-[180px]">{session.user.email}</span>
 
-                  {/* Notification bell */}
-                  <div className="relative" ref={notifRef}>
-                    <button
-                      onClick={openNotifications}
-                      className="relative p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
-                      aria-label="Notifications"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                      </svg>
-                      {(unreadCount + notifUnread) > 0 && (
-                        <span className="absolute top-0 right-0 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
-                          {(unreadCount + notifUnread) > 99 ? "99+" : unreadCount + notifUnread}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Dropdown panel */}
-                    {notifOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-80 bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                          <p className="text-[#f5f2eb] text-sm font-semibold">Notifications</p>
-                          {notifications.some(n => !n.read) && (
-                            <button onClick={() => { api.post("/api/notifications/read-all", {}).catch(() => {}); setNotifications(ns => ns.map(n => ({ ...n, read: true }))); }} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Mark all read</button>
-                          )}
-                        </div>
-                        {unreadCount > 0 && (
-                          <Link href="/messages" onClick={() => setNotifOpen(false)} className="flex items-center gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <span className="text-lg">✉️</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[#f5f2eb] text-xs font-semibold">{unreadCount} unread message{unreadCount !== 1 ? "s" : ""}</p>
-                              <p className="text-gray-500 text-xs">Tap to view BST messages</p>
-                            </div>
-                            <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">{unreadCount > 99 ? "99+" : unreadCount}</span>
-                          </Link>
-                        )}
-                        <div className="max-h-80 overflow-y-auto">
-                          {notifications.length === 0 && unreadCount === 0 ? (
-                            <p className="text-gray-600 text-xs text-center py-8">No notifications yet</p>
-                          ) : notifications.length === 0 ? null : (
-                            notifications.map((n) => (
-                              <a key={n.id} href={n.link} onClick={() => { api.post(`/api/notifications/${n.id}/read`, {}).catch(() => {}); setNotifOpen(false); }} className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${n.read ? "opacity-60" : ""}`}>
-                                <span className="text-base mt-0.5 shrink-0">{n.type === "forum_reply" ? "💬" : "🪒"}</span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[#f5f2eb] text-xs font-semibold leading-snug">{n.title}</p>
-                                  <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{n.body}</p>
-                                  <p className="text-gray-700 text-[10px] mt-1">{new Date(n.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-                                </div>
-                                {!n.read && <span className="w-2 h-2 rounded-full bg-[#c9a050] shrink-0 mt-1.5" />}
-                              </a>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
+                {/* Notification bell */}
+                <div className="relative" ref={notifRef}>
                   <button
-                    onClick={handleSignOut}
-                    className="text-sm text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap hidden md:block"
+                    onClick={openNotifications}
+                    className="relative p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
+                    aria-label="Notifications"
                   >
-                    Sign out
-                  </button>
-                  <button
-                    onClick={() => setMenuOpen((o) => !o)}
-                    className="md:hidden relative flex flex-col gap-1.5 p-2 -mr-2"
-                    aria-label="Menu"
-                  >
-                    <span className={`block w-5 h-0.5 bg-[#c9a050] transition-transform origin-center ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-                    <span className={`block w-5 h-0.5 bg-[#c9a050] transition-opacity ${menuOpen ? "opacity-0" : ""}`} />
-                    <span className={`block w-5 h-0.5 bg-[#c9a050] transition-transform origin-center ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
                     {(unreadCount + notifUnread) > 0 && (
-                      <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-[#1a1a1a]" />
+                      <span className="absolute top-0 right-0 min-w-[15px] h-[15px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                        {(unreadCount + notifUnread) > 99 ? "99+" : unreadCount + notifUnread}
+                      </span>
                     )}
                   </button>
-                </>
-              ) : (
-                <Link
-                  href="/sign-in"
-                  className="text-sm bg-[#c9a050] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-[#b8903f] transition-colors whitespace-nowrap"
+
+                  {/* Dropdown panel */}
+                  {notifOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                        <p className="text-[#f5f2eb] text-sm font-semibold">Notifications</p>
+                        {notifications.some(n => !n.read) && (
+                          <button onClick={() => { api.post("/api/notifications/read-all", {}).catch(() => {}); setNotifications(ns => ns.map(n => ({ ...n, read: true }))); }} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Mark all read</button>
+                        )}
+                      </div>
+                      {unreadCount > 0 && (
+                        <Link href="/messages" onClick={() => setNotifOpen(false)} className="flex items-center gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <span className="text-lg">✉️</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[#f5f2eb] text-xs font-semibold">{unreadCount} unread message{unreadCount !== 1 ? "s" : ""}</p>
+                            <p className="text-gray-500 text-xs">Tap to view BST messages</p>
+                          </div>
+                          <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                        </Link>
+                      )}
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 && unreadCount === 0 ? (
+                          <p className="text-gray-600 text-xs text-center py-8">No notifications yet</p>
+                        ) : notifications.length === 0 ? null : (
+                          notifications.map((n) => (
+                            <a key={n.id} href={n.link} onClick={() => { api.post(`/api/notifications/${n.id}/read`, {}).catch(() => {}); setNotifOpen(false); }} className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${n.read ? "opacity-60" : ""}`}>
+                              <span className="text-base mt-0.5 shrink-0">{n.type === "forum_reply" ? "💬" : "🪒"}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[#f5f2eb] text-xs font-semibold leading-snug">{n.title}</p>
+                                <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{n.body}</p>
+                                <p className="text-gray-700 text-[10px] mt-1">{new Date(n.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                              </div>
+                              {!n.read && <span className="w-2 h-2 rounded-full bg-[#c9a050] shrink-0 mt-1.5" />}
+                            </a>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleSignOut}
+                  className="text-sm text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap hidden md:block"
                 >
-                  Sign In / Join Free
-                </Link>
-              )
+                  Sign out
+                </button>
+                <button
+                  onClick={() => setMenuOpen((o) => !o)}
+                  className="md:hidden relative flex flex-col gap-1.5 p-2 -mr-2"
+                  aria-label="Menu"
+                >
+                  <span className={`block w-5 h-0.5 bg-[#c9a050] transition-transform origin-center ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
+                  <span className={`block w-5 h-0.5 bg-[#c9a050] transition-opacity ${menuOpen ? "opacity-0" : ""}`} />
+                  <span className={`block w-5 h-0.5 bg-[#c9a050] transition-transform origin-center ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+                  {(unreadCount + notifUnread) > 0 && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-[#1a1a1a]" />
+                  )}
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/sign-in"
+                className="text-sm bg-[#c9a050] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-[#b8903f] transition-colors whitespace-nowrap"
+              >
+                Sign In / Join Free
+              </Link>
             )}
           </div>
         </div>

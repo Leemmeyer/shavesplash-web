@@ -103,6 +103,164 @@ function GearPhoto({ item }: { item: GearItem }) {
   );
 }
 
+// ─── Detail Modal ─────────────────────────────────────────────────────────────
+
+function SpecRow({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex justify-between items-start gap-4 py-1.5 border-b border-white/5 last:border-0">
+      <span className="text-gray-500 text-sm shrink-0">{label}</span>
+      <span className="text-[#f5f2eb] text-sm text-right">{value}</span>
+    </div>
+  );
+}
+
+function DetailSpecs({ item }: { item: GearItem }) {
+  const d = item.data;
+  const cat = item.categoryId;
+
+  const rows: { label: string; value: string | number }[] = [];
+
+  if (cat === "razors") {
+    if (d.edgeType) rows.push({ label: "Edge Type", value: String(d.edgeType) });
+    if (d.construction) rows.push({ label: "Construction", value: String(d.construction) });
+    if (d.metal) rows.push({ label: "Metal", value: String(d.metal) });
+    if (d.finish) rows.push({ label: "Finish", value: String(d.finish) });
+    if (d.bladeGap != null) rows.push({ label: "Blade Gap", value: `${d.bladeGap}mm` });
+    if (d.exposure != null) rows.push({ label: "Exposure", value: `${d.exposure}mm` });
+    if (d.weight != null) rows.push({ label: "Weight", value: `${d.weight}g` });
+    if (d.straightWidth) rows.push({ label: "Width", value: `${d.straightWidth}"` });
+    if (d.straightPoint) rows.push({ label: "Point", value: String(d.straightPoint) });
+    if (d.straightHollow) rows.push({ label: "Hollow", value: String(d.straightHollow) });
+  }
+  if (cat === "blades") {
+    if (d.bladeFormat) rows.push({ label: "Format", value: String(d.bladeFormat) });
+    if (d.bladeCountryOfOrigin) rows.push({ label: "Country", value: String(d.bladeCountryOfOrigin) });
+    if (d.bladeCoating) rows.push({ label: "Coating", value: String(d.bladeCoating) });
+    if (d.sharpness) rows.push({ label: "Sharpness", value: `${d.sharpness}/10` });
+  }
+  if (cat === "brushes") {
+    if (d.knot) rows.push({ label: "Knot", value: String(d.knot) });
+    if (d.diameter) rows.push({ label: "Diameter", value: String(d.diameter) });
+  }
+  if (cat === "soaps") {
+    if (d.soapDensity) rows.push({ label: "Density", value: `${d.soapDensity}/10` });
+    if (d.soapCushion) rows.push({ label: "Cushion", value: `${d.soapCushion}/10` });
+    if (d.soapSlickness) rows.push({ label: "Slickness", value: `${d.soapSlickness}/10` });
+    if (d.soapStability) rows.push({ label: "Stability", value: `${d.soapStability}/10` });
+    if (d.soapScentStrength) rows.push({ label: "Scent Strength", value: `${d.soapScentStrength}/10` });
+    if (d.soapHasMenthol != null) rows.push({ label: "Menthol", value: d.soapHasMenthol ? "Yes" : "No" });
+    if (d.soapIsTallow != null) rows.push({ label: "Base", value: d.soapIsTallow ? "Tallow" : "Vegan" });
+  }
+  if (cat === "aftershaves") {
+    if (d.aftershaveScentStrength) rows.push({ label: "Scent Strength", value: `${d.aftershaveScentStrength}/10` });
+  }
+  if (cat === "edpedt") {
+    if (d.edpedtScentStrength) rows.push({ label: "Scent Strength", value: `${d.edpedtScentStrength}/10` });
+  }
+  if (cat === "preshaves") {
+    if (d.preshaveType) rows.push({ label: "Type", value: String(d.preshaveType) });
+  }
+  if (["soaps", "aftershaves", "edpedt"].includes(cat)) {
+    if (d.scentFamily) rows.push({ label: "Scent Family", value: d.familySubtype ? `${d.scentFamily} · ${d.familySubtype}` : String(d.scentFamily) });
+    if (d.topNotes) rows.push({ label: "Top Notes", value: String(d.topNotes) });
+    if (d.heartNotes) rows.push({ label: "Heart Notes", value: String(d.heartNotes) });
+    if (d.baseNotes) rows.push({ label: "Base Notes", value: String(d.baseNotes) });
+    if (d.inspiration) rows.push({ label: "Inspiration", value: String(d.inspiration) });
+  }
+  if (["soaps", "balms", "aftershaves", "edpedt"].includes(cat)) {
+    if (d.size != null) {
+      const unit = ["soaps", "balms"].includes(cat) ? "oz" : "mL";
+      rows.push({ label: "Size", value: `${d.size} ${unit}` });
+    }
+  }
+
+  if (rows.length === 0 && !d.scentDescription) return null;
+
+  return (
+    <div className="mt-4">
+      {rows.map((r) => <SpecRow key={r.label} {...r} />)}
+      {d.scentDescription && (
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-1.5">Description</p>
+          <p className="text-[#f5f2eb] text-sm leading-relaxed">{String(d.scentDescription)}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailModal({ item, selected, onToggle, onEdit, onClose }: {
+  item: GearItem; selected: boolean;
+  onToggle: () => void; onEdit: () => void; onClose: () => void;
+}) {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!item.hasPhoto) return;
+    api.get<{ photoUrl: string | null }>(`/api/gear/${item.id}/photo`)
+      .then((d) => setPhotoUrl(d.photoUrl))
+      .catch(() => {});
+  }, [item.id, item.hasPhoto]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div
+        className="bg-[#1e1e1e] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/5 shrink-0">
+          <span className="text-xs text-gray-500 uppercase tracking-wider">
+            {categoryIcon(item.categoryId)} {categoryLabel(item.categoryId)}
+          </span>
+          <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-xl leading-none">✕</button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1 px-5 pb-5">
+          {/* Photo */}
+          {item.hasPhoto && (
+            <div className="aspect-video bg-[#161616] rounded-xl overflow-hidden mt-4">
+              {photoUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={photoUrl} alt={item.name} className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+                  </div>
+              }
+            </div>
+          )}
+
+          {/* Identity */}
+          <div className="mt-4">
+            <p className="text-[#c9a050] text-sm font-medium">{item.brand}</p>
+            <h2 className="text-[#f5f2eb] text-xl font-bold leading-snug mt-0.5">{item.name}</h2>
+          </div>
+
+          {/* Specs */}
+          <DetailSpecs item={item} />
+        </div>
+
+        {/* Footer actions */}
+        <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex gap-3">
+          <button
+            onClick={onEdit}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] hover:border-white/20 transition-colors"
+          >
+            Propose Edit
+          </button>
+          <button
+            onClick={onToggle}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${selected ? "bg-[#c9a050]/20 border border-[#c9a050]/60 text-[#c9a050]" : "bg-[#c9a050] text-black hover:bg-[#d4aa60]"}`}
+          >
+            {selected ? "✓ Selected for Den" : "Add to Den"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
 function EditModal({ item, onClose }: { item: GearItem; onClose: () => void }) {
@@ -351,18 +509,21 @@ function EditScentFields({ data, setField }: { data: Record<string, unknown>; se
 // ─── Gear Card ────────────────────────────────────────────────────────────────
 
 function GearCard({
-  item, selected, onToggle, onEdit,
+  item, selected, onToggle, onEdit, onView,
 }: {
   item: GearItem; selected: boolean;
-  onToggle: () => void; onEdit: () => void;
+  onToggle: () => void; onEdit: () => void; onView: () => void;
 }) {
   const preview = specPreview(item);
 
   return (
-    <div className={`group relative bg-[#1e1e1e] rounded-xl border transition-all cursor-pointer flex flex-col ${selected ? "border-[#c9a050]/60 ring-1 ring-[#c9a050]/30" : "border-white/5 hover:border-white/15"}`}>
+    <div
+      onClick={onView}
+      className={`group relative bg-[#1e1e1e] rounded-xl border transition-all cursor-pointer flex flex-col ${selected ? "border-[#c9a050]/60 ring-1 ring-[#c9a050]/30" : "border-white/5 hover:border-white/15"}`}
+    >
       {/* Checkbox */}
       <button
-        onClick={onToggle}
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
         className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${selected ? "bg-[#c9a050] border-[#c9a050] text-black" : "bg-black/60 border-white/30 hover:border-white/60"}`}
       >
         {selected && <span className="text-xs font-bold leading-none">✓</span>}
@@ -400,6 +561,7 @@ function DatabasePageContent() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editItem, setEditItem] = useState<GearItem | null>(null);
+  const [viewItem, setViewItem] = useState<GearItem | null>(null);
   const [adding, setAdding] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
 
@@ -509,6 +671,7 @@ function DatabasePageContent() {
               selected={selected.has(item.id)}
               onToggle={() => toggleSelect(item.id)}
               onEdit={() => setEditItem(item)}
+              onView={() => setViewItem(item)}
             />
           ))}
         </div>
@@ -533,6 +696,17 @@ function DatabasePageContent() {
             </>
           )}
         </div>
+      )}
+
+      {/* Detail modal */}
+      {viewItem && (
+        <DetailModal
+          item={viewItem}
+          selected={selected.has(viewItem.id)}
+          onToggle={() => toggleSelect(viewItem.id)}
+          onEdit={() => { setViewItem(null); setEditItem(viewItem); }}
+          onClose={() => setViewItem(null)}
+        />
       )}
 
       {/* Edit modal */}

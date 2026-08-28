@@ -360,6 +360,7 @@ function ItemDetailContent({ id }: { id: string }) {
         ...data,
       });
       setShowEdit(false);
+      router.refresh();
     } catch (e) {
       setEditError(e instanceof Error ? e.message : "Failed to save");
     } finally {

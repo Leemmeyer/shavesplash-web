@@ -91,16 +91,10 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [bladeFormat, setBladeFormat] = useState("");
   const [bladeCountryOfOrigin, setBladeCountryOfOrigin] = useState("");
   const [bladeCoating, setBladeCoating] = useState("");
-  const [sharpness, setSharpness] = useState(0);
   // Brush
   const [knot, setKnot] = useState("");
   const [diameter, setDiameter] = useState("");
   // Soap
-  const [soapDensity, setSoapDensity] = useState(0);
-  const [soapCushion, setSoapCushion] = useState(0);
-  const [soapSlickness, setSoapSlickness] = useState(0);
-  const [soapStability, setSoapStability] = useState(0);
-  const [soapScentStrength, setSoapScentStrength] = useState(0);
   const [soapHasMenthol, setSoapHasMenthol] = useState<boolean | undefined>();
   const [soapIsTallow, setSoapIsTallow] = useState<boolean | undefined>();
   // Scent
@@ -111,7 +105,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [scentFamily, setScentFamily] = useState("");
   const [familySubtype, setFamilySubtype] = useState("");
   const [inspiration, setInspiration] = useState("");
-  const [aftershaveScentStrength, setAftershaveScentStrength] = useState(0);
   const [edpedtScentStrength, setEdpedtScentStrength] = useState(0);
   // Preshave
   const [preshaveType, setPreshaveType] = useState("");
@@ -141,14 +134,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.bladeFormat) setBladeFormat(item.bladeFormat as string);
         if (item.bladeCountryOfOrigin) setBladeCountryOfOrigin(item.bladeCountryOfOrigin as string);
         if (item.bladeCoating) setBladeCoating(item.bladeCoating as string);
-        if (item.sharpness) setSharpness(item.sharpness as number);
         if (item.knot) setKnot(item.knot as string);
         if (item.diameter) setDiameter(item.diameter as string);
-        if (item.soapDensity) setSoapDensity(item.soapDensity as number);
-        if (item.soapCushion) setSoapCushion(item.soapCushion as number);
-        if (item.soapSlickness) setSoapSlickness(item.soapSlickness as number);
-        if (item.soapStability) setSoapStability(item.soapStability as number);
-        if (item.soapScentStrength) setSoapScentStrength(item.soapScentStrength as number);
         if (item.soapHasMenthol != null) setSoapHasMenthol(item.soapHasMenthol as boolean);
         if (item.soapIsTallow != null) setSoapIsTallow(item.soapIsTallow as boolean);
         if (item.topNotes) setTopNotes(item.topNotes as string);
@@ -158,7 +145,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.scentFamily) setScentFamily(item.scentFamily as string);
         if (item.familySubtype) setFamilySubtype(item.familySubtype as string);
         if (item.inspiration) setInspiration(item.inspiration as string);
-        if (item.aftershaveScentStrength) setAftershaveScentStrength(item.aftershaveScentStrength as number);
         if (item.edpedtScentStrength) setEdpedtScentStrength(item.edpedtScentStrength as number);
         if (item.preshaveType) setPreshaveType(item.preshaveType as string);
         if (item.size != null) setSize(String(item.size));

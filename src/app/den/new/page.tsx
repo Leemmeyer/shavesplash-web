@@ -556,11 +556,16 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
             <input
               id="new-item-photo-upload"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
+                const supported = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+                if (!supported.includes(file.type)) {
+                  setError('Unsupported photo format. Please use JPEG, PNG, or WEBP. On iPhone, go to Settings → Camera → Formats → Most Compatible.');
+                  return;
+                }
                 const reader = new FileReader();
                 reader.onload = () => {
                   const img = new Image();
@@ -572,7 +577,9 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
                     canvas.height = Math.round(img.height * scale);
                     canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
                     setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
+                    setError(null);
                   };
+                  img.onerror = () => setError('Could not read photo. Please try a JPEG or PNG file.');
                   img.src = reader.result as string;
                 };
                 reader.readAsDataURL(file);

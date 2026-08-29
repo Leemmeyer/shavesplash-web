@@ -71,8 +71,8 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "topNotes", label: "Top Notes" },
     { key: "heartNotes", label: "Heart Notes" },
     { key: "baseNotes", label: "Base Notes" },
+    { key: "ingredients", label: "Ingredients" },
     { key: "inspiration", label: "Inspiration" },
-    { key: "scentDescription", label: "Description" },
     { key: "size", label: "Size (oz)" },
   ],
   aftershaves: [
@@ -82,15 +82,17 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "topNotes", label: "Top Notes" },
     { key: "heartNotes", label: "Heart Notes" },
     { key: "baseNotes", label: "Base Notes" },
+    { key: "ingredients", label: "Ingredients" },
     { key: "inspiration", label: "Inspiration" },
-    { key: "scentDescription", label: "Description" },
     { key: "size", label: "Size (mL)" },
   ],
   balms: [
+    { key: "ingredients", label: "Ingredients" },
     { key: "size", label: "Size (oz)" },
   ],
   preshaves: [
     { key: "preshaveType", label: "Type" },
+    { key: "ingredients", label: "Ingredients" },
   ],
   edpedt: [
     { key: "edpedtScentStrength", label: "Scent Strength" },
@@ -99,8 +101,8 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "topNotes", label: "Top Notes" },
     { key: "heartNotes", label: "Heart Notes" },
     { key: "baseNotes", label: "Base Notes" },
+    { key: "ingredients", label: "Ingredients" },
     { key: "inspiration", label: "Inspiration" },
-    { key: "scentDescription", label: "Description" },
     { key: "size", label: "Size (mL)" },
   ],
 };

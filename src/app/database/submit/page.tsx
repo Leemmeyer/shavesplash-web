@@ -106,6 +106,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [scentFamily, setScentFamily] = useState("");
   const [familySubtype, setFamilySubtype] = useState("");
   const [inspiration, setInspiration] = useState("");
+  // Ingredients
+  const [ingredients, setIngredients] = useState("");
   // Preshave
   const [preshaveType, setPreshaveType] = useState("");
   // Size
@@ -185,6 +187,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const isPreshave = categoryId === "preshaves";
   const isBalm = categoryId === "balms";
   const hasSize = isSoap || isAftershave || isEdpEdt || isBalm;
+  const hasIngredients = isSoap || isAftershave || isBalm || isPreshave || isEdpEdt;
   const sizeUnit = (isSoap || isBalm) ? "oz" : "mL";
   const isStraight = isRazor && edgeType === "Straight";
   const hasScent = isSoap || isAftershave;
@@ -232,6 +235,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (inspiration.trim()) data.inspiration = inspiration.trim();
     }
     if (isPreshave && preshaveType) data.preshaveType = preshaveType;
+    if (hasIngredients && ingredients.trim()) data.ingredients = ingredients.trim();
     if (hasSize && size.trim()) data.size = parseFloat(size);
 
     try {
@@ -498,6 +502,22 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
             <input value={size} onChange={(e) => setSize(e.target.value)} type="number" step="0.1" min="0"
               placeholder={sizeUnit === "oz" ? "e.g. 4" : "e.g. 100"}
               className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
+          </div>
+        )}
+
+        {/* Ingredients */}
+        {hasIngredients && (
+          <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+              Ingredients <span className="normal-case text-gray-600">(optional)</span>
+            </label>
+            <textarea
+              value={ingredients}
+              onChange={(e) => setIngredients(e.target.value)}
+              rows={4}
+              placeholder="e.g. Aqua, Potassium Stearate, Glycerin…"
+              className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none text-sm"
+            />
           </div>
         )}
 

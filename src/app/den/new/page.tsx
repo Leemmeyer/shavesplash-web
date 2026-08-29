@@ -316,7 +316,6 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   const [topNotes, setTopNotes] = useState("");
   const [heartNotes, setHeartNotes] = useState("");
   const [baseNotes, setBaseNotes] = useState("");
-  const [scentDescription, setScentDescription] = useState("");
   const [inspiration, setInspiration] = useState("");
   const [scentFamily, setScentFamily] = useState("");
   const [familySubtype, setFamilySubtype] = useState("");
@@ -373,12 +372,6 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
     if (entry.topNotes) setTopNotes(entry.topNotes);
     if (entry.heartNotes) setHeartNotes(entry.heartNotes);
     if (entry.baseNotes) setBaseNotes(entry.baseNotes);
-    if (entry.description) setScentDescription(
-      entry.description
-        .replace(/<[^>]*>/g, " ")
-        .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
-        .replace(/\s+/g, " ").trim()
-    );
     if (entry.inspiration) setInspiration(entry.inspiration);
     if (entry.scentFamily) setScentFamily(entry.scentFamily);
     if (entry.familySubtype) setFamilySubtype(entry.familySubtype);
@@ -431,7 +424,6 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
       if (topNotes.trim()) data.topNotes = topNotes.trim();
       if (heartNotes.trim()) data.heartNotes = heartNotes.trim();
       if (baseNotes.trim()) data.baseNotes = baseNotes.trim();
-      if (scentDescription.trim()) data.scentDescription = scentDescription.trim();
       if (inspiration.trim()) data.inspiration = inspiration.trim();
       if (scentFamily.trim()) data.scentFamily = scentFamily.trim();
       if (familySubtype.trim()) data.familySubtype = familySubtype.trim();
@@ -756,12 +748,6 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
               <textarea value={ingredients} onChange={(e) => setIngredients(e.target.value)} rows={3}
                 placeholder="e.g. Aqua, Potassium Stearate, Glycerin…"
                 className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Scent Description</label>
-              <textarea value={scentDescription} onChange={(e) => setScentDescription(e.target.value)} rows={3}
-                placeholder="Describe the scent..."
-                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Inspiration</label>

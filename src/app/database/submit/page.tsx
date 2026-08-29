@@ -148,6 +148,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.inspiration) setInspiration(item.inspiration as string);
         if (item.preshaveType) setPreshaveType(item.preshaveType as string);
         if (item.size != null) setSize(String(item.size));
+        if (item.ingredients) setIngredients(item.ingredients as string);
         if (item.hasPhoto) {
           api.get<{ photoUrl: string | null }>(`/api/inventory/${fromDenId}/photo`)
             .then((p) => { if (p.photoUrl) setPhotoPreview(p.photoUrl); })

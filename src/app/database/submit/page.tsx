@@ -103,7 +103,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [topNotes, setTopNotes] = useState("");
   const [heartNotes, setHeartNotes] = useState("");
   const [baseNotes, setBaseNotes] = useState("");
-  const [scentDescription, setScentDescription] = useState("");
   const [scentFamily, setScentFamily] = useState("");
   const [familySubtype, setFamilySubtype] = useState("");
   const [inspiration, setInspiration] = useState("");
@@ -142,7 +141,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.topNotes) setTopNotes(item.topNotes as string);
         if (item.heartNotes) setHeartNotes(item.heartNotes as string);
         if (item.baseNotes) setBaseNotes(item.baseNotes as string);
-        if (item.scentDescription) setScentDescription(item.scentDescription as string);
         if (item.scentFamily) setScentFamily(item.scentFamily as string);
         if (item.familySubtype) setFamilySubtype(item.familySubtype as string);
         if (item.inspiration) setInspiration(item.inspiration as string);
@@ -229,7 +227,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (topNotes.trim()) data.topNotes = topNotes.trim();
       if (heartNotes.trim()) data.heartNotes = heartNotes.trim();
       if (baseNotes.trim()) data.baseNotes = baseNotes.trim();
-      if (scentDescription.trim()) data.scentDescription = scentDescription.trim();
       if (scentFamily.trim()) data.scentFamily = scentFamily.trim();
       if (familySubtype.trim()) data.familySubtype = familySubtype.trim();
       if (inspiration.trim()) data.inspiration = inspiration.trim();
@@ -483,11 +480,6 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
                   className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
               </div>
             ))}
-            <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
-              <textarea value={scentDescription} onChange={(e) => setScentDescription(e.target.value)} rows={3}
-                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
-            </div>
           </div>
         )}
 

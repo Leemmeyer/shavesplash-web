@@ -83,6 +83,8 @@ type InventoryItem = {
   // Scent info (soap & aftershave)
   topNotes?: string; heartNotes?: string; baseNotes?: string;
   scentDescription?: string; inspiration?: string; scentFamily?: string; familySubtype?: string;
+  // Ingredients (soaps, aftershaves, balms, preshaves, edpedt)
+  ingredients?: string;
 };
 
 export default function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -162,6 +164,7 @@ function ItemDetailContent({ id }: { id: string }) {
   const [editInspiration, setEditInspiration] = useState("");
   const [editScentFamily, setEditScentFamily] = useState("");
   const [editFamilySubtype, setEditFamilySubtype] = useState("");
+  const [editIngredients, setEditIngredients] = useState("");
 
   // Catalog picker (edit form)
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
@@ -231,6 +234,7 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditInspiration(item.inspiration ?? "");
     setEditScentFamily(item.scentFamily ?? "");
     setEditFamilySubtype(item.familySubtype ?? "");
+    setEditIngredients(item.ingredients ?? "");
     setEditPlates(item.plates ? item.plates.map(p => ({ ...p })) : []);
     setEditingPlateIdx(null);
     setEditError(null);
@@ -335,6 +339,9 @@ function ItemDetailContent({ id }: { id: string }) {
     if (isSoap || isAftershave || isEdpEdt || isBalm) {
       const parsedSize = parseFloat(editSize);
       if (!isNaN(parsedSize) && parsedSize > 0) data.size = parsedSize;
+    }
+    if (isSoap || isAftershave || isBalm || isPreshave || isEdpEdt) {
+      if (editIngredients.trim()) data.ingredients = editIngredients.trim();
     }
 
     try {
@@ -512,6 +519,7 @@ function ItemDetailContent({ id }: { id: string }) {
             {item.topNotes && <Spec label="Top Notes" value={item.topNotes} />}
             {item.heartNotes && <Spec label="Heart Notes" value={item.heartNotes} />}
             {item.baseNotes && <Spec label="Base Notes" value={item.baseNotes} />}
+            {(isSoap || isAftershave) && item.ingredients && <Spec label="Ingredients" value={item.ingredients} />}
             {item.scentDescription && (
               <div className="pt-1 border-t border-white/5 mt-1">
                 <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Description</p>
@@ -531,6 +539,7 @@ function ItemDetailContent({ id }: { id: string }) {
 
             {/* Preshave */}
             {item.preshaveType && <Spec label="Type" value={item.preshaveType} />}
+            {(isBalm || isPreshave || isEdpEdt) && item.ingredients && <Spec label="Ingredients" value={item.ingredients} />}
 
             {/* Size */}
             {item.size != null && (() => {
@@ -641,6 +650,13 @@ function ItemDetailContent({ id }: { id: string }) {
             <Field label="Name *">
               <input value={editName} onChange={(e) => setEditName(e.target.value)} className={input} />
             </Field>
+            {(isBalm || isPreshave || isEdpEdt) && (
+              <Field label="Ingredients — optional">
+                <textarea value={editIngredients} onChange={(e) => setEditIngredients(e.target.value)} rows={3}
+                  placeholder="e.g. Stearic Acid, Coconut Oil, Shea Butter..."
+                  className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
+              </Field>
+            )}
             <Field label="Notes">
               <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} className={`${input} resize-none`} />
             </Field>
@@ -886,6 +902,11 @@ function ItemDetailContent({ id }: { id: string }) {
                   <input value={editBaseNotes} onChange={(e) => setEditBaseNotes(e.target.value)}
                     placeholder="e.g. Oakmoss, Musk"
                     className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50" />
+                </Field>
+                <Field label="Ingredients — optional">
+                  <textarea value={editIngredients} onChange={(e) => setEditIngredients(e.target.value)} rows={3}
+                    placeholder="e.g. Stearic Acid, Coconut Oil, Shea Butter..."
+                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
                 </Field>
                 <Field label="Scent Description">
                   <textarea value={editScentDescription} onChange={(e) => setEditScentDescription(e.target.value)} rows={3}

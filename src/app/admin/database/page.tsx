@@ -28,6 +28,20 @@ type GearEdit = {
   createdAt: string;
 };
 
+const EDGE_TYPE_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"] as const;
+const CONSTRUCTION_OPTIONS = ["1pc", "2pc", "3pc", "4pc", "Adjustable"] as const;
+const METAL_OPTIONS = ["Aluminum", "Brass", "Bronze", "Copper", "Steel", "Titanium", "Zamak"] as const;
+const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished"] as const;
+const KNOT_OPTIONS = ["Badger", "Boar", "Horse", "Mixed", "Synthetic"] as const;
+const DIAMETER_OPTIONS = ["20mm","22mm","24mm","25mm","26mm","27mm","28mm","29mm","30mm","31mm","32mm"] as const;
+const BLADE_FORMAT_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE"] as const;
+const STRAIGHT_WIDTH_OPTIONS = ["4/8","5/8","6/8","7/8","8/8","11/16","13/16","15/16"] as const;
+const STRAIGHT_POINT_OPTIONS = ["Round","Square","Spike","Barbers notch","French","Spanish"] as const;
+const STRAIGHT_HOLLOW_OPTIONS = ["Extra Full","Full","1/2 hollow","1/4 hollow","Near Wedge","Wedge","Frameback","Faux frameback"] as const;
+const PRESHAVE_TYPE_OPTIONS = ["Oil","Cream","Gel","Solid"] as const;
+const PLATE_TYPE_OPTIONS = ["SB", "OC", "DC"] as const;
+const SCENT_FAMILY_OPTIONS = ["Citrus","Floral","Fougère","Gourmand","Leather","Oriental","Woody","Aquatic","Chypre","Aromatic","Green","Spicy","Fresh","Tobacco","Musk"] as const;
+
 const CATEGORY_LABELS: Record<string, string> = {
   razors: "Razor", blades: "Blade", brushes: "Brush",
   soaps: "Soap", aftershaves: "Aftershave", balms: "Balm",
@@ -134,6 +148,222 @@ function SubmitterBadge({ name, email }: { name: string | null; email: string | 
   );
 }
 
+// ─── Edit Field Helpers ───────────────────────────────────────────────────────
+
+function EField({ label, value, onChange, placeholder, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-gray-600 uppercase tracking-wider mb-1">{label}</label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full bg-[#161616] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-700 focus:outline-none focus:border-[#c9a050]/50" />
+    </div>
+  );
+}
+
+function ETextarea({ label, value, onChange, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-gray-600 uppercase tracking-wider mb-1">{label}</label>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={2}
+        className="w-full bg-[#161616] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-700 focus:outline-none focus:border-[#c9a050]/50 resize-none" />
+    </div>
+  );
+}
+
+function EPills({ label, value, options, onChange }: {
+  label: string; value: string; options: readonly string[]; onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-gray-600 uppercase tracking-wider mb-1">{label}</label>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => (
+          <button key={o} type="button" onClick={() => onChange(value === o ? "" : o)}
+            className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${value === o ? "bg-[#c9a050]/20 border-[#c9a050]/60 text-[#c9a050]" : "bg-[#161616] border-white/10 text-gray-400 hover:border-white/20"}`}>
+            {o}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EBool({ label, value, onChange }: {
+  label: string; value: boolean | undefined; onChange: (v: boolean | undefined) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-gray-600 uppercase tracking-wider mb-1">{label}</label>
+      <div className="flex gap-1.5">
+        {([undefined, true, false] as const).map((v) => (
+          <button key={String(v)} type="button" onClick={() => onChange(v)}
+            className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${value === v ? "bg-[#c9a050]/20 border-[#c9a050]/60 text-[#c9a050]" : "bg-[#161616] border-white/10 text-gray-400 hover:border-white/20"}`}>
+            {v === undefined ? "Unknown" : v ? "Yes" : "No"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EPlates({ plates, onChange }: {
+  plates: { name: string; type: string; bladeGap: string; exposure: string }[];
+  onChange: (p: { name: string; type: string; bladeGap: string; exposure: string }[]) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-[10px] text-gray-600 uppercase tracking-wider">Plates</label>
+        <button type="button" onClick={() => onChange([...plates, { name: "", type: "SB", bladeGap: "", exposure: "" }])}
+          className="text-[10px] text-[#c9a050] hover:text-[#d4aa60]">+ Add</button>
+      </div>
+      {plates.length === 0
+        ? <p className="text-gray-700 text-xs italic">None</p>
+        : <div className="space-y-2">
+            {plates.map((p, i) => (
+              <div key={i} className="bg-[#161616] border border-white/10 rounded-lg p-2 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <input value={p.name} onChange={(e) => onChange(plates.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                    placeholder="Name" className="flex-1 bg-[#1e1e1e] border border-white/10 rounded px-2 py-1 text-xs text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50" />
+                  <button type="button" onClick={() => onChange(plates.filter((_, j) => j !== i))} className="text-gray-600 hover:text-red-400 text-sm">✕</button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {PLATE_TYPE_OPTIONS.map((t) => (
+                      <button key={t} type="button" onClick={() => onChange(plates.map((x, j) => j === i ? { ...x, type: t } : x))}
+                        className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${p.type === t ? "bg-[#c9a050]/20 border-[#c9a050]/60 text-[#c9a050]" : "bg-[#1e1e1e] border-white/10 text-gray-400"}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="number" step="0.01" value={p.bladeGap} onChange={(e) => onChange(plates.map((x, j) => j === i ? { ...x, bladeGap: e.target.value } : x))}
+                    placeholder="Gap mm" className="w-16 bg-[#1e1e1e] border border-white/10 rounded px-2 py-0.5 text-xs text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50" />
+                  <input type="number" step="0.01" value={p.exposure} onChange={(e) => onChange(plates.map((x, j) => j === i ? { ...x, exposure: e.target.value } : x))}
+                    placeholder="Exp mm" className="w-16 bg-[#1e1e1e] border border-white/10 rounded px-2 py-0.5 text-xs text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+      }
+    </div>
+  );
+}
+
+function SubmissionEditForm({ categoryId, draftData, setField }: {
+  categoryId: string;
+  draftData: Record<string, unknown>;
+  setField: (key: string, value: unknown) => void;
+}) {
+  const str = (k: string) => String(draftData[k] ?? "");
+  const isStraight = categoryId === "razors" && draftData.edgeType === "Straight";
+
+  const plates = (Array.isArray(draftData.plates)
+    ? (draftData.plates as { name: string; type: string; bladeGap?: number; exposure?: number }[]).map((p) => ({
+        name: p.name ?? "", type: p.type ?? "SB",
+        bladeGap: p.bladeGap != null ? String(p.bladeGap) : "",
+        exposure: p.exposure != null ? String(p.exposure) : "",
+      }))
+    : []) as { name: string; type: string; bladeGap: string; exposure: string }[];
+
+  const savePlates = (rows: { name: string; type: string; bladeGap: string; exposure: string }[]) => {
+    setField("plates", rows.filter((r) => r.name.trim()).map((r) => ({
+      name: r.name.trim(), type: r.type || "SB",
+      ...(r.bladeGap.trim() ? { bladeGap: parseFloat(r.bladeGap) } : {}),
+      ...(r.exposure.trim() ? { exposure: parseFloat(r.exposure) } : {}),
+    })));
+  };
+
+  if (categoryId === "razors") return (
+    <div className="space-y-3">
+      <EPills label="Edge Type" value={str("edgeType")} options={EDGE_TYPE_OPTIONS} onChange={(v) => setField("edgeType", v)} />
+      <EPills label="Construction" value={str("construction")} options={CONSTRUCTION_OPTIONS} onChange={(v) => setField("construction", v)} />
+      <EPills label="Metal" value={str("metal")} options={METAL_OPTIONS} onChange={(v) => setField("metal", v)} />
+      <EPills label="Finish" value={str("finish")} options={FINISH_OPTIONS} onChange={(v) => setField("finish", v)} />
+      <div className="grid grid-cols-3 gap-2">
+        <EField label="Blade Gap (mm)" value={str("bladeGap")} onChange={(v) => setField("bladeGap", v ? parseFloat(v) : undefined)} type="number" />
+        <EField label="Exposure (mm)" value={str("exposure")} onChange={(v) => setField("exposure", v ? parseFloat(v) : undefined)} type="number" />
+        <EField label="Weight (g)" value={str("weight")} onChange={(v) => setField("weight", v ? parseInt(v) : undefined)} type="number" />
+      </div>
+      <EPlates plates={plates} onChange={savePlates} />
+      {isStraight && <>
+        <EPills label="Width" value={str("straightWidth")} options={STRAIGHT_WIDTH_OPTIONS} onChange={(v) => setField("straightWidth", v)} />
+        <EPills label="Point" value={str("straightPoint")} options={STRAIGHT_POINT_OPTIONS} onChange={(v) => setField("straightPoint", v)} />
+        <EPills label="Hollow" value={str("straightHollow")} options={STRAIGHT_HOLLOW_OPTIONS} onChange={(v) => setField("straightHollow", v)} />
+      </>}
+    </div>
+  );
+
+  if (categoryId === "blades") return (
+    <div className="space-y-3">
+      <EPills label="Format" value={str("bladeFormat")} options={BLADE_FORMAT_OPTIONS} onChange={(v) => setField("bladeFormat", v)} />
+      <EField label="Country of Origin" value={str("bladeCountryOfOrigin")} onChange={(v) => setField("bladeCountryOfOrigin", v)} placeholder="e.g. Russia" />
+      <EField label="Coating" value={str("bladeCoating")} onChange={(v) => setField("bladeCoating", v)} placeholder="e.g. PTFE" />
+    </div>
+  );
+
+  if (categoryId === "brushes") return (
+    <div className="space-y-3">
+      <EPills label="Knot" value={str("knot")} options={KNOT_OPTIONS} onChange={(v) => setField("knot", v)} />
+      <EPills label="Diameter" value={str("diameter")} options={DIAMETER_OPTIONS} onChange={(v) => setField("diameter", v)} />
+    </div>
+  );
+
+  const scentFields = (
+    <>
+      <EPills label="Scent Family" value={str("scentFamily")} options={SCENT_FAMILY_OPTIONS} onChange={(v) => setField("scentFamily", v)} />
+      <EField label="Subtype" value={str("familySubtype")} onChange={(v) => setField("familySubtype", v)} placeholder="e.g. Lavender" />
+      <EField label="Top Notes" value={str("topNotes")} onChange={(v) => setField("topNotes", v)} />
+      <EField label="Heart Notes" value={str("heartNotes")} onChange={(v) => setField("heartNotes", v)} />
+      <EField label="Base Notes" value={str("baseNotes")} onChange={(v) => setField("baseNotes", v)} />
+      <ETextarea label="Ingredients" value={str("ingredients")} onChange={(v) => setField("ingredients", v)} placeholder="Aqua, Stearic Acid…" />
+      <EField label="Inspiration" value={str("inspiration")} onChange={(v) => setField("inspiration", v)} />
+    </>
+  );
+
+  if (categoryId === "soaps") return (
+    <div className="space-y-3">
+      <EBool label="Menthol" value={draftData.soapHasMenthol as boolean | undefined} onChange={(v) => setField("soapHasMenthol", v)} />
+      <EBool label="Tallow" value={draftData.soapIsTallow as boolean | undefined} onChange={(v) => setField("soapIsTallow", v)} />
+      {scentFields}
+      <EField label="Size (oz)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />
+    </div>
+  );
+
+  if (categoryId === "aftershaves") return (
+    <div className="space-y-3">
+      {scentFields}
+      <EField label="Size (mL)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />
+    </div>
+  );
+
+  if (categoryId === "balms") return (
+    <div className="space-y-3">
+      <ETextarea label="Ingredients" value={str("ingredients")} onChange={(v) => setField("ingredients", v)} />
+      <EField label="Size (oz)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />
+    </div>
+  );
+
+  if (categoryId === "preshaves") return (
+    <div className="space-y-3">
+      <EPills label="Type" value={str("preshaveType")} options={PRESHAVE_TYPE_OPTIONS} onChange={(v) => setField("preshaveType", v)} />
+      <ETextarea label="Ingredients" value={str("ingredients")} onChange={(v) => setField("ingredients", v)} />
+    </div>
+  );
+
+  if (categoryId === "edpedt") return (
+    <div className="space-y-3">
+      {scentFields}
+      <EField label="Size (mL)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />
+    </div>
+  );
+
+  return null;
+}
+
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 
 function FullPhotoModal({ id, onClose }: { id: string; onClose: () => void }) {
@@ -162,13 +392,57 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
   onClose: () => void;
 }) {
   const [busy, setBusy] = useState<"approve" | "reject" | "delete" | null>(null);
-  const [done, setDone] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Committed (server-consistent) values — update after a successful save
+  const [viewBrand, setViewBrand] = useState(item.brand);
+  const [viewName, setViewName] = useState(item.name);
+  const [viewData, setViewData] = useState<Record<string, unknown>>({ ...item.data });
+
+  // Draft values — live while editing
+  const [draftBrand, setDraftBrand] = useState("");
+  const [draftName, setDraftName] = useState("");
+  const [draftData, setDraftData] = useState<Record<string, unknown>>({});
+
+  const startEdit = () => {
+    setDraftBrand(viewBrand);
+    setDraftName(viewName);
+    setDraftData({ ...viewData });
+    setSaveError(null);
+    setEditing(true);
+  };
+
+  const cancelEdit = () => setEditing(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await api.patch(`/api/admin/gear/${item.id}`, {
+        brand: draftBrand.trim(),
+        name: draftName.trim(),
+        data: draftData,
+      });
+      setViewBrand(draftBrand.trim());
+      setViewName(draftName.trim());
+      setViewData({ ...draftData });
+      setEditing(false);
+    } catch {
+      setSaveError("Failed to save — check console");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setField = (key: string, value: unknown) =>
+    setDraftData((prev) => ({ ...prev, [key]: value }));
 
   const handle = async (action: "approve" | "reject" | "delete") => {
     setBusy(action);
     await onAction(action);
-    setDone(true);
     onClose();
   };
 
@@ -182,64 +456,97 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/5 shrink-0">
-            <div>
+            <div className="flex-1 min-w-0">
               <span className="text-xs bg-[#c9a050]/10 text-[#c9a050] border border-[#c9a050]/20 rounded-full px-2 py-0.5">
                 {CATEGORY_LABELS[item.categoryId] ?? item.categoryId}
               </span>
-              <p className="text-[#f5f2eb] font-semibold mt-1.5">{item.brand} — {item.name}</p>
+              <p className="text-[#f5f2eb] font-semibold mt-1.5 truncate">{viewBrand} — {viewName}</p>
               <div className="flex items-center gap-2 mt-1">
                 <SubmitterBadge name={item.submittedByName} email={item.submittedByEmail} />
                 <span className="text-gray-700 text-[10px]">· {new Date(item.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
-            <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-xl leading-none ml-4 shrink-0">✕</button>
+            <div className="flex items-center gap-2 ml-4 shrink-0">
+              {!editing && (
+                <button onClick={startEdit}
+                  className="text-xs text-[#c9a050] border border-[#c9a050]/30 rounded-lg px-2.5 py-1 hover:bg-[#c9a050]/10 transition-colors">
+                  Edit
+                </button>
+              )}
+              <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-xl leading-none">✕</button>
+            </div>
           </div>
 
           {/* Body */}
-          <div className="overflow-y-auto flex-1 px-5 py-4 space-y-2">
+          <div className="overflow-y-auto flex-1 px-5 py-4">
             {/* Photo */}
-            {item.hasPhoto && (
+            {item.hasPhoto && !editing && (
               <button onClick={() => setShowPhoto(true)}
-                className="w-full aspect-video bg-[#161616] rounded-xl overflow-hidden block hover:opacity-90 transition-opacity mb-3">
+                className="w-full aspect-video bg-[#161616] rounded-xl overflow-hidden block hover:opacity-90 transition-opacity mb-4">
                 <PhotoThumbnail id={item.id} />
               </button>
             )}
 
-            {/* All fields */}
-            {fields.map(({ key, label }) => {
-              const val = item.data[key];
-              const populated = val !== null && val !== undefined && val !== "" && val !== 0 && !(Array.isArray(val) && val.length === 0);
-              return (
-                <div key={key} className={`flex justify-between items-start gap-4 py-1.5 border-b border-white/5 last:border-0 ${populated ? "" : "opacity-30"}`}>
-                  <span className="text-gray-500 text-sm shrink-0">{label}</span>
-                  <span className={`text-sm text-right ${populated ? "text-[#f5f2eb]" : "text-gray-700 italic"}`}>
-                    {populated ? formatValue(key, val) : "—"}
-                  </span>
+            {editing ? (
+              <div className="space-y-3">
+                <EField label="Brand" value={draftBrand} onChange={setDraftBrand} placeholder="Brand" />
+                <EField label="Name" value={draftName} onChange={setDraftName} placeholder="Name" />
+                <div className="border-t border-white/5 pt-3">
+                  <SubmissionEditForm categoryId={item.categoryId} draftData={draftData} setField={setField} />
                 </div>
-              );
-            })}
-            {fields.length === 0 && (
-              <p className="text-gray-600 text-sm text-center py-4">No category-specific fields</p>
+                {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {fields.map(({ key, label }) => {
+                  const val = viewData[key];
+                  const populated = val !== null && val !== undefined && val !== "" && val !== 0 && !(Array.isArray(val) && val.length === 0);
+                  return (
+                    <div key={key} className={`flex justify-between items-start gap-4 py-1.5 border-b border-white/5 last:border-0 ${populated ? "" : "opacity-30"}`}>
+                      <span className="text-gray-500 text-sm shrink-0">{label}</span>
+                      <span className={`text-sm text-right ${populated ? "text-[#f5f2eb]" : "text-gray-700 italic"}`}>
+                        {populated ? formatValue(key, val) : "—"}
+                      </span>
+                    </div>
+                  );
+                })}
+                {fields.length === 0 && (
+                  <p className="text-gray-600 text-sm text-center py-4">No category-specific fields</p>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Actions */}
-          {!done && (
-            <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex gap-2">
-              <button onClick={() => handle("approve")} disabled={!!busy}
-                className="flex-1 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors disabled:opacity-50">
-                {busy === "approve" ? "Approving…" : "Approve"}
-              </button>
-              <button onClick={() => handle("reject")} disabled={!!busy}
-                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-500 transition-colors disabled:opacity-50">
-                {busy === "reject" ? "Rejecting…" : "Reject"}
-              </button>
-              <button onClick={() => handle("delete")} disabled={!!busy}
-                className="px-4 py-2.5 border border-white/10 text-gray-500 text-sm rounded-xl hover:bg-white/5 transition-colors disabled:opacity-50">
-                {busy === "delete" ? "…" : "Delete"}
-              </button>
-            </div>
-          )}
+          {/* Footer actions */}
+          <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex gap-2">
+            {editing ? (
+              <>
+                <button onClick={handleSave} disabled={saving}
+                  className="flex-1 py-2.5 bg-[#c9a050] text-black text-sm font-semibold rounded-xl hover:bg-[#d4aa60] transition-colors disabled:opacity-50">
+                  {saving ? "Saving…" : "Save Changes"}
+                </button>
+                <button onClick={cancelEdit} disabled={saving}
+                  className="px-4 py-2.5 border border-white/10 text-gray-500 text-sm rounded-xl hover:bg-white/5 transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => handle("approve")} disabled={!!busy}
+                  className="flex-1 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors disabled:opacity-50">
+                  {busy === "approve" ? "Approving…" : "Approve"}
+                </button>
+                <button onClick={() => handle("reject")} disabled={!!busy}
+                  className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-500 transition-colors disabled:opacity-50">
+                  {busy === "reject" ? "Rejecting…" : "Reject"}
+                </button>
+                <button onClick={() => handle("delete")} disabled={!!busy}
+                  className="px-4 py-2.5 border border-white/10 text-gray-500 text-sm rounded-xl hover:bg-white/5 transition-colors disabled:opacity-50">
+                  {busy === "delete" ? "…" : "Delete"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       {showPhoto && <FullPhotoModal id={item.id} onClose={() => setShowPhoto(false)} />}

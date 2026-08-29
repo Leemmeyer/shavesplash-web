@@ -175,11 +175,27 @@ function DetailSpecs({ item }: { item: GearItem }) {
   }
 
   const hasIngredients = !!d.ingredients && ["soaps", "aftershaves", "balms", "preshaves", "edpedt"].includes(cat);
-  if (rows.length === 0 && !d.scentDescription && !hasIngredients) return null;
+  const plates = Array.isArray(d.plates) ? (d.plates as { name: string; type: string; bladeGap?: number; exposure?: number }[]) : [];
+  if (rows.length === 0 && !d.scentDescription && !hasIngredients && plates.length === 0) return null;
 
   return (
     <div className="mt-4">
       {rows.map((r) => <SpecRow key={r.label} {...r} />)}
+      {plates.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Plates</p>
+          <div className="space-y-1.5">
+            {plates.map((p, i) => (
+              <div key={i} className="flex items-center justify-between text-sm py-1">
+                <span className="text-[#f5f2eb]">{p.name} <span className="text-gray-500 text-xs">{p.type}</span></span>
+                <span className="text-gray-500 text-xs">
+                  {[p.bladeGap != null && `${p.bladeGap}mm gap`, p.exposure != null && `${p.exposure}mm exp`].filter(Boolean).join(" · ")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {!!d.scentDescription && (
         <div className="mt-3 pt-3 border-t border-white/5">
           <p className="text-gray-500 text-xs uppercase tracking-wider mb-1.5">Description</p>

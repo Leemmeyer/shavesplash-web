@@ -86,6 +86,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [weight, setWeight] = useState("");
   const [metal, setMetal] = useState("");
   const [finish, setFinish] = useState("");
+  const [plates, setPlates] = useState<{ name: string; type: string; bladeGap: string; exposure: string }[]>([]);
   const [straightWidth, setStraightWidth] = useState("");
   const [straightPoint, setStraightPoint] = useState("");
   const [straightHollow, setStraightHollow] = useState("");
@@ -133,6 +134,14 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.straightWidth) setStraightWidth(item.straightWidth as string);
         if (item.straightPoint) setStraightPoint(item.straightPoint as string);
         if (item.straightHollow) setStraightHollow(item.straightHollow as string);
+        if (Array.isArray(item.plates)) {
+          setPlates((item.plates as { name: string; type: string; bladeGap?: number; exposure?: number }[]).map((p) => ({
+            name: p.name ?? "",
+            type: p.type ?? "",
+            bladeGap: p.bladeGap != null ? String(p.bladeGap) : "",
+            exposure: p.exposure != null ? String(p.exposure) : "",
+          })));
+        }
         if (item.bladeFormat) setBladeFormat(item.bladeFormat as string);
         if (item.bladeCountryOfOrigin) setBladeCountryOfOrigin(item.bladeCountryOfOrigin as string);
         if (item.bladeCoating) setBladeCoating(item.bladeCoating as string);
@@ -208,6 +217,15 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (weight.trim()) data.weight = parseInt(weight, 10);
       if (metal) data.metal = metal;
       if (finish) data.finish = finish;
+      const validPlates = plates.filter((p) => p.name.trim());
+      if (validPlates.length > 0) {
+        data.plates = validPlates.map((p) => ({
+          name: p.name.trim(),
+          type: p.type || "SB",
+          ...(p.bladeGap.trim() ? { bladeGap: parseFloat(p.bladeGap) } : {}),
+          ...(p.exposure.trim() ? { exposure: parseFloat(p.exposure) } : {}),
+        }));
+      }
       if (isStraight) {
         if (straightWidth) data.straightWidth = straightWidth;
         if (straightPoint) data.straightPoint = straightPoint;
@@ -409,6 +427,61 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
                 <SelectField label="Hollow" value={straightHollow} options={STRAIGHT_HOLLOW_OPTIONS} onChange={setStraightHollow} />
               </>
             )}
+            {/* Plates */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-gray-500 uppercase tracking-wider">Plates <span className="normal-case text-gray-600">(optional)</span></label>
+                <button type="button" onClick={() => setPlates((prev) => [...prev, { name: "", type: "SB", bladeGap: "", exposure: "" }])}
+                  className="text-xs text-[#c9a050] hover:text-[#d4aa60] transition-colors">
+                  + Add Plate
+                </button>
+              </div>
+              {plates.length === 0 ? (
+                <p className="text-gray-600 text-xs italic">No plates added — click "Add Plate" to list this razor&apos;s plates.</p>
+              ) : (
+                <div className="space-y-3">
+                  {plates.map((plate, i) => (
+                    <div key={i} className="bg-[#242424] border border-white/10 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={plate.name}
+                          onChange={(e) => setPlates((prev) => prev.map((p, j) => j === i ? { ...p, name: e.target.value } : p))}
+                          placeholder="Plate name (e.g. .68 OC)"
+                          className="flex-1 bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                        />
+                        <button type="button" onClick={() => setPlates((prev) => prev.filter((_, j) => j !== i))}
+                          className="text-gray-600 hover:text-red-400 text-lg leading-none px-1 transition-colors">✕</button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {(["SB", "OC", "DC"] as const).map((t) => (
+                            <button key={t} type="button"
+                              onClick={() => setPlates((prev) => prev.map((p, j) => j === i ? { ...p, type: t } : p))}
+                              className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${plate.type === t ? "bg-[#c9a050]/20 border-[#c9a050]/60 text-[#c9a050]" : "bg-[#1e1e1e] border-white/10 text-gray-400 hover:border-white/20"}`}>
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          value={plate.bladeGap}
+                          onChange={(e) => setPlates((prev) => prev.map((p, j) => j === i ? { ...p, bladeGap: e.target.value } : p))}
+                          placeholder="Gap mm"
+                          type="number" step="0.01"
+                          className="w-20 bg-[#1e1e1e] border border-white/10 rounded-lg px-2 py-1 text-xs text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                        />
+                        <input
+                          value={plate.exposure}
+                          onChange={(e) => setPlates((prev) => prev.map((p, j) => j === i ? { ...p, exposure: e.target.value } : p))}
+                          placeholder="Exp mm"
+                          type="number" step="0.01"
+                          className="w-20 bg-[#1e1e1e] border border-white/10 rounded-lg px-2 py-1 text-xs text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -44,6 +44,7 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "bladeGap", label: "Blade Gap (mm)" },
     { key: "exposure", label: "Exposure (mm)" },
     { key: "weight", label: "Weight (g)" },
+    { key: "plates", label: "Plates" },
     { key: "straightWidth", label: "Width" },
     { key: "straightPoint", label: "Point" },
     { key: "straightHollow", label: "Hollow" },
@@ -111,6 +112,14 @@ function formatValue(key: string, value: unknown): string {
   if (key === "soapHasMenthol") return value ? "Yes" : "No";
   if (key === "soapIsTallow") return value ? "Tallow" : "Vegan";
   if (key.endsWith("Strength") || key === "sharpness") return `${value}/10`;
+  if (key === "plates" && Array.isArray(value)) {
+    return (value as { name: string; type: string; bladeGap?: number; exposure?: number }[])
+      .map((p) => {
+        const details = [p.type, p.bladeGap != null && `${p.bladeGap}mm`, p.exposure != null && `${p.exposure}exp`].filter(Boolean).join(" ");
+        return `${p.name}${details ? ` (${details})` : ""}`;
+      })
+      .join(", ");
+  }
   return String(value);
 }
 
@@ -199,7 +208,7 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
             {/* All fields */}
             {fields.map(({ key, label }) => {
               const val = item.data[key];
-              const populated = val !== null && val !== undefined && val !== "" && val !== 0;
+              const populated = val !== null && val !== undefined && val !== "" && val !== 0 && !(Array.isArray(val) && val.length === 0);
               return (
                 <div key={key} className={`flex justify-between items-start gap-4 py-1.5 border-b border-white/5 last:border-0 ${populated ? "" : "opacity-30"}`}>
                   <span className="text-gray-500 text-sm shrink-0">{label}</span>

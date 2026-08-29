@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
@@ -75,6 +75,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [prefilling, setPrefilling] = useState(!!fromDenId);
+  const [duplicates, setDuplicates] = useState<{ id: string; brand: string; name: string }[]>([]);
+  const dupeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Razor
   const [edgeType, setEdgeType] = useState("");
@@ -155,6 +157,26 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       .catch(() => {})
       .finally(() => setPrefilling(false));
   }, [fromDenId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced duplicate check
+  useEffect(() => {
+    const b = brand.trim();
+    const n = name.trim();
+    if (!b || !n) { setDuplicates([]); return; }
+    if (dupeTimer.current) clearTimeout(dupeTimer.current);
+    dupeTimer.current = setTimeout(async () => {
+      try {
+        const { items } = await api.get<{ items: { id: string; brand: string; name: string; categoryId: string }[] }>(
+          `/api/gear?q=${encodeURIComponent(b + " " + n)}&category=${categoryId}`
+        );
+        const matches = items.filter(
+          (i) => i.brand.toLowerCase() === b.toLowerCase() && i.name.toLowerCase() === n.toLowerCase()
+        );
+        setDuplicates(matches);
+      } catch { setDuplicates([]); }
+    }, 600);
+    return () => { if (dupeTimer.current) clearTimeout(dupeTimer.current); };
+  }, [brand, name, categoryId]);
 
   const isRazor = categoryId === "razors";
   const isBlade = categoryId === "blades";
@@ -302,6 +324,19 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. WR2 1.05 OC"
               className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
           </div>
+          {/* Duplicate warning */}
+          {duplicates.length > 0 && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 space-y-1.5">
+              <p className="text-yellow-400 text-sm font-semibold">⚠️ This item may already exist in the database:</p>
+              {duplicates.map((d) => (
+                <Link key={d.id} href="/database" className="block text-yellow-300/80 text-sm hover:text-yellow-300 underline underline-offset-2">
+                  {d.brand} — {d.name}
+                </Link>
+              ))}
+              <p className="text-yellow-500/60 text-xs pt-0.5">You can still submit if this is a different version or variant.</p>
+            </div>
+          )}
+
           {/* Photo */}
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Photo (optional)</label>

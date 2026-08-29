@@ -27,6 +27,9 @@ type GearItem = {
   createdAt: string;
 };
 
+type FilterOption = { value: string; label: string };
+type FilterGroup = { key: string; label: string; options: FilterOption[] };
+
 function categoryIcon(id: string) {
   return CATEGORIES.find((c) => c.id === id)?.icon ?? "📦";
 }
@@ -592,6 +595,7 @@ function DatabasePageContent() {
   const [viewItem, setViewItem] = useState<GearItem | null>(null);
   const [adding, setAdding] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
 
   const fetchItems = useCallback(() => {
     setLoading(true);
@@ -605,6 +609,7 @@ function DatabasePageContent() {
   }, [category, search]);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
+  useEffect(() => { setActiveFilters({}); }, [category]);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -636,6 +641,76 @@ function DatabasePageContent() {
         : a.name.localeCompare(b.name) || a.brand.localeCompare(b.brand)
     );
   }, [items, sort]);
+
+  const filterGroups = useMemo((): FilterGroup[] => {
+    if (category === "razors") return [
+      { key: "edgeType", label: "Type", options: ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"]
+          .filter((v) => items.some((i) => i.data.edgeType === v))
+          .map((v) => ({ value: v, label: v === "Double Edge" ? "DE" : v })) },
+    ].filter((g) => g.options.length > 0);
+
+    if (category === "brushes") return [
+      { key: "knot", label: "Knot", options: ["Badger", "Boar", "Horse", "Mixed", "Synthetic"]
+          .filter((v) => items.some((i) => i.data.knot === v))
+          .map((v) => ({ value: v, label: v })) },
+    ].filter((g) => g.options.length > 0);
+
+    if (category === "soaps") {
+      const groups: FilterGroup[] = [];
+      const baseOpts: FilterOption[] = [
+        ...(items.some((i) => i.data.soapIsTallow === true) ? [{ value: "true", label: "Tallow" }] : []),
+        ...(items.some((i) => i.data.soapIsTallow === false) ? [{ value: "false", label: "Vegan" }] : []),
+      ];
+      if (baseOpts.length > 0) groups.push({ key: "soapIsTallow", label: "Base", options: baseOpts });
+      const families = [...new Set(items.filter((i) => i.data.scentFamily).map((i) => String(i.data.scentFamily)))].sort();
+      if (families.length > 0) groups.push({ key: "scentFamily", label: "Scent", options: families.map((v) => ({ value: v, label: v })) });
+      return groups;
+    }
+
+    if (category === "aftershaves") {
+      const families = [...new Set(items.filter((i) => i.data.scentFamily).map((i) => String(i.data.scentFamily)))].sort();
+      if (families.length === 0) return [];
+      return [{ key: "scentFamily", label: "Scent", options: families.map((v) => ({ value: v, label: v })) }];
+    }
+
+    if (category === "preshaves") return [
+      { key: "preshaveType", label: "Type", options: ["Cream", "Oil", "Gel", "Soap"]
+          .filter((v) => items.some((i) => i.data.preshaveType === v))
+          .map((v) => ({ value: v, label: v })) },
+    ].filter((g) => g.options.length > 0);
+
+    return [];
+  }, [category, items]);
+
+  const toggleFilter = (key: string, value: string) => {
+    setActiveFilters((prev) => {
+      const current = prev[key] ?? [];
+      const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+      return { ...prev, [key]: next };
+    });
+  };
+
+  const hasFilters = Object.values(activeFilters).some((v) => v.length > 0);
+
+  const filteredItems = useMemo(() => {
+    if (!hasFilters) return sortedItems;
+    return sortedItems.filter((item) => {
+      for (const [key, values] of Object.entries(activeFilters)) {
+        if (values.length === 0) continue;
+        let passes = false;
+        for (const v of values) {
+          if (key === "soapIsTallow") {
+            if (v === "true" && item.data[key] === true) { passes = true; break; }
+            if (v === "false" && item.data[key] === false) { passes = true; break; }
+          } else {
+            if (String(item.data[key] ?? "") === v) { passes = true; break; }
+          }
+        }
+        if (!passes) return false;
+      }
+      return true;
+    });
+  }, [sortedItems, activeFilters, hasFilters]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 pb-32">
@@ -678,10 +753,38 @@ function DatabasePageContent() {
         ))}
       </div>
 
+      {/* Filter chips */}
+      {filterGroups.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {filterGroups.map((group) => (
+            <div key={group.key} className="flex items-start gap-3">
+              <span className="text-xs text-gray-600 uppercase tracking-wider shrink-0 pt-1 w-10">{group.label}</span>
+              <div className="flex gap-1.5 flex-wrap flex-1">
+                {group.options.map((opt) => {
+                  const active = (activeFilters[group.key] ?? []).includes(opt.value);
+                  return (
+                    <button key={opt.value} onClick={() => toggleFilter(group.key, opt.value)}
+                      className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${active
+                        ? "bg-[#c9a050]/20 border-[#c9a050]/60 text-[#c9a050]"
+                        : "bg-[#1e1e1e] border-white/10 text-gray-400 hover:border-white/25 hover:text-gray-300"}`}>
+                      {opt.label}
+                    </button>
+                  );
+                })}
+                {(activeFilters[group.key]?.length ?? 0) > 0 && (
+                  <button onClick={() => setActiveFilters((prev) => ({ ...prev, [group.key]: [] }))}
+                    className="text-xs text-gray-600 hover:text-gray-400 px-1 pt-1">✕</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Sort + Stats row */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-gray-600 text-xs">
-          {loading ? "" : `${items.length} item${items.length !== 1 ? "s" : ""}${brands.length > 0 ? ` · ${brands.length} brand${brands.length !== 1 ? "s" : ""}` : ""}`}
+          {loading ? "" : `${filteredItems.length}${hasFilters && filteredItems.length !== items.length ? ` of ${items.length}` : ""} item${filteredItems.length !== 1 ? "s" : ""}${brands.length > 0 ? ` · ${brands.length} brand${brands.length !== 1 ? "s" : ""}` : ""}`}
         </p>
         <div className="flex items-center gap-2">
           <span className="text-gray-500 text-sm">Sort by</span>
@@ -705,16 +808,27 @@ function DatabasePageContent() {
         <div className="flex justify-center py-20">
           <div className="w-6 h-6 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
         </div>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-gray-500 text-sm">No items yet.</p>
-          <Link href="/database/submit" className="mt-3 inline-block text-[#c9a050] text-sm hover:underline">
-            Be the first to submit →
-          </Link>
+          {hasFilters ? (
+            <>
+              <p className="text-gray-500 text-sm">No items match these filters.</p>
+              <button onClick={() => setActiveFilters({})} className="mt-3 text-[#c9a050] text-sm hover:underline">
+                Clear filters
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-500 text-sm">No items yet.</p>
+              <Link href="/database/submit" className="mt-3 inline-block text-[#c9a050] text-sm hover:underline">
+                Be the first to submit →
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {sortedItems.map((item) => (
+          {filteredItems.map((item) => (
             <GearCard
               key={item.id}
               item={item}

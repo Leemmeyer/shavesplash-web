@@ -156,7 +156,7 @@ function DenContent() {
     // Custom categories from items (mobile-synced)
     const itemCustomIds = [...new Set(items.map((i) => i.categoryId).filter((id) => !defaultIds.has(id)))];
     const itemCustoms = itemCustomIds.map((id) => {
-      const catName = items.find((i) => i.categoryId === id)?._categoryName;
+      const catName = items.filter((i) => i.categoryId === id).map((i) => i._categoryName).find(Boolean);
       return { id, label: catName || id, icon: "📦" };
     });
     // Custom categories from server (web-created, may be empty)

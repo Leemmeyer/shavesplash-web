@@ -7,6 +7,7 @@ type Brand = {
   id: string;
   name: string;
   models: string[];
+  pendingModels: string[];
   materials: string[];
   sortOrder: number;
   pending: boolean;
@@ -204,6 +205,16 @@ export default function RazorsPage() {
     setBrands((prev) => prev.map((b) => b.id === id ? updated.brand : b).sort((a, b) => a.name.localeCompare(b.name)));
   };
 
+  const handleApproveModel = async (id: string, model: string) => {
+    const updated = await api.patch<{ brand: Brand }>(`/api/admin/brands/${id}/approve-model`, { model });
+    setBrands((prev) => prev.map((b) => b.id === id ? updated.brand : b));
+  };
+
+  const handleRejectModel = async (id: string, model: string) => {
+    const updated = await api.patch<{ brand: Brand }>(`/api/admin/brands/${id}/reject-model`, { model });
+    setBrands((prev) => prev.map((b) => b.id === id ? updated.brand : b));
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -261,9 +272,9 @@ export default function RazorsPage() {
       ) : (
         <>
           {brands.some((b) => b.pending) && (
-            <div className="mb-8">
+            <div className="mb-6">
               <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-3">
-                ⏳ Pending Review ({brands.filter((b) => b.pending).length})
+                ⏳ Pending Brands ({brands.filter((b) => b.pending).length})
               </h2>
               <div className="space-y-2">
                 {brands.filter((b) => b.pending).map((brand) => (
@@ -288,6 +299,42 @@ export default function RazorsPage() {
                       >
                         Delete
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {brands.some((b) => b.pendingModels?.length > 0) && (
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-3">
+                ⏳ Pending Models ({brands.reduce((sum, b) => sum + (b.pendingModels?.length ?? 0), 0)})
+              </h2>
+              <div className="space-y-2">
+                {brands.filter((b) => b.pendingModels?.length > 0).map((brand) => (
+                  <div key={brand.id} className="bg-[#242424] rounded-2xl border border-amber-400/20 px-5 py-4">
+                    <p className="text-[#f5f2eb] font-semibold mb-3">{brand.name}</p>
+                    <div className="space-y-2">
+                      {brand.pendingModels.map((model) => (
+                        <div key={model} className="flex items-center justify-between gap-4 bg-[#1e1e1e] rounded-xl px-4 py-2.5">
+                          <p className="text-[#f5f2eb] text-sm">{model}</p>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleApproveModel(brand.id, model)}
+                              className="text-xs bg-[#c9a050] text-black font-semibold px-3 py-1 rounded-lg hover:bg-[#b8903f] transition-colors"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectModel(brand.id, model)}
+                              className="text-xs text-gray-500 hover:text-red-400 transition-colors px-2"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}

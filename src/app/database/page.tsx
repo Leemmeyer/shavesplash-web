@@ -649,6 +649,12 @@ function DatabasePageContent() {
           .map((v) => ({ value: v, label: v === "Double Edge" ? "DE" : v })) },
     ].filter((g) => g.options.length > 0);
 
+    if (category === "blades") return [
+      { key: "bladeFormat", label: "Format", options: ["Double Edge", "GEM", "AC", "SE", "Injector"]
+          .filter((v) => items.some((i) => i.data.bladeFormat === v))
+          .map((v) => ({ value: v, label: v === "Double Edge" ? "DE" : v })) },
+    ].filter((g) => g.options.length > 0);
+
     if (category === "brushes") return [
       { key: "knot", label: "Knot", options: ["Badger", "Boar", "Horse", "Mixed", "Synthetic"]
           .filter((v) => items.some((i) => i.data.knot === v))

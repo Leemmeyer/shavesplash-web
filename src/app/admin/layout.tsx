@@ -14,14 +14,14 @@ type PendingCounts = {
 };
 
 const TABS: { label: string; href: string; countKey?: keyof PendingCounts }[] = [
+  { label: "Activity",    href: "/admin/activity" },
+  { label: "Users",       href: "/admin/users" },
   { label: "Razors",      href: "/admin/razors",      countKey: "razors" },
   { label: "Soaps",       href: "/admin/soaps",        countKey: "soaps" },
   { label: "Aftershaves", href: "/admin/aftershaves",  countKey: "aftershaves" },
   { label: "Blades",      href: "/admin/blades",       countKey: "blades" },
   { label: "Brushes",     href: "/admin/brushes",      countKey: "brushes" },
   { label: "Database",    href: "/admin/database",     countKey: "database" },
-  { label: "Users",       href: "/admin/users" },
-  { label: "Activity",    href: "/admin/activity" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

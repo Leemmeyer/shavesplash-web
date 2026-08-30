@@ -10,10 +10,10 @@ const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
 const SOTD_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 const CATEGORY_ICONS: Record<string, string> = {
-  razors: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
+  razors: "🪒", razorsSecondary: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  razors: "Razor", blades: "Blade", brushes: "Brush", soaps: "Soap",
+  razors: "Razor", razorsSecondary: "Razor (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
   aftershaves: "Aftershave", balms: "Balm", preshaves: "Pre-Shave", edpedt: "EDP/EDT",
 };
 
@@ -161,9 +161,8 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   const usedItems = Object.entries(post.selectedItems)
     .filter(([, s]) => s.itemName)
     .sort(([a], [b]) => {
-      const ia = CATEGORY_ORDER.indexOf(a) + 1 || Infinity;
-      const ib = CATEGORY_ORDER.indexOf(b) + 1 || Infinity;
-      return ia - ib;
+      const sortKey = (k: string) => k === 'razorsSecondary' ? 0.5 : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
+      return sortKey(a) - sortKey(b);
     });
 
   const scoreEntries = Object.entries(post.scores)

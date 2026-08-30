@@ -392,10 +392,10 @@ function PreferencesContent() {
         <div className="bg-[#1e1e1e] rounded-2xl border border-red-500/20 p-6">
           <h2 className="text-red-400 font-semibold text-base mb-1">Danger Zone</h2>
           <p className="text-gray-500 text-xs mb-2">
-            Permanently deletes selected data from the cloud. Your account is kept. This cannot be undone.
+            Permanently deletes selected data from the cloud. Your account is kept. This cannot be undone. If you delete Shave Logs, any reactions and comments other users have left on your posts will also be permanently deleted.
           </p>
           <p className="text-gray-600 text-xs mb-4">
-            To re-upload your data from your phone afterward, open ShaveSplash on your iPhone and go to <strong className="text-gray-500">Settings → Reset Cloud &amp; Re-sync</strong>.
+            To re-upload your data from your phone afterward, open ShaveSplash on your phone and go to <strong className="text-gray-500">Settings → Reset Cloud &amp; Re-sync</strong>.
           </p>
           {!showClearConfirm ? (
             <button
@@ -411,8 +411,8 @@ function PreferencesContent() {
                 <p className="text-gray-400 text-sm font-medium">What would you like to delete?</p>
                 {[
                   { label: "Inventory (Den)", description: "All your gear", value: clearInventory, set: setClearInventory },
-                  { label: "Shave Logs", description: "All your shave history", value: clearLogs, set: setClearLogs },
-                  { label: "Preferences", description: "Result options, score parameters, display name", value: clearPreferences, set: setClearPreferences },
+                  { label: "Shave Logs", description: "All your shave history, including reactions and comments from other users", value: clearLogs, set: setClearLogs },
+                  { label: "Preferences", description: "Result options and score parameters", value: clearPreferences, set: setClearPreferences },
                 ].map(({ label, description, value, set }) => (
                   <button
                     key={label}

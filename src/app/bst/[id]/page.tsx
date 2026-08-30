@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ContactSellerButton from "@/components/ContactSellerButton";
 import SellerActions from "@/components/SellerActions";
 import AdminRemoveListing from "@/components/AdminRemoveListing";
+import BSTPhotoGallery from "@/components/BSTPhotoGallery";
 
 const BACKEND = "https://api.shavesplash.app";
 
@@ -31,10 +32,6 @@ type Listing = {
   photoCount: number;
   seller: Seller;
 };
-
-function photoSrc(data: string) {
-  return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
-}
 
 async function getListing(id: string): Promise<Listing | null> {
   try {
@@ -94,36 +91,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Photos */}
           <div>
-            {photos.length > 0 ? (
-              <div className="space-y-3">
-                <div className="aspect-square bg-[#242424] rounded-2xl overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoSrc(photos[0].data)}
-                    alt={listing.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {photos.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {photos.slice(1).map((photo) => (
-                      <div key={photo.id} className="aspect-square bg-[#242424] rounded-xl overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={photoSrc(photo.data)}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="aspect-square bg-[#242424] rounded-2xl flex items-center justify-center text-8xl opacity-20">
-                🪒
-              </div>
-            )}
+            <BSTPhotoGallery photos={photos} title={listing.title} />
           </div>
 
           {/* Details */}

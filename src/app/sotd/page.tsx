@@ -161,7 +161,7 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   const usedItems = Object.entries(post.selectedItems)
     .filter(([, s]) => s.itemName)
     .sort(([a], [b]) => {
-      const sortKey = (k: string) => k === 'razorsSecondary' ? 0.5 : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
+      const sortKey = (k: string) => k === 'razorsSecondary' ? 1.5 : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
       return sortKey(a) - sortKey(b);
     });
 

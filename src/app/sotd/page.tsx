@@ -13,7 +13,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   razors: "🪒", razorsSecondary: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  razors: "Razor", razorsSecondary: "Razor (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
+  razors: "Razor", razorsSecondary: "Razors (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
   aftershaves: "Aftershave", balms: "Balm", preshaves: "Pre-Shave", edpedt: "EDP/EDT",
 };
 

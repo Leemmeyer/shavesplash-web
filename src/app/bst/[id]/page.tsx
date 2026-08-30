@@ -4,6 +4,7 @@ import ContactSellerButton from "@/components/ContactSellerButton";
 import SellerActions from "@/components/SellerActions";
 import AdminRemoveListing from "@/components/AdminRemoveListing";
 import BSTPhotoGallery from "@/components/BSTPhotoGallery";
+import ShareListingButton from "@/components/ShareListingButton";
 
 const BACKEND = "https://api.shavesplash.app";
 
@@ -205,6 +206,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
             {/* Admin controls */}
             <AdminRemoveListing listingId={listing.id} />
+
+            {/* Share */}
+            <div className="mb-4">
+              <ShareListingButton listingId={listing.id} title={listing.title} />
+            </div>
 
             {/* Contact CTA */}
             <ContactSellerButton

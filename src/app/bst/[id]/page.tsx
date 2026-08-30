@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ContactSellerButton from "@/components/ContactSellerButton";
@@ -58,6 +59,30 @@ async function getPhotos(id: string): Promise<Photo[]> {
   } catch {
     return [];
   }
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await getListing(id);
+  if (!listing) return {};
+  const sellerName = listing.seller.profile?.displayName ?? listing.seller.name ?? "Seller";
+  const images = listing.photoCount > 0
+    ? [{ url: `${BACKEND}/api/bst/listings/${id}/cover`, width: 1200, height: 630 }]
+    : [];
+  return {
+    title: `${listing.title} — ShaveSplash Marketplace`,
+    description: `${listing.condition} · $${listing.price.toFixed(2)} · Listed by ${sellerName}. ${listing.description.slice(0, 120)}`,
+    openGraph: {
+      title: listing.title,
+      description: `${listing.condition} · $${listing.price.toFixed(2)} · Listed by ${sellerName}`,
+      url: `https://shavesplash.app/bst/${id}`,
+      siteName: "ShaveSplash Community",
+      images,
+      type: "website",
+    },
+  };
 }
 
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {

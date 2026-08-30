@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import WatchlistSection from "@/components/WatchlistSection";
 import CreateListingModal from "@/components/CreateListingModal";
+import BSTListingCard from "@/components/BSTListingCard";
 
 const BACKEND = "https://api.shavesplash.app";
 
@@ -15,7 +16,6 @@ const CATEGORIES = [
   { value: "misc", label: "Misc" },
 ];
 
-type Photo = { id: string; data: string; order: number };
 type Seller = { id: string; name: string; email: string; profile: { displayName?: string } | null };
 type Listing = {
   id: string;
@@ -36,7 +36,7 @@ type Listing = {
   percentRemaining: number | null;
   ageMonths: number | null;
   size: number | null;
-  photos: Photo[];
+  photoCount: number;
   seller: Seller;
 };
 
@@ -76,7 +76,6 @@ export default async function BSTPage({
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5">
         <Link href="/" className="font-[family-name:var(--font-fredericka)] text-2xl text-[#c9a050]">
           ShaveSplash
@@ -102,12 +101,10 @@ export default async function BSTPage({
           </div>
         </div>
 
-        {/* Watchlist alerts */}
         <Suspense fallback={null}>
           <WatchlistSection />
         </Suspense>
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <form method="GET" className="flex-1">
             <input
@@ -138,7 +135,6 @@ export default async function BSTPage({
           </div>
         </div>
 
-        {/* Grid */}
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-600">
             <p className="text-4xl mb-4">🪒</p>
@@ -147,115 +143,11 @@ export default async function BSTPage({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <BSTListingCard key={listing.id} listing={listing} />
             ))}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function photoSrc(data: string) {
-  return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
-}
-
-function ListingCard({ listing }: { listing: Listing }) {
-  const photo = listing.photos[0];
-  const sellerName = listing.seller.profile?.displayName ?? listing.seller.name ?? "Seller";
-  const daysListed = Math.floor((Date.now() - new Date(listing.createdAt).getTime()) / 86400000);
-  const daysUntilExpiry = listing.expiresAt
-    ? Math.ceil((new Date(listing.expiresAt).getTime() - Date.now()) / 86400000)
-    : null;
-  const expiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 2;
-
-  return (
-    <Link href={`/bst/${listing.id}`} className="group block">
-      <div className="bg-[#242424] rounded-2xl overflow-hidden border border-white/5 hover:border-[#c9a050]/30 transition-colors">
-        {/* Photo */}
-        <div className="aspect-square bg-[#1e1e1e] relative overflow-hidden">
-          {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoSrc(photo.data)}
-              alt={listing.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-5xl opacity-20">
-              🪒
-            </div>
-          )}
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-gray-300 text-right leading-tight">
-            {listing.condition}
-            {listing.percentRemaining != null && (
-              <span className="block text-[10px] text-[#c9a050]">{listing.percentRemaining}% left</span>
-            )}
-            {listing.size != null && (
-              <span className="block text-[10px] text-gray-400">{listing.size}{["soap"].includes(listing.category) ? "oz" : "mL"}</span>
-            )}
-          </div>
-          {listing.isExpertListing && (
-            <div className="absolute top-2 left-2 bg-[#c9a050] text-black rounded-lg px-2 py-0.5 text-[10px] font-bold tracking-wide">
-              ★ EXPERT
-            </div>
-          )}
-          {expiringSoon && (
-            <div className="absolute bottom-2 left-2 bg-red-500/90 text-white rounded-lg px-2 py-0.5 text-[10px] font-bold">
-              Expires in {daysUntilExpiry}d
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="p-3">
-          {listing.category === "razor" ? (
-            <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
-              {[listing.brand, listing.model].filter(Boolean).join(" ")}
-            </p>
-          ) : (
-            <>
-              {(listing.brand || listing.model) && (
-                <p className="text-[#c9a050] text-xs font-medium mb-0.5">
-                  {[listing.brand, listing.model].filter(Boolean).join(" · ")}
-                </p>
-              )}
-              <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
-                {listing.title}
-              </p>
-            </>
-          )}
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1.5">
-              {listing.listingType === "wtb" && (
-                <span className="bg-blue-900/40 text-blue-400 border border-blue-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">WTB</span>
-              )}
-              {listing.listingType === "for_trade" && (
-                <span className="bg-green-900/40 text-green-400 border border-green-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">TRADE</span>
-              )}
-              {listing.listingType === "pif" && (
-                <span className="bg-purple-900/40 text-purple-400 border border-purple-700/40 text-[10px] font-bold px-1.5 py-0.5 rounded-md">PIF</span>
-              )}
-              {listing.listingType === "pif" ? (
-                <span className="text-purple-400 text-xs font-medium">Free · Shipping by {(listing as any).shippingPaidBy ?? "receiver"}</span>
-              ) : listing.price > 0 ? (
-                <span className="text-[#c9a050] font-bold text-base">${listing.price.toFixed(2)}</span>
-              ) : listing.listingType === "for_sale" ? (
-                <span className="text-gray-500 text-sm">Price TBD</span>
-              ) : null}
-            </div>
-            <span className="text-gray-600 text-xs">{sellerName}</span>
-          </div>
-          <div className="flex items-center gap-3 mt-1.5">
-            <span className="text-gray-600 text-[10px]">
-              {daysListed === 0 ? "Listed today" : `Listed ${daysListed}d ago`}
-            </span>
-            <span className="text-gray-600 text-[10px]">
-              {listing.views} {listing.views === 1 ? "view" : "views"}
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
   );
 }

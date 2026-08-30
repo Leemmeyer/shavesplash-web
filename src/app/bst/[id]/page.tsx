@@ -28,7 +28,7 @@ type Listing = {
   percentRemaining: number | null;
   ageMonths: number | null;
   size: number | null;
-  photos: Photo[];
+  photoCount: number;
   seller: Seller;
 };
 
@@ -49,9 +49,22 @@ async function getListing(id: string): Promise<Listing | null> {
   }
 }
 
+async function getPhotos(id: string): Promise<Photo[]> {
+  try {
+    const res = await fetch(`${BACKEND}/api/bst/listings/${id}/photos`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.photos ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const listing = await getListing(id);
+  const [listing, photos] = await Promise.all([getListing(id), getPhotos(id)]);
 
   if (!listing) notFound();
 
@@ -81,19 +94,19 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Photos */}
           <div>
-            {listing.photos.length > 0 ? (
+            {photos.length > 0 ? (
               <div className="space-y-3">
                 <div className="aspect-square bg-[#242424] rounded-2xl overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={photoSrc(listing.photos[0].data)}
+                    src={photoSrc(photos[0].data)}
                     alt={listing.title}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {listing.photos.length > 1 && (
+                {photos.length > 1 && (
                   <div className="grid grid-cols-4 gap-2">
-                    {listing.photos.slice(1).map((photo) => (
+                    {photos.slice(1).map((photo) => (
                       <div key={photo.id} className="aspect-square bg-[#242424] rounded-xl overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img

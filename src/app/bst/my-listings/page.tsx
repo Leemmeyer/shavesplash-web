@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session-context";
 import { api } from "@/lib/api";
 
-type Photo = { id: string; data: string; order: number };
 type MyListing = {
   id: string;
   title: string;
@@ -15,13 +14,29 @@ type MyListing = {
   condition: string;
   category: string;
   status: string;
-  photos: Photo[];
+  photoCount: number;
   createdAt: string;
   expiresAt: string | null;
 };
 
-function photoSrc(data: string) {
-  return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
+const BACKEND = "https://api.shavesplash.app";
+
+function ListingThumbnail({ listingId, photoCount }: { listingId: string; photoCount: number }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!photoCount) return;
+    fetch(`${BACKEND}/api/bst/listings/${listingId}/photos`)
+      .then((r) => r.json())
+      .then((d) => {
+        const data = d.photos?.[0]?.data;
+        if (data) setSrc(data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`);
+      })
+      .catch(() => {});
+  }, [listingId, photoCount]);
+  return src
+    // eslint-disable-next-line @next/next/no-img-element
+    ? <img src={src} alt="" className="w-full h-full object-cover" />
+    : <div className="w-full h-full flex items-center justify-center text-2xl opacity-20">🪒</div>;
 }
 
 export default function MyListingsPage() {
@@ -116,16 +131,7 @@ export default function MyListingsPage() {
                     return (
                       <div key={listing.id} className="bg-[#242424] rounded-2xl border border-white/5 p-4 flex gap-4 items-center">
                         <div className="w-16 h-16 rounded-xl bg-[#1e1e1e] overflow-hidden flex-shrink-0">
-                          {listing.photos[0] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={photoSrc(listing.photos[0].data)}
-                              alt={listing.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl opacity-20">🪒</div>
-                          )}
+                          <ListingThumbnail listingId={listing.id} photoCount={listing.photoCount} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <Link href={`/bst/${listing.id}`} className="text-[#f5f2eb] font-semibold text-sm hover:text-[#c9a050] transition-colors line-clamp-1">
@@ -174,16 +180,7 @@ export default function MyListingsPage() {
                   {sold.map((listing) => (
                     <div key={listing.id} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-4 flex gap-4 items-center opacity-60">
                       <div className="w-16 h-16 rounded-xl bg-[#181818] overflow-hidden flex-shrink-0">
-                        {listing.photos[0] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={photoSrc(listing.photos[0].data)}
-                            alt={listing.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-2xl opacity-20">🪒</div>
-                        )}
+                        <ListingThumbnail listingId={listing.id} photoCount={listing.photoCount} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-gray-400 font-semibold text-sm line-clamp-1">{listing.title}</p>

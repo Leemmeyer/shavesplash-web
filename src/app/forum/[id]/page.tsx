@@ -113,13 +113,13 @@ function ForumReactionPill({ emoji, count, reacted, onClick, disabled, targetTyp
         <span className="text-xs font-medium">{count}</span>
       </button>
       {hovered && display && display.length > 0 && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
+        <div className="absolute bottom-full left-0 mb-2 z-50 pointer-events-none">
           <div className="bg-[#1a1a1a] border border-white/15 rounded-xl px-3 py-2 shadow-xl min-w-[100px] max-w-[180px]">
             {display.map((name, i) => (
               <p key={i} className="text-xs text-gray-300 whitespace-nowrap leading-5">{name}</p>
             ))}
           </div>
-          <div className="w-2 h-2 bg-[#1a1a1a] border-r border-b border-white/15 rotate-45 mx-auto -mt-1" />
+          <div className="w-2 h-2 bg-[#1a1a1a] border-r border-b border-white/15 rotate-45 ml-3 -mt-1" />
         </div>
       )}
     </div>

@@ -64,6 +64,7 @@ interface Comment {
   body: string;
   createdAt: string;
   authorName: string;
+  authorIsExpert?: boolean;
   isOwn: boolean;
   reactions: Record<string, ReactionGroup>;
 }
@@ -80,6 +81,7 @@ interface SotdPost {
   hasPhoto?: boolean;
   isAnonymous: boolean;
   authorName: string | null;
+  authorIsExpert?: boolean;
   reactions: Record<string, ReactionGroup>;
   commentCount: number;
   comments: Comment[];
@@ -341,6 +343,9 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
         <div>
           <div className="flex items-center gap-2">
             <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
+            {!post.isAnonymous && post.authorIsExpert && (
+              <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Patron</span>
+            )}
             {isAdmin && (
               <AdminRemoveButton
                 endpoint={`/api/sotd/${post.id}/admin`}
@@ -510,7 +515,8 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
             {comments.map((cm) => (
               <div key={cm.id} className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <span className="text-[#c9a050] text-xs font-semibold mr-1.5">{cm.authorName}</span>
+                  <span className="text-[#c9a050] text-xs font-semibold mr-1">{cm.authorName}</span>
+                  {cm.authorIsExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide mr-1.5">★ Patron</span>}
                   <span className="text-gray-300 text-sm">{cm.body}</span>
                   {/* Comment reactions */}
                   <div className="flex items-center gap-1 mt-1.5 flex-wrap">

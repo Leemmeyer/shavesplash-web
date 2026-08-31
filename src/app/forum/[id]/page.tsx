@@ -14,7 +14,7 @@ const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 interface Author {
   id: string;
   name: string;
-  profile?: { displayName?: string };
+  profile?: { displayName?: string; isExpert?: boolean };
 }
 
 type ReactionGroup = { count: number; reacted: boolean };
@@ -367,6 +367,7 @@ export default function ThreadPage() {
         )}
         <div className="flex items-center gap-2 text-xs text-gray-600 border-t border-white/5 pt-4 mb-3">
           <span className="font-medium text-gray-400">{displayName(thread.author)}</span>
+          {thread.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Patron</span>}
           <span>·</span>
           <span>{timeAgo(thread.createdAt)}</span>
         </div>
@@ -429,6 +430,7 @@ export default function ThreadPage() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <span className="text-gray-400 font-medium">{displayName(reply.author)}</span>
+                  {reply.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Patron</span>}
                   <span>·</span>
                   <span>{timeAgo(reply.createdAt)}</span>
                   <span className="text-gray-700">#{i + 1}</span>

@@ -45,9 +45,9 @@ interface Thread {
   isPinned: boolean;
   createdAt: string;
   updatedAt: string;
-  author: { id: string; name: string; profile?: { displayName?: string } };
+  author: { id: string; name: string; profile?: { displayName?: string; isExpert?: boolean } };
   _count: { replies: number };
-  lastReply: { createdAt: string; author: { name: string; profile?: { displayName?: string } } } | null;
+  lastReply: { createdAt: string; author: { name: string; profile?: { displayName?: string; isExpert?: boolean } } } | null;
 }
 
 export default function ForumPage() {
@@ -353,7 +353,10 @@ export default function ForumPage() {
                   <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full shrink-0">
                     {categoryLabel(thread.category)}
                   </span>
-                  <span className="shrink-0">by {thread.author.profile?.displayName ?? thread.author.name}</span>
+                  <span className="shrink-0 flex items-center gap-1.5">
+                    by {thread.author.profile?.displayName ?? thread.author.name}
+                    {thread.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Patron</span>}
+                  </span>
                   <div className="ml-auto flex items-center gap-1.5 min-w-0 overflow-hidden">
                     <span className="shrink-0">{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>
                     {thread.lastReply && (

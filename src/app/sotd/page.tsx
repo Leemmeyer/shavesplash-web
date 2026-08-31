@@ -344,7 +344,7 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
           <div className="flex items-center gap-2">
             <p className="text-[#f5f2eb] font-semibold text-sm">{post.isAnonymous ? "Anonymous" : (post.authorName ?? "User")}</p>
             {!post.isAnonymous && post.authorIsExpert && (
-              <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Patron</span>
+              <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Expert</span>
             )}
             {isAdmin && (
               <AdminRemoveButton
@@ -516,7 +516,7 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
               <div key={cm.id} className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <span className="text-[#c9a050] text-xs font-semibold mr-1">{cm.authorName}</span>
-                  {cm.authorIsExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide mr-1.5">★ Patron</span>}
+                  {cm.authorIsExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide mr-1.5">★ Expert</span>}
                   <span className="text-gray-300 text-sm">{cm.body}</span>
                   {/* Comment reactions */}
                   <div className="flex items-center gap-1 mt-1.5 flex-wrap">

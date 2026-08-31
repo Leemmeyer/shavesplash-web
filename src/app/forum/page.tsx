@@ -355,7 +355,7 @@ export default function ForumPage() {
                   </span>
                   <span className="shrink-0 flex items-center gap-1.5">
                     by {thread.author.profile?.displayName ?? thread.author.name}
-                    {thread.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Patron</span>}
+                    {thread.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Expert</span>}
                   </span>
                   <div className="ml-auto flex items-center gap-1.5 min-w-0 overflow-hidden">
                     <span className="shrink-0">{thread._count.replies} {thread._count.replies === 1 ? "reply" : "replies"}</span>

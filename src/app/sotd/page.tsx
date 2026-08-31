@@ -103,6 +103,63 @@ function resultColor(rank?: number, total?: number): string {
   return colors[Math.round(idx * step)] ?? "#6b7280";
 }
 
+// ── Reaction Pill with hover tooltip ─────────────────────────────────────────
+function ReactionPill({ emoji, count, reacted, onClick, disabled, fetchReactors }: {
+  emoji: string;
+  count: number;
+  reacted: boolean;
+  onClick: () => void;
+  disabled: boolean;
+  fetchReactors: () => Promise<string[]>;
+}) {
+  const [names, setNames] = useState<string[] | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    setHovered(true);
+    if (names === null) {
+      timerRef.current = setTimeout(() => {
+        fetchReactors().then(setNames).catch(() => setNames([]));
+      }, 200);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  const display = names ? (names.length <= 5 ? names : [...names.slice(0, 5), `+${names.length - 5} more`]) : null;
+
+  return (
+    <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
+          reacted
+            ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
+            : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
+        }`}
+      >
+        <span>{emoji}</span>
+        <span className="text-xs font-medium">{count}</span>
+      </button>
+      {hovered && display && display.length > 0 && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
+          <div className="bg-[#1a1a1a] border border-white/15 rounded-xl px-3 py-2 shadow-xl min-w-[100px] max-w-[180px]">
+            {display.map((name, i) => (
+              <p key={i} className="text-xs text-gray-300 whitespace-nowrap leading-5">{name}</p>
+            ))}
+          </div>
+          <div className="w-2 h-2 bg-[#1a1a1a] border-r border-b border-white/15 rotate-45 mx-auto -mt-1" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SOTD Card ────────────────────────────────────────────────────────────────
 function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   post: SotdPost;
@@ -311,19 +368,15 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
           {SOTD_EMOJIS.filter((e) => (post.reactions[e]?.count ?? 0) > 0).map((emoji) => {
             const g = post.reactions[emoji];
             return (
-              <button
+              <ReactionPill
                 key={emoji}
+                emoji={emoji}
+                count={g!.count}
+                reacted={g!.reacted}
                 onClick={() => session ? onReact(post.id, emoji) : undefined}
                 disabled={!session}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
-                  g?.reacted
-                    ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
-                    : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
-                }`}
-              >
-                <span>{emoji}</span>
-                <span className="text-xs font-medium">{g!.count}</span>
-              </button>
+                fetchReactors={() => api.get<{ names: string[] }>(`/api/sotd/${post.id}/reactions/${encodeURIComponent(emoji)}/reactors`).then(r => r.names)}
+              />
             );
           })}
 

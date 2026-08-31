@@ -67,10 +67,71 @@ function timeAgo(date: string) {
 }
 
 // ── Emoji Picker ──────────────────────────────────────────────────────────────
-function EmojiReactions({ reactions, onReact, session }: {
+function ForumReactionPill({ emoji, count, reacted, onClick, disabled, targetType, targetId }: {
+  emoji: string;
+  count: number;
+  reacted: boolean;
+  onClick: () => void;
+  disabled: boolean;
+  targetType: string;
+  targetId: string;
+}) {
+  const [names, setNames] = useState<string[] | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    setHovered(true);
+    if (names === null) {
+      timerRef.current = setTimeout(() => {
+        api.get<{ names: string[] }>(`/api/forum/reactions/reactors?targetType=${targetType}&targetId=${targetId}&emoji=${encodeURIComponent(emoji)}`)
+          .then((r) => setNames(r.names))
+          .catch(() => setNames([]));
+      }, 200);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  const display = names ? (names.length <= 5 ? names : [...names.slice(0, 5), `+${names.length - 5} more`]) : null;
+
+  return (
+    <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
+          reacted
+            ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
+            : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
+        }`}
+      >
+        <span>{emoji}</span>
+        <span className="text-xs font-medium">{count}</span>
+      </button>
+      {hovered && display && display.length > 0 && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
+          <div className="bg-[#1a1a1a] border border-white/15 rounded-xl px-3 py-2 shadow-xl min-w-[100px] max-w-[180px]">
+            {display.map((name, i) => (
+              <p key={i} className="text-xs text-gray-300 whitespace-nowrap leading-5">{name}</p>
+            ))}
+          </div>
+          <div className="w-2 h-2 bg-[#1a1a1a] border-r border-b border-white/15 rotate-45 mx-auto -mt-1" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmojiReactions({ reactions, onReact, session, targetType, targetId }: {
   reactions: Record<string, ReactionGroup>;
   onReact: (emoji: string) => void;
   session: { user: { id: string } } | null;
+  targetType: string;
+  targetId: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -90,19 +151,16 @@ function EmojiReactions({ reactions, onReact, session }: {
       {FORUM_EMOJIS.filter((e) => (reactions[e]?.count ?? 0) > 0).map((emoji) => {
         const g = reactions[emoji];
         return (
-          <button
+          <ForumReactionPill
             key={emoji}
+            emoji={emoji}
+            count={g!.count}
+            reacted={g!.reacted}
             onClick={() => session ? onReact(emoji) : undefined}
             disabled={!session}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border transition-colors ${
-              g?.reacted
-                ? "bg-[#c9a050]/20 border-[#c9a050]/50 text-[#f5f2eb]"
-                : "border-white/10 text-gray-500 hover:border-white/20 disabled:cursor-default"
-            }`}
-          >
-            <span>{emoji}</span>
-            <span className="text-xs font-medium">{g!.count}</span>
-          </button>
+            targetType={targetType}
+            targetId={targetId}
+          />
         );
       })}
 
@@ -312,7 +370,7 @@ export default function ThreadPage() {
           <span>·</span>
           <span>{timeAgo(thread.createdAt)}</span>
         </div>
-        <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} />
+        <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} targetType="thread" targetId={id} />
       </div>
 
       {/* Reply search */}
@@ -402,7 +460,7 @@ export default function ThreadPage() {
                   className="w-full max-h-64 object-cover rounded-xl mb-3"
                 />
               )}
-              <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} />
+              <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} targetType="reply" targetId={reply.id} />
             </div>
           ))}
         </div>

@@ -83,9 +83,14 @@ export default function BSTListingCard({ listing }: { listing: Listing }) {
         </div>
         <div className="p-3">
           {listing.category === "razor" ? (
-            <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-1 line-clamp-2">
-              {[listing.brand, listing.model].filter(Boolean).join(" ")}
-            </p>
+            <>
+              <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mb-0.5 line-clamp-1">
+                {[listing.brand, listing.model].filter(Boolean).join(" ")}
+              </p>
+              {listing.material && (
+                <p className="text-[#c9a050] text-xs font-medium mb-1 truncate">{listing.material}</p>
+              )}
+            </>
           ) : (
             <>
               {(listing.brand || listing.model) && (

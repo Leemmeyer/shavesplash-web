@@ -65,6 +65,7 @@ interface Comment {
   createdAt: string;
   authorName: string;
   isOwn: boolean;
+  reactions: Record<string, ReactionGroup>;
 }
 
 interface SotdPost {
@@ -160,6 +161,41 @@ function ReactionPill({ emoji, count, reacted, onClick, disabled, fetchReactors 
   );
 }
 
+const COMMENT_EMOJIS = ["👍", "❤️", "🔥", "🪒"];
+
+function CommentEmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-6 h-6 flex items-center justify-center rounded-full border border-white/10 text-xs text-gray-600 hover:border-white/25 hover:text-gray-400 transition-colors"
+        title="Add reaction"
+      >+</button>
+      {open && (
+        <div className="absolute bottom-full left-0 mb-1.5 z-50 bg-[#1e1e1e] border border-white/10 rounded-xl px-2 py-1.5 flex gap-1 shadow-xl">
+          {COMMENT_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => { onPick(emoji); setOpen(false); }}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-sm"
+            >{emoji}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SOTD Card ────────────────────────────────────────────────────────────────
 function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   post: SotdPost;
@@ -173,6 +209,40 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   const [submitting, setSubmitting] = useState(false);
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
+
+  const handleCommentReact = async (commentId: string, emoji: string) => {
+    if (!session) return;
+    setComments((prev) => prev.map((cm) => {
+      if (cm.id !== commentId) return cm;
+      const cur = cm.reactions[emoji] ?? { count: 0, reacted: false };
+      return {
+        ...cm,
+        reactions: {
+          ...cm.reactions,
+          [emoji]: { count: cur.reacted ? cur.count - 1 : cur.count + 1, reacted: !cur.reacted },
+        },
+      };
+    }));
+    try {
+      const { reactions } = await api.post<{ reactions: Record<string, ReactionGroup> }>(
+        `/api/sotd/comments/${commentId}/reactions`, { emoji }
+      );
+      setComments((prev) => prev.map((cm) => cm.id === commentId ? { ...cm, reactions } : cm));
+    } catch {
+      // revert optimistic update
+      setComments((prev) => prev.map((cm) => {
+        if (cm.id !== commentId) return cm;
+        const cur = cm.reactions[emoji] ?? { count: 0, reacted: true };
+        return {
+          ...cm,
+          reactions: {
+            ...cm.reactions,
+            [emoji]: { count: cur.reacted ? cur.count - 1 : cur.count + 1, reacted: !cur.reacted },
+          },
+        };
+      }));
+    }
+  };
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [gearExpanded, setGearExpanded] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -442,6 +512,27 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
                 <div className="flex-1 min-w-0">
                   <span className="text-[#c9a050] text-xs font-semibold mr-1.5">{cm.authorName}</span>
                   <span className="text-gray-300 text-sm">{cm.body}</span>
+                  {/* Comment reactions */}
+                  <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                    {SOTD_EMOJIS.filter((e) => cm.reactions[e]?.count > 0).map((emoji) => (
+                      <ReactionPill
+                        key={emoji}
+                        emoji={emoji}
+                        count={cm.reactions[emoji].count}
+                        reacted={cm.reactions[emoji].reacted}
+                        disabled={!session}
+                        onClick={() => session && handleCommentReact(cm.id, emoji)}
+                        fetchReactors={() =>
+                          api.get<{ names: string[] }>(`/api/sotd/comments/${cm.id}/reactions/${encodeURIComponent(emoji)}/reactors`).then((r) => r.names)
+                        }
+                      />
+                    ))}
+                    {session && (
+                      <CommentEmojiPicker
+                        onPick={(emoji) => handleCommentReact(cm.id, emoji)}
+                      />
+                    )}
+                  </div>
                 </div>
                 {cm.isOwn && (
                   <button

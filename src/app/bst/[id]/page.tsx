@@ -230,7 +230,27 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Seller controls (only shown to the listing owner) */}
-            <SellerActions listingId={listing.id} sellerId={listing.seller.id} />
+            <SellerActions
+              listingId={listing.id}
+              sellerId={listing.seller.id}
+              listing={{
+                id: listing.id,
+                title: listing.title,
+                brand: listing.brand,
+                model: listing.model,
+                material: listing.material,
+                description: listing.description,
+                price: listing.price,
+                condition: listing.condition,
+                category: listing.category,
+                listingType: listing.listingType,
+                shippingPaidBy: listing.shippingPaidBy ?? null,
+                percentRemaining: listing.percentRemaining,
+                ageMonths: listing.ageMonths,
+                size: listing.size,
+                photoCount: listing.photoCount,
+              }}
+            />
 
             {/* Admin controls */}
             <AdminRemoveListing listingId={listing.id} />

@@ -5,15 +5,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session-context";
 import { api } from "@/lib/api";
+import EditListingModal, { type EditableListing } from "@/components/EditListingModal";
 
 type MyListing = {
   id: string;
   title: string;
   brand: string | null;
+  model: string | null;
+  material: string | null;
   price: number;
-  condition: string;
+  condition: string | null;
   category: string;
   status: string;
+  listingType: string | null;
+  shippingPaidBy: string | null;
+  description: string | null;
+  percentRemaining: number | null;
+  ageMonths: number | null;
+  size: number | null;
   photoCount: number;
   createdAt: string;
   expiresAt: string | null;
@@ -46,6 +55,7 @@ export default function MyListingsPage() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingListing, setEditingListing] = useState<MyListing | null>(null);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -55,6 +65,11 @@ export default function MyListingsPage() {
       .catch(() => setError("Failed to load listings"))
       .finally(() => setLoading(false));
   }, [session, sessionLoading]);
+
+  const handleSaved = (id: string, updated: Partial<EditableListing>) => {
+    setListings((prev) => prev.map((l) => (l.id === id ? { ...l, ...updated } : l)));
+    setEditingListing(null);
+  };
 
   const handleAction = async (id: string, status: "SOLD" | "REMOVED") => {
     setWorking(id);
@@ -149,6 +164,13 @@ export default function MyListingsPage() {
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <button
+                            onClick={() => setEditingListing(listing)}
+                            disabled={working === listing.id}
+                            className="bg-[#c9a050]/10 hover:bg-[#c9a050]/20 border border-[#c9a050]/40 text-[#c9a050] font-bold text-xs rounded-lg px-3 py-2 transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                          <button
                             onClick={() => handleAction(listing.id, "SOLD")}
                             disabled={working === listing.id}
                             className="bg-green-900/30 hover:bg-green-900/50 border border-green-700/40 text-green-400 font-bold text-xs rounded-lg px-3 py-2 transition-colors disabled:opacity-50 cursor-pointer"
@@ -218,6 +240,14 @@ export default function MyListingsPage() {
           </div>
         )}
       </div>
+
+      {editingListing && (
+        <EditListingModal
+          listing={editingListing}
+          onClose={() => setEditingListing(null)}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 }

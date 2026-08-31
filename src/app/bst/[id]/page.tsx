@@ -146,6 +146,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             )}
 
             <div className="flex items-center flex-wrap gap-2 mb-6">
+              {listing.status === "SOLD" && (
+                <span className="bg-red-950 border border-red-700/50 text-red-400 rounded-lg px-3 py-1 text-sm font-bold">SOLD</span>
+              )}
               {listing.listingType === "wtb" && (
                 <span className="bg-blue-950 border border-blue-700/50 text-blue-400 rounded-lg px-3 py-1 text-sm font-bold">WTB</span>
               )}

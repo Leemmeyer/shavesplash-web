@@ -14,6 +14,7 @@ const CATEGORIES = [
   { value: "aftershave", label: "Aftershaves" },
   { value: "edp", label: "EDP/EDT" },
   { value: "misc", label: "Misc" },
+  { value: "sold", label: "Sold" },
 ];
 
 type Seller = { id: string; name: string; email: string; profile: { displayName?: string } | null };
@@ -53,26 +54,49 @@ async function getListings(): Promise<Listing[]> {
   }
 }
 
+async function getSoldListings(): Promise<Listing[]> {
+  try {
+    const res = await fetch(`${BACKEND}/api/bst/listings?status=SOLD`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.listings ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function BSTPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   const params = await searchParams;
-  const listings = await getListings();
+  const isSoldTab = params.category === "sold";
 
-  const filtered = listings.filter((l) => {
-    if (params.category && l.category !== params.category) return false;
-    if (params.q) {
-      const q = params.q.toLowerCase();
-      return (
-        l.title.toLowerCase().includes(q) ||
-        (l.brand ?? "").toLowerCase().includes(q) ||
-        l.description.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const [listings, soldListings] = await Promise.all([
+    getListings(),
+    (isSoldTab || params.q) ? getSoldListings() : Promise.resolve([] as Listing[]),
+  ]);
+
+  const filtered = isSoldTab
+    ? soldListings
+    : (() => {
+        const pool = params.q ? [...listings, ...soldListings] : listings;
+        return pool.filter((l) => {
+          if (params.category && l.category !== params.category) return false;
+          if (params.q) {
+            const q = params.q.toLowerCase();
+            return (
+              l.title.toLowerCase().includes(q) ||
+              (l.brand ?? "").toLowerCase().includes(q) ||
+              l.description.toLowerCase().includes(q)
+            );
+          }
+          return true;
+        });
+      })();
 
   return (
     <div className="min-h-screen">
@@ -90,7 +114,9 @@ export default async function BSTPage({
               Marketplace
             </h1>
             <p className="text-gray-500 text-sm">
-              {listings.length} active listing{listings.length !== 1 ? "s" : ""} from the wetshaving community
+              {isSoldTab
+                ? `${soldListings.length} sold listing${soldListings.length !== 1 ? "s" : ""}`
+                : `${listings.length} active listing${listings.length !== 1 ? "s" : ""} from the wetshaving community`}
             </p>
           </div>
           <div className="shrink-0 pt-1 flex items-center gap-3">
@@ -122,11 +148,15 @@ export default async function BSTPage({
             {CATEGORIES.map((cat) => (
               <Link
                 key={cat.value}
-                href={`/bst?${cat.value ? `category=${cat.value}` : ""}${params.q ? `&q=${params.q}` : ""}`}
+                href={`/bst?${cat.value ? `category=${cat.value}` : ""}${params.q && cat.value !== "sold" ? `&q=${params.q}` : ""}`}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
                   (params.category ?? "") === cat.value
-                    ? "bg-[#c9a050] text-black border-[#c9a050]"
-                    : "border-white/10 text-gray-400 hover:border-[#c9a050]/40 hover:text-[#c9a050]"
+                    ? cat.value === "sold"
+                      ? "bg-red-600 text-white border-red-600"
+                      : "bg-[#c9a050] text-black border-[#c9a050]"
+                    : cat.value === "sold"
+                      ? "border-red-800/40 text-red-400 hover:border-red-600/60 hover:text-red-300"
+                      : "border-white/10 text-gray-400 hover:border-[#c9a050]/40 hover:text-[#c9a050]"
                 }`}
               >
                 {cat.label}

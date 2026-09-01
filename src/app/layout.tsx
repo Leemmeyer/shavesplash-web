@@ -12,19 +12,30 @@ const fredericka = Fredericka_the_Great({
 });
 
 export const metadata: Metadata = {
-  title: "ShaveSplash Community — The Wetshaving Community",
-  description: "Log your shaves, track your den, and connect with the wetshaving community.",
+  metadataBase: new URL("https://shavesplash.app"),
+  title: {
+    default: "ShaveSplash — The Wetshaving Community",
+    template: "%s — ShaveSplash",
+  },
+  description: "Log your shaves, track your den, buy and sell gear, and connect with the wetshaving community.",
   icons: {
     icon: "/favicon.png",
     apple: "/favicon.png",
   },
   openGraph: {
-    title: "ShaveSplash Community",
-    description: "The wetshaving community. Log shaves, manage your den, and trade gear.",
+    title: "ShaveSplash — The Wetshaving Community",
+    description: "Log your shaves, track your den, buy and sell gear, and connect with the wetshaving community.",
     url: "https://shavesplash.app",
-    siteName: "ShaveSplash Community",
+    siteName: "ShaveSplash",
     locale: "en_US",
     type: "website",
+    images: [{ url: "/rabbit-logo.jpeg", width: 512, height: 512, alt: "ShaveSplash" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ShaveSplash — The Wetshaving Community",
+    description: "Log your shaves, track your den, buy and sell gear, and connect with the wetshaving community.",
+    images: ["/rabbit-logo.jpeg"],
   },
 };
 

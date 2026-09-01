@@ -102,8 +102,30 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     ? new Date(listing.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : null;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": listing.title,
+    "description": listing.description,
+    ...(listing.brand ? { "brand": { "@type": "Brand", "name": listing.brand } } : {}),
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": listing.price.toFixed(2),
+      "availability": listing.status === "ACTIVE"
+        ? "https://schema.org/InStock"
+        : "https://schema.org/SoldOut",
+      "url": `https://shavesplash.app/bst/${id}`,
+      "seller": { "@type": "Person", "name": sellerName },
+    },
+  };
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5">
         <Link href="/" className="font-[family-name:var(--font-fredericka)] text-2xl text-[#c9a050]">
           ShaveSplash

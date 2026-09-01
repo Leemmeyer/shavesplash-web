@@ -1,4 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "ShaveSplash is the community app for wet shaving enthusiasts. Log shaves, manage your den, trade gear, and connect with fellow shavers.",
+  openGraph: { title: "About ShaveSplash", description: "The wetshaving community app.", url: "https://shavesplash.app/about", type: "website" },
+};
 
 export default function AboutPage() {
   return (

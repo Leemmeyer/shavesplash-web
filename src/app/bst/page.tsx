@@ -3,6 +3,19 @@ import { Suspense } from "react";
 import WatchlistSection from "@/components/WatchlistSection";
 import CreateListingModal from "@/components/CreateListingModal";
 import BSTListingCard from "@/components/BSTListingCard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Marketplace",
+  description: "Buy, sell, and trade wet shaving gear. Razors, brushes, soaps, aftershaves, and more — from the ShaveSplash community.",
+  openGraph: {
+    title: "ShaveSplash Marketplace",
+    description: "Buy, sell, and trade wet shaving gear. Razors, brushes, soaps, aftershaves, and more.",
+    url: "https://shavesplash.app/bst",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
+};
 
 const BACKEND = "https://api.shavesplash.app";
 

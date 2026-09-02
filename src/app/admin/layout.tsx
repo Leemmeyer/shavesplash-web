@@ -22,6 +22,7 @@ const TABS: { label: string; href: string; countKey?: keyof PendingCounts }[] = 
   { label: "Blades",      href: "/admin/blades",       countKey: "blades" },
   { label: "Brushes",     href: "/admin/brushes",      countKey: "brushes" },
   { label: "Database",    href: "/admin/database",     countKey: "database" },
+  { label: "Promotion",   href: "/admin/promotion" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -41,6 +41,20 @@ export default function PromotionAdminPage() {
   const set = (k: keyof Promotion, v: string | boolean) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const toggleActive = async () => {
+    const next = !form.isActive;
+    setForm((f) => ({ ...f, isActive: next }));
+    setBanner(null);
+    try {
+      const updated = await api.put<Promotion>("/api/promotion", { isActive: next });
+      setForm((f) => ({ ...f, isActive: updated.isActive, updatedAt: updated.updatedAt }));
+      setBanner({ ok: true, msg: next ? "Promotion activated." : "Promotion deactivated." });
+    } catch {
+      setForm((f) => ({ ...f, isActive: !next })); // revert on failure
+      setBanner({ ok: false, msg: "Failed to update. Check your connection." });
+    }
+  };
+
   const handleSave = async () => {
     if (!form.title.trim()) { setBanner({ ok: false, msg: "Title is required." }); return; }
     if (!form.message.trim()) { setBanner({ ok: false, msg: "Message is required." }); return; }
@@ -89,7 +103,7 @@ export default function PromotionAdminPage() {
           <p className="text-gray-500 text-sm mt-0.5">Show the bell icon and allow users to view this promotion</p>
         </div>
         <button
-          onClick={() => set("isActive", !form.isActive)}
+          onClick={toggleActive}
           className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${form.isActive ? "bg-red-600" : "bg-white/10"}`}
         >
           <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${form.isActive ? "translate-x-5" : "translate-x-0.5"}`} />

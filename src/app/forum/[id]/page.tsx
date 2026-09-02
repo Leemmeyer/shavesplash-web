@@ -35,10 +35,16 @@ function renderWithLinks(text: string) {
 function renderBody(text: string) {
   const segs: Array<{ isQuote: boolean; content: string }> = [];
   for (const line of text.split('\n')) {
-    const q = line.startsWith('> ');
+    const isQuoteLine = line.startsWith('> ');
     const last = segs[segs.length - 1];
-    if (last && last.isQuote === q) last.content += '\n' + (q ? line.slice(2) : line);
-    else segs.push({ isQuote: q, content: q ? line.slice(2) : line });
+    // Non-empty lines immediately after a quote block are treated as continuations
+    // (handles existing replies where multi-line source text wasn't collapsed)
+    const effectivelyQuote = isQuoteLine || (!!last?.isQuote && line.trim() !== '');
+    if (last && last.isQuote === effectivelyQuote) {
+      last.content += '\n' + (isQuoteLine ? line.slice(2) : line);
+    } else {
+      segs.push({ isQuote: effectivelyQuote, content: isQuoteLine ? line.slice(2) : line });
+    }
   }
   return segs.map((seg, i) =>
     seg.isQuote ? (

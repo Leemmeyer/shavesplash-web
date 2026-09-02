@@ -8,7 +8,7 @@ import AdminRemoveButton from "@/components/AdminRemoveButton";
 
 const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
-const SOTD_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
+const SOTD_EMOJIS = ["👍", "❤️", "🔥", "😂", "😊", "😮", "😢"];
 const CATEGORY_ICONS: Record<string, string> = {
   razors: "🪒", razorsSecondary: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };
@@ -163,7 +163,7 @@ function ReactionPill({ emoji, count, reacted, onClick, disabled, fetchReactors 
   );
 }
 
-const COMMENT_EMOJIS = ["👍", "❤️", "🔥", "🪒"];
+const COMMENT_EMOJIS = ["👍", "❤️", "🔥", "😂", "😊", "😮", "😢"];
 
 function CommentEmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
   const [open, setOpen] = useState(false);

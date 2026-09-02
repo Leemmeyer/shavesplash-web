@@ -424,15 +424,17 @@ export default function ThreadPage() {
           <span>·</span>
           <span>{timeAgo(thread.createdAt)}</span>
         </div>
-        <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} targetType="thread" targetId={id} />
-        {session && (
-          <button
-            onClick={() => handleQuoteReply(displayName(thread.author), thread.body)}
-            className="mt-2 text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors"
-          >
-            ↩ Quote Reply
-          </button>
-        )}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} targetType="thread" targetId={id} />
+          {session && (
+            <button
+              onClick={() => handleQuoteReply(displayName(thread.author), thread.body)}
+              className="text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors shrink-0"
+            >
+              ↩ Quote Reply
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Reply search */}
@@ -523,15 +525,17 @@ export default function ThreadPage() {
                   className="w-full max-h-64 object-cover rounded-xl mb-3"
                 />
               )}
-              <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} targetType="reply" targetId={reply.id} />
-              {session && (
-                <button
-                  onClick={() => handleQuoteReply(displayName(reply.author), reply.body)}
-                  className="mt-2 text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors"
-                >
-                  ↩ Quote Reply
-                </button>
-              )}
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} targetType="reply" targetId={reply.id} />
+                {session && (
+                  <button
+                    onClick={() => handleQuoteReply(displayName(reply.author), reply.body)}
+                    className="text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors shrink-0"
+                  >
+                    ↩ Quote Reply
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

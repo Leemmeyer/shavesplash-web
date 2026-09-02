@@ -63,7 +63,19 @@ export default function ForumPage() {
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setReadState(loadReadState()); }, []);
+  // Stamp a visit watermark on mount. Threads updated before this moment are
+  // considered "seen". Only threads updated AFTER the previous visit show as new.
+  const [visitedAt] = useState(() => {
+    try { return parseInt(localStorage.getItem("ss_forum_last_visit") ?? "0", 10); }
+    catch { return 0; }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("ss_forum_last_visit", String(Date.now()));
+      localStorage.setItem(NAV_COUNT_KEY, "0"); // clear nav badge immediately on visit
+    } catch {}
+    setReadState(loadReadState());
+  }, []);
 
   const markRead = useCallback((threadId: string) => {
     setReadState((prev) => {
@@ -73,11 +85,15 @@ export default function ForumPage() {
     });
   }, []);
 
+  // A thread is unread only if it was updated AFTER the previous visit AND
+  // hasn't been individually opened since.
   const isUnread = useCallback((thread: Thread) => {
+    const threadUpdatedAt = new Date(thread.updatedAt).getTime();
+    if (threadUpdatedAt <= visitedAt) return false;
     const lastRead = readState[thread.id];
     if (!lastRead) return true;
-    return new Date(thread.updatedAt).getTime() > lastRead;
-  }, [readState]);
+    return threadUpdatedAt > lastRead;
+  }, [readState, visitedAt]);
 
   // Unread counts per category — written to localStorage so the nav badge can read it
   const unreadByCategory = useMemo(() => {
@@ -95,7 +111,7 @@ export default function ForumPage() {
     [unreadByCategory]
   );
 
-  // Keep nav badge in sync whenever the count changes
+  // Keep nav badge in sync after threads load
   useEffect(() => {
     if (!fetching) {
       try { localStorage.setItem(NAV_COUNT_KEY, String(totalUnread)); } catch {}

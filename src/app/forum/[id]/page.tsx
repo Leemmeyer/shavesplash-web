@@ -57,7 +57,7 @@ function renderBody(text: string) {
   );
 }
 
-const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
+const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😂", "😊", "😮", "😢"];
 
 interface Author {
   id: string;

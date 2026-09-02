@@ -9,6 +9,29 @@ import AdminRemoveButton from "@/components/AdminRemoveButton";
 
 const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
+const URL_REGEX = /https?:\/\/[^\s]+/g;
+function renderWithLinks(text: string) {
+  const parts: { t: string; link: boolean }[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  URL_REGEX.lastIndex = 0;
+  while ((m = URL_REGEX.exec(text)) !== null) {
+    if (m.index > last) parts.push({ t: text.slice(last, m.index), link: false });
+    const url = m[0].replace(/[.,;:!?)"']+$/, '');
+    parts.push({ t: url, link: true });
+    last = m.index + url.length;
+  }
+  if (last < text.length) parts.push({ t: text.slice(last), link: false });
+  return parts.map((p, i) =>
+    p.link ? (
+      <a key={i} href={p.t} target="_blank" rel="noopener noreferrer"
+        className="text-[#c9a050] underline hover:text-[#b8903f] break-all">
+        {p.t}
+      </a>
+    ) : <span key={i}>{p.t}</span>
+  );
+}
+
 const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 
 interface Author {
@@ -356,7 +379,7 @@ export default function ThreadPage() {
         <h1 className="font-[family-name:var(--font-fredericka)] text-2xl text-[#f5f2eb] mb-4 leading-snug">
           {thread.title}
         </h1>
-        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-4">{thread.body}</p>
+        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-4">{renderWithLinks(thread.body)}</p>
         {thread.photoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -453,7 +476,7 @@ export default function ThreadPage() {
                   )}
                 </div>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-3">{reply.body}</p>
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-3">{renderWithLinks(reply.body)}</p>
               {reply.photoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

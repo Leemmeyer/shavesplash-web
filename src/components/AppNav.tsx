@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 
 type AppNotification = {
   id: string;
-  type: "forum_reply" | "sotd_comment";
+  type: "forum_reply" | "sotd_comment" | "quote_reply";
   title: string;
   body: string;
   link: string;
@@ -199,7 +199,7 @@ export default function AppNav() {
                         ) : notifications.length === 0 ? null : (
                           notifications.map((n) => (
                             <a key={n.id} href={n.link} onClick={() => { api.post(`/api/notifications/${n.id}/read`, {}).catch(() => {}); setNotifOpen(false); }} className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${n.read ? "opacity-60" : ""}`}>
-                              <span className="text-base mt-0.5 shrink-0">{n.type === "forum_reply" ? "💬" : "🪒"}</span>
+                              <span className="text-base mt-0.5 shrink-0">{n.type === "forum_reply" ? "💬" : n.type === "quote_reply" ? "↩️" : "🪒"}</span>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[#f5f2eb] text-xs font-semibold leading-snug">{n.title}</p>
                                 <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{n.body}</p>

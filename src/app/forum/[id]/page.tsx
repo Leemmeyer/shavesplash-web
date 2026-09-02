@@ -32,6 +32,25 @@ function renderWithLinks(text: string) {
   );
 }
 
+function renderBody(text: string) {
+  const segs: Array<{ isQuote: boolean; content: string }> = [];
+  for (const line of text.split('\n')) {
+    const q = line.startsWith('> ');
+    const last = segs[segs.length - 1];
+    if (last && last.isQuote === q) last.content += '\n' + (q ? line.slice(2) : line);
+    else segs.push({ isQuote: q, content: q ? line.slice(2) : line });
+  }
+  return segs.map((seg, i) =>
+    seg.isQuote ? (
+      <div key={i} className="border-l-2 border-[#c9a050]/40 pl-3 py-0.5 my-1 bg-[#c9a050]/5 rounded-r italic text-[#8b7a5a] text-sm whitespace-pre-wrap">
+        {renderWithLinks(seg.content)}
+      </div>
+    ) : (
+      <span key={i} className="whitespace-pre-wrap">{renderWithLinks(seg.content)}</span>
+    )
+  );
+}
+
 const FORUM_EMOJIS = ["👍", "❤️", "🔥", "😊", "😮", "😢"];
 
 interface Author {
@@ -232,6 +251,7 @@ export default function ThreadPage() {
   const replySearchInputRef = useRef<HTMLInputElement>(null);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const replyAuthors = useMemo(() => {
     if (!thread) return [];
@@ -285,6 +305,16 @@ export default function ThreadPage() {
       .then((d) => setThread(d.thread))
       .catch(() => router.push("/forum"));
   }, [id, router]);
+
+  const handleQuoteReply = (author: string, body: string) => {
+    const cleaned = body.replace(/^> .+$/gm, '').trim();
+    const clipped = cleaned.length > 150 ? cleaned.slice(0, 150).trimEnd() + '…' : cleaned;
+    setReplyBody(`> @${author}: "${clipped}"\n\n`);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  };
 
   const handleReactThread = async (emoji: string) => {
     if (!session) return;
@@ -379,7 +409,7 @@ export default function ThreadPage() {
         <h1 className="font-[family-name:var(--font-fredericka)] text-2xl text-[#f5f2eb] mb-4 leading-snug">
           {thread.title}
         </h1>
-        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-4">{renderWithLinks(thread.body)}</p>
+        <div className="text-gray-300 text-sm leading-relaxed mb-4">{renderBody(thread.body)}</div>
         {thread.photoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -395,6 +425,14 @@ export default function ThreadPage() {
           <span>{timeAgo(thread.createdAt)}</span>
         </div>
         <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} targetType="thread" targetId={id} />
+        {session && (
+          <button
+            onClick={() => handleQuoteReply(displayName(thread.author), thread.body)}
+            className="mt-2 text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors"
+          >
+            ↩ Quote Reply
+          </button>
+        )}
       </div>
 
       {/* Reply search */}
@@ -476,7 +514,7 @@ export default function ThreadPage() {
                   )}
                 </div>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-3">{renderWithLinks(reply.body)}</p>
+              <div className="text-gray-300 text-sm leading-relaxed mb-3">{renderBody(reply.body)}</div>
               {reply.photoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -486,6 +524,14 @@ export default function ThreadPage() {
                 />
               )}
               <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} targetType="reply" targetId={reply.id} />
+              {session && (
+                <button
+                  onClick={() => handleQuoteReply(displayName(reply.author), reply.body)}
+                  className="mt-2 text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors"
+                >
+                  ↩ Quote Reply
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -498,6 +544,7 @@ export default function ThreadPage() {
         <div className="bg-[#242424] border border-white/5 rounded-2xl p-5 mt-6">
           <h3 className="text-sm font-semibold text-gray-400 mb-3">Leave a reply</h3>
           <textarea
+            ref={textareaRef}
             value={replyBody}
             onChange={(e) => setReplyBody(e.target.value)}
             placeholder="Share your thoughts…"

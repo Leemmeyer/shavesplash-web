@@ -7,12 +7,12 @@ import { useSession } from "@/lib/session-context";
 
 const FEATURES = [
   { icon: "🔔", label: "Watchlist alerts", sub: "Get notified when items you want are listed" },
-  { icon: "∞", label: "Unlimited listings", sub: "Free tier: 3 per month" },
-  { icon: "📸", label: "Unlimited photos", sub: "Free tier: 3 per listing" },
-  { icon: "⏳", label: "Listings active for 30 days", sub: "Free tier: expire after 7 days" },
+  { icon: "∞", label: "Unlimited listings", sub: "Free: 3 per month" },
+  { icon: "📸", label: "Up to 10 photos per listing", sub: "Free: up to 3 per listing" },
+  { icon: "⏳", label: "Listings active for 30 days", sub: "Free: expire after 7 days" },
   { icon: "⬆️", label: "Priority placement", sub: "Your listings appear above free-tier listings" },
   { icon: "✏️", label: "Edit forum posts for 48 hours", sub: "Free members: 1-hour edit window" },
-  { icon: "★", label: "Expert Seller badge", sub: "Builds trust with buyers in the community" },
+  { icon: "★", label: "Expert badge", sub: "Builds trust with buyers in the community" },
 ];
 
 const PLANS = [

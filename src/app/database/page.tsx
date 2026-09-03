@@ -15,6 +15,7 @@ const CATEGORIES = [
   { id: "balms", label: "Balms", icon: "🧴" },
   { id: "preshaves", label: "Preshaves", icon: "✨" },
   { id: "edpedt", label: "EDP/EDT", icon: "🌸" },
+  { id: "bowls", label: "Bowls", icon: "🫙" },
 ];
 
 type GearItem = {
@@ -61,6 +62,12 @@ function specPreview(item: GearItem): string {
   }
   if (item.categoryId === "soaps" || item.categoryId === "aftershaves") {
     if (d.scentFamily) return String(d.scentFamily);
+  }
+  if (item.categoryId === "bowls") {
+    const parts: string[] = [];
+    if (d.bowlMaterial) parts.push(String(d.bowlMaterial));
+    if (d.bowlDiameterIn) parts.push(`Ø${d.bowlDiameterIn}"`);
+    return parts.join(" · ");
   }
   return "";
 }
@@ -162,6 +169,12 @@ function DetailSpecs({ item }: { item: GearItem }) {
   }
   if (cat === "preshaves") {
     if (d.preshaveType) rows.push({ label: "Type", value: String(d.preshaveType) });
+  }
+  if (cat === "bowls") {
+    if (d.bowlMaterial) rows.push({ label: "Material", value: String(d.bowlMaterial) });
+    if (d.bowlDiameterIn) rows.push({ label: "Diameter", value: `${d.bowlDiameterIn}"` });
+    if (d.bowlDepthIn) rows.push({ label: "Depth", value: `${d.bowlDepthIn}"` });
+    if (d.bowlWeightG) rows.push({ label: "Weight", value: `${d.bowlWeightG}g` });
   }
   if (["soaps", "aftershaves", "edpedt"].includes(cat)) {
     if (d.scentFamily) rows.push({ label: "Scent Family", value: d.familySubtype ? `${d.scentFamily} · ${d.familySubtype}` : String(d.scentFamily) });

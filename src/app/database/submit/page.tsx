@@ -27,6 +27,7 @@ const CATEGORY_OPTIONS = [
   { id: "balms", label: "Balm", icon: "🧴" },
   { id: "preshaves", label: "Preshave", icon: "✨" },
   { id: "edpedt", label: "EDP/EDT", icon: "🌸" },
+  { id: "bowls", label: "Bowl", icon: "🫙" },
 ];
 
 function SelectField({ label, value, options, onChange }: {
@@ -113,6 +114,11 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [preshaveType, setPreshaveType] = useState("");
   // Size
   const [size, setSize] = useState("");
+  // Bowl
+  const [bowlMaterial, setBowlMaterial] = useState("");
+  const [bowlDiameterIn, setBowlDiameterIn] = useState("");
+  const [bowlDepthIn, setBowlDepthIn] = useState("");
+  const [bowlWeightG, setBowlWeightG] = useState("");
 
   // Pre-fill from a Den item when ?from= is present
   useEffect(() => {
@@ -196,6 +202,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const isEdpEdt = categoryId === "edpedt";
   const isPreshave = categoryId === "preshaves";
   const isBalm = categoryId === "balms";
+  const isBowl = categoryId === "bowls";
   const hasSize = isSoap || isAftershave || isEdpEdt || isBalm;
   const hasIngredients = isSoap || isAftershave || isBalm || isPreshave || isEdpEdt;
   const sizeUnit = (isSoap || isBalm) ? "oz" : "mL";
@@ -256,6 +263,12 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
     if (isPreshave && preshaveType) data.preshaveType = preshaveType;
     if (hasIngredients && ingredients.trim()) data.ingredients = ingredients.trim();
     if (hasSize && size.trim()) data.size = parseFloat(size);
+    if (isBowl) {
+      if (bowlMaterial.trim()) data.bowlMaterial = bowlMaterial.trim();
+      if (bowlDiameterIn.trim()) data.bowlDiameterIn = bowlDiameterIn.trim();
+      if (bowlDepthIn.trim()) data.bowlDepthIn = bowlDepthIn.trim();
+      if (bowlWeightG.trim()) data.bowlWeightG = bowlWeightG.trim();
+    }
 
     try {
       const { id } = await api.post<{ id: string }>("/api/gear", { categoryId, brand: brand.trim(), name: name.trim(), data });
@@ -566,6 +579,35 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
           <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-5">
             <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Preshave Specs</h2>
             <SelectField label="Type" value={preshaveType} options={PRESHAVE_TYPE_OPTIONS} onChange={setPreshaveType} />
+          </div>
+        )}
+
+        {/* Bowl specs */}
+        {isBowl && (
+          <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 space-y-4">
+            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">Bowl Specs</h2>
+            <div>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Material <span className="normal-case text-gray-600">(optional)</span></label>
+              <input value={bowlMaterial} onChange={(e) => setBowlMaterial(e.target.value)} placeholder="e.g. Ceramic, Stainless Steel"
+                className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Diameter (in)</label>
+                <input value={bowlDiameterIn} onChange={(e) => setBowlDiameterIn(e.target.value)} type="number" step="0.1" min="0" placeholder="e.g. 4.5"
+                  className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Depth (in)</label>
+                <input value={bowlDepthIn} onChange={(e) => setBowlDepthIn(e.target.value)} type="number" step="0.1" min="0" placeholder="e.g. 2.0"
+                  className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Weight (g)</label>
+                <input value={bowlWeightG} onChange={(e) => setBowlWeightG(e.target.value)} type="number" step="1" min="0" placeholder="e.g. 320"
+                  className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 transition-colors" />
+              </div>
+            </div>
           </div>
         )}
 

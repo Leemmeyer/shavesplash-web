@@ -45,7 +45,7 @@ const SCENT_FAMILY_OPTIONS = ["Citrus","Floral","Fougère","Gourmand","Leather",
 const CATEGORY_LABELS: Record<string, string> = {
   razors: "Razor", blades: "Blade", brushes: "Brush",
   soaps: "Soap", aftershaves: "Aftershave", balms: "Balm",
-  preshaves: "Preshave", edpedt: "EDP/EDT",
+  preshaves: "Preshave", edpedt: "EDP/EDT", bowls: "Bowl",
 };
 
 // All fields per category, with display labels
@@ -119,6 +119,12 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "ingredients", label: "Ingredients" },
     { key: "inspiration", label: "Inspiration" },
     { key: "size", label: "Size (mL)" },
+  ],
+  bowls: [
+    { key: "bowlMaterial", label: "Material" },
+    { key: "bowlDiameterIn", label: "Diameter (in)" },
+    { key: "bowlDepthIn", label: "Depth (in)" },
+    { key: "bowlWeightG", label: "Weight (g)" },
   ],
 };
 
@@ -358,6 +364,17 @@ function SubmissionEditForm({ categoryId, draftData, setField }: {
     <div className="space-y-3">
       {scentFields}
       <EField label="Size (mL)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />
+    </div>
+  );
+
+  if (categoryId === "bowls") return (
+    <div className="space-y-3">
+      <EField label="Material" value={str("bowlMaterial")} onChange={(v) => setField("bowlMaterial", v)} placeholder="e.g. Ceramic" />
+      <div className="grid grid-cols-3 gap-2">
+        <EField label="Diameter (in)" value={str("bowlDiameterIn")} onChange={(v) => setField("bowlDiameterIn", v)} placeholder="e.g. 4.5" />
+        <EField label="Depth (in)" value={str("bowlDepthIn")} onChange={(v) => setField("bowlDepthIn", v)} placeholder="e.g. 2.0" />
+        <EField label="Weight (g)" value={str("bowlWeightG")} onChange={(v) => setField("bowlWeightG", v)} placeholder="e.g. 320" />
+      </div>
     </div>
   );
 

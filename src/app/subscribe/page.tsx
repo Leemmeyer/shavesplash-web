@@ -11,6 +11,7 @@ const FEATURES = [
   { icon: "⏳", label: "Listings stay until sold", sub: "Free tier: expire after 30 days" },
   { icon: "⬆️", label: "Priority placement", sub: "Your listings appear above free-tier listings" },
   { icon: "🔔", label: "Watchlist alerts", sub: "Get notified when items you want are listed" },
+  { icon: "✏️", label: "Edit forum posts for 48 hours", sub: "Free members: 1-hour edit window" },
   { icon: "★", label: "Expert Seller badge", sub: "Builds trust with buyers in the community" },
 ];
 

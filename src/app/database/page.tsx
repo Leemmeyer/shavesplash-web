@@ -15,7 +15,7 @@ const CATEGORIES = [
   { id: "balms", label: "Balms", icon: "🧴" },
   { id: "preshaves", label: "Preshaves", icon: "✨" },
   { id: "edpedt", label: "EDP/EDT", icon: "🌸" },
-  { id: "bowls", label: "Bowls", icon: "🫙" },
+  { id: "bowls", label: "Bowls", icon: "🥣" },
 ];
 
 type GearItem = {

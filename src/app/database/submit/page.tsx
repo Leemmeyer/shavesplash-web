@@ -27,7 +27,7 @@ const CATEGORY_OPTIONS = [
   { id: "balms", label: "Balm", icon: "🧴" },
   { id: "preshaves", label: "Preshave", icon: "✨" },
   { id: "edpedt", label: "EDP/EDT", icon: "🌸" },
-  { id: "bowls", label: "Bowl", icon: "🫙" },
+  { id: "bowls", label: "Bowl", icon: "🥣" },
 ];
 
 function SelectField({ label, value, options, onChange }: {

@@ -225,8 +225,8 @@ export default function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-visible">
+        <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead>
             <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-wide">
               <th className="text-left px-5 py-3 font-medium">User</th>

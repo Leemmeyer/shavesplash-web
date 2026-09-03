@@ -11,7 +11,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error((err as { error?: string }).error ?? "Request failed");
+    const errMsg = (err as { error?: string }).error ?? "Request failed";
+    if (errMsg === "suspended") {
+      window.location.href = "/sign-in?suspended=1";
+      return new Promise<never>(() => {});
+    }
+    throw new Error(errMsg);
   }
   return res.json() as Promise<T>;
 }

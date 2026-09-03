@@ -13,6 +13,7 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "";
+  const isSuspended = searchParams.get("suspended") === "1";
   const { session, loading: sessionLoading } = useSession();
 
   useEffect(() => {
@@ -59,6 +60,13 @@ function SignInForm() {
             />
           </div>
 
+          {isSuspended && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 text-center">
+              Your account has been suspended. Please contact{" "}
+              <a href="mailto:teutonblade@shavesplash.com" className="underline hover:text-red-300">teutonblade@shavesplash.com</a>
+              {" "}for more information.
+            </div>
+          )}
           {error && (
             <p className="text-red-400 text-sm text-center">{error}</p>
           )}

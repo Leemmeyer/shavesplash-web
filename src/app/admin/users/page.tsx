@@ -15,6 +15,7 @@ type UserRow = {
     isExpert: boolean;
     expertSince: string | null;
     paypalHandle: string | null;
+    suspended: boolean;
   } | null;
   _count: {
     shaveLogs: number;
@@ -28,12 +29,14 @@ function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending }: {
+function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending, onToggleSuspend, suspendPending }: {
   user: UserRow;
   onDelete: () => void;
   onClear: () => void;
   onToggleExpert: () => void;
   expertPending: boolean;
+  onToggleSuspend: () => void;
+  suspendPending: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
@@ -75,6 +78,13 @@ function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending }:
           >
             {expertPending ? "…" : user.profile?.isExpert ? "Revoke Expert" : "Grant Expert"}
           </button>
+          <button
+            onClick={() => { onToggleSuspend(); setOpen(false); }}
+            disabled={suspendPending}
+            className="w-full text-left px-4 py-2.5 text-sm text-orange-400 hover:bg-white/5 transition-colors disabled:opacity-40"
+          >
+            {suspendPending ? "…" : user.profile?.suspended ? "Unsuspend" : "Suspend"}
+          </button>
           <div className="border-t border-white/5 my-1" />
           <button
             onClick={() => { onClear(); setOpen(false); }}
@@ -112,6 +122,9 @@ export default function UsersPage() {
   // Expert toggle
   const [expertPending, setExpertPending] = useState<string | null>(null);
 
+  // Suspend toggle
+  const [suspendPending, setSuspendPending] = useState<string | null>(null);
+
   useEffect(() => {
     api.get<{ users: UserRow[] }>("/api/admin/monitoring/all-users")
       .then((d) => setUsers(d.users))
@@ -143,6 +156,19 @@ export default function UsersPage() {
     setClearing(false);
     setConfirmClearUser(null);
     setClearConfirmText("");
+  }
+
+  async function handleToggleSuspend(userId: string, currentlySuspended: boolean) {
+    setSuspendPending(userId);
+    try {
+      const { suspended } = await api.post<{ suspended: boolean }>(`/api/admin/monitoring/users/${userId}/suspend`, {});
+      setUsers((prev) => prev.map((u) =>
+        u.id === userId
+          ? { ...u, profile: u.profile ? { ...u.profile, suspended } : { displayName: null, isExpert: false, expertSince: null, paypalHandle: null, suspended } }
+          : u
+      ));
+    } catch {}
+    setSuspendPending(null);
   }
 
   async function handleToggleExpert(userId: string, currentlyExpert: boolean) {
@@ -247,7 +273,9 @@ export default function UsersPage() {
                     <span className="text-gray-500 text-xs">{u.lastSeen ? formatDate(u.lastSeen) : <span className="text-gray-700">—</span>}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {u.profile?.isExpert ? (
+                    {u.profile?.suspended ? (
+                      <span className="text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 rounded-full px-2 py-0.5">Suspended</span>
+                    ) : u.profile?.isExpert ? (
                       <span className="text-[10px] font-semibold text-[#c9a050] bg-[#c9a050]/10 border border-[#c9a050]/20 rounded-full px-2 py-0.5">Expert</span>
                     ) : (
                       <span className="text-[10px] text-gray-600 bg-white/5 rounded-full px-2 py-0.5">Free</span>
@@ -277,6 +305,8 @@ export default function UsersPage() {
                         onClear={() => { setConfirmClearUser(u); setClearConfirmText(""); }}
                         onToggleExpert={() => handleToggleExpert(u.id, !!u.profile?.isExpert)}
                         expertPending={expertPending === u.id}
+                        onToggleSuspend={() => handleToggleSuspend(u.id, !!u.profile?.suspended)}
+                        suspendPending={suspendPending === u.id}
                       />
                     )}
                   </td>

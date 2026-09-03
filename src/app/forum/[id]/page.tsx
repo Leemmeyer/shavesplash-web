@@ -73,6 +73,7 @@ interface Reply {
   photoUrl?: string | null;
   author: Author;
   createdAt: string;
+  updatedAt: string;
   reactions: Record<string, ReactionGroup>;
 }
 
@@ -84,6 +85,7 @@ interface Thread {
   isPinned: boolean;
   photoUrl?: string | null;
   createdAt: string;
+  updatedAt: string;
   author: Author;
   replies: Reply[];
   reactions: Record<string, ReactionGroup>;
@@ -251,6 +253,13 @@ export default function ThreadPage() {
   const [replyBody, setReplyBody] = useState("");
   const [replyPhotoDataUrl, setReplyPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editingThread, setEditingThread] = useState(false);
+  const [editThreadTitle, setEditThreadTitle] = useState("");
+  const [editThreadBody, setEditThreadBody] = useState("");
+  const [savingThread, setSavingThread] = useState(false);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editReplyBody, setEditReplyBody] = useState("");
+  const [savingReply, setSavingReply] = useState(false);
   const [replySearch, setReplySearch] = useState("");
   const [taggedReplyUsers, setTaggedReplyUsers] = useState<{ id: string; displayName: string }[]>([]);
   const [replyMentionQuery, setReplyMentionQuery] = useState<string | null>(null);
@@ -379,6 +388,59 @@ export default function ThreadPage() {
     setThread((t) => t ? { ...t, replies: t.replies.filter((r) => r.id !== replyId) } : t);
   };
 
+  const startEditThread = () => {
+    if (!thread) return;
+    setEditThreadTitle(thread.title);
+    setEditThreadBody(thread.body);
+    setEditingThread(true);
+  };
+
+  const handleSaveThread = async () => {
+    if (!thread || savingThread) return;
+    setSavingThread(true);
+    try {
+      const { thread: updated } = await api.patch<{ thread: Thread }>(`/api/forum/threads/${id}`, {
+        title: editThreadTitle.trim() || thread.title,
+        body: editThreadBody.trim() || thread.body,
+      });
+      setThread((t) => t ? { ...t, title: updated.title, body: updated.body, updatedAt: updated.updatedAt } : t);
+      setEditingThread(false);
+    } catch (e: unknown) {
+      const msg = (e as { message?: string })?.message ?? "";
+      alert(msg.includes("expired") ? "Your edit window has expired. Upgrade to Expert for a 48-hour edit window." : "Failed to save edit.");
+    } finally {
+      setSavingThread(false);
+    }
+  };
+
+  const startEditReply = (reply: Reply) => {
+    setEditingReplyId(reply.id);
+    setEditReplyBody(reply.body);
+  };
+
+  const handleSaveReply = async (replyId: string) => {
+    if (savingReply) return;
+    setSavingReply(true);
+    try {
+      const { reply: updated } = await api.patch<{ reply: Reply }>(`/api/forum/replies/${replyId}`, { body: editReplyBody.trim() });
+      setThread((t) => t ? { ...t, replies: t.replies.map((r) => r.id === replyId ? { ...r, body: updated.body, updatedAt: updated.updatedAt } : r) } : t);
+      setEditingReplyId(null);
+    } catch (e: unknown) {
+      const msg = (e as { message?: string })?.message ?? "";
+      alert(msg.includes("expired") ? "Your edit window has expired. Upgrade to Expert for a 48-hour edit window." : "Failed to save edit.");
+    } finally {
+      setSavingReply(false);
+    }
+  };
+
+  const canEdit = (createdAt: string) => {
+    // Show edit button for up to 48h; backend enforces actual tier limit
+    return isAdmin || Date.now() - new Date(createdAt).getTime() < 48 * 60 * 60 * 1000;
+  };
+
+  const wasEdited = (createdAt: string, updatedAt: string) =>
+    new Date(updatedAt).getTime() - new Date(createdAt).getTime() > 60_000;
+
   if (!thread) return null;
 
   return (
@@ -395,13 +457,14 @@ export default function ThreadPage() {
             {CATEGORY_LABELS[thread.category] ?? thread.category}
           </span>
           <div className="flex items-center gap-2">
+            {session?.user.id === thread.author.id && canEdit(thread.createdAt) && !editingThread && (
+              <button onClick={startEditThread} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Edit</button>
+            )}
             {session?.user.id === thread.author.id && (
-              <button
-                onClick={handleDeleteThread}
-                className="text-xs text-red-500 hover:text-red-400 transition-colors"
-              >
-                Delete
-              </button>
+              <button onClick={handleDeleteThread} className="text-xs text-red-500 hover:text-red-400 transition-colors">Delete</button>
+            )}
+            {isAdmin && !editingThread && (
+              <button onClick={startEditThread} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Edit</button>
             )}
             {isAdmin && (
               <AdminRemoveButton
@@ -412,10 +475,36 @@ export default function ThreadPage() {
             )}
           </div>
         </div>
-        <h1 className="font-[family-name:var(--font-fredericka)] text-2xl text-[#f5f2eb] mb-4 leading-snug">
-          {thread.title}
-        </h1>
-        <div className="text-gray-300 text-sm leading-relaxed mb-4">{renderBody(thread.body)}</div>
+
+        {editingThread ? (
+          <div className="mb-4">
+            <input
+              value={editThreadTitle}
+              onChange={(e) => setEditThreadTitle(e.target.value)}
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-2.5 text-base text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/40 mb-3"
+            />
+            <textarea
+              value={editThreadBody}
+              onChange={(e) => setEditThreadBody(e.target.value)}
+              rows={6}
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] resize-y focus:outline-none focus:border-[#c9a050]/40 mb-3"
+            />
+            <div className="flex gap-2">
+              <button onClick={handleSaveThread} disabled={savingThread} className="bg-[#c9a050] text-black font-semibold px-5 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#b8903f] transition-colors">
+                {savingThread ? "Saving…" : "Save"}
+              </button>
+              <button onClick={() => setEditingThread(false)} className="text-sm text-gray-500 hover:text-gray-300 px-4 py-2 transition-colors">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h1 className="font-[family-name:var(--font-fredericka)] text-2xl text-[#f5f2eb] mb-4 leading-snug">
+              {thread.title}
+            </h1>
+            <div className="text-gray-300 text-sm leading-relaxed mb-4">{renderBody(thread.body)}</div>
+          </>
+        )}
+
         {thread.photoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -429,6 +518,7 @@ export default function ThreadPage() {
           {thread.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Expert</span>}
           <span>·</span>
           <span>{timeAgo(thread.createdAt)}</span>
+          {wasEdited(thread.createdAt, thread.updatedAt) && <span className="text-gray-700 italic">· edited</span>}
         </div>
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <EmojiReactions reactions={thread.reactions} onReact={handleReactThread} session={session} targetType="thread" targetId={id} />
@@ -502,16 +592,18 @@ export default function ThreadPage() {
                   {reply.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Expert</span>}
                   <span>·</span>
                   <span>{timeAgo(reply.createdAt)}</span>
+                  {wasEdited(reply.createdAt, reply.updatedAt) && <span className="text-gray-700 italic">· edited</span>}
                   <span className="text-gray-700">#{i + 1}</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  {session?.user.id === reply.author.id && canEdit(reply.createdAt) && editingReplyId !== reply.id && (
+                    <button onClick={() => startEditReply(reply)} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Edit</button>
+                  )}
+                  {isAdmin && editingReplyId !== reply.id && (
+                    <button onClick={() => startEditReply(reply)} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Edit</button>
+                  )}
                   {session?.user.id === reply.author.id && (
-                    <button
-                      onClick={() => handleDeleteReply(reply.id)}
-                      className="text-xs text-red-500/60 hover:text-red-400 transition-colors"
-                    >
-                      Delete
-                    </button>
+                    <button onClick={() => handleDeleteReply(reply.id)} className="text-xs text-red-500/60 hover:text-red-400 transition-colors">Delete</button>
                   )}
                   {isAdmin && (
                     <AdminRemoveButton
@@ -522,26 +614,42 @@ export default function ThreadPage() {
                   )}
                 </div>
               </div>
-              <div className="text-gray-300 text-sm leading-relaxed mb-3">{renderBody(reply.body)}</div>
-              {reply.photoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={reply.photoUrl}
-                  alt="Reply photo"
-                  className="w-full max-h-64 object-cover rounded-xl mb-3"
-                />
+
+              {editingReplyId === reply.id ? (
+                <div className="mb-3">
+                  <textarea
+                    value={editReplyBody}
+                    onChange={(e) => setEditReplyBody(e.target.value)}
+                    rows={5}
+                    className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] resize-y focus:outline-none focus:border-[#c9a050]/40 mb-3"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => handleSaveReply(reply.id)} disabled={savingReply} className="bg-[#c9a050] text-black font-semibold px-5 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#b8903f] transition-colors">
+                      {savingReply ? "Saving…" : "Save"}
+                    </button>
+                    <button onClick={() => setEditingReplyId(null)} className="text-sm text-gray-500 hover:text-gray-300 px-4 py-2 transition-colors">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-gray-300 text-sm leading-relaxed mb-3">{renderBody(reply.body)}</div>
+                  {reply.photoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={reply.photoUrl} alt="Reply photo" className="w-full max-h-64 object-cover rounded-xl mb-3" />
+                  )}
+                </>
               )}
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} targetType="reply" targetId={reply.id} />
-                {session && (
-                  <button
-                    onClick={() => handleQuoteReply(displayName(reply.author), reply.body)}
-                    className="text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors shrink-0"
-                  >
-                    ↩ Quote Reply
-                  </button>
-                )}
-              </div>
+
+              {editingReplyId !== reply.id && (
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <EmojiReactions reactions={reply.reactions} onReact={(emoji) => handleReactReply(reply.id, emoji)} session={session} targetType="reply" targetId={reply.id} />
+                  {session && (
+                    <button onClick={() => handleQuoteReply(displayName(reply.author), reply.body)} className="text-xs text-[#c9a050] hover:text-[#b8903f] font-medium transition-colors shrink-0">
+                      ↩ Quote Reply
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

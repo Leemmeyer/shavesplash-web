@@ -178,7 +178,7 @@ export default function UsersPage() {
       await api.post(endpoint, { userId });
       setUsers((prev) => prev.map((u) =>
         u.id === userId
-          ? { ...u, profile: u.profile ? { ...u.profile, isExpert: !currentlyExpert } : { displayName: null, isExpert: !currentlyExpert, expertSince: null, paypalHandle: null } }
+          ? { ...u, profile: u.profile ? { ...u.profile, isExpert: !currentlyExpert } : { displayName: null, isExpert: !currentlyExpert, expertSince: null, paypalHandle: null, suspended: false } }
           : u
       ));
     } catch {}

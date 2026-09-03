@@ -85,7 +85,6 @@ function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending, o
           >
             {suspendPending ? "…" : user.profile?.suspended ? "Unsuspend" : "Suspend"}
           </button>
-          <div className="border-t border-white/5 my-1" />
           <button
             onClick={() => { onClear(); setOpen(false); }}
             className="w-full text-left px-4 py-2.5 text-sm text-amber-400 hover:bg-white/5 transition-colors"

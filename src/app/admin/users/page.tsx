@@ -70,7 +70,7 @@ function ActionsMenu({ user, onDelete, onClear, onToggleExpert, expertPending, o
         ⋯
       </button>
       {open && (
-        <div className={`absolute right-0 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 min-w-[160px] py-1 ${openUpward ? "bottom-full mb-1" : "top-full mt-1"}`}>
+        <div className={`absolute right-0 flex flex-col bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 min-w-[160px] py-1 overflow-hidden ${openUpward ? "bottom-full mb-1" : "top-full mt-1"}`}>
           <button
             onClick={() => { onToggleExpert(); setOpen(false); }}
             disabled={expertPending}

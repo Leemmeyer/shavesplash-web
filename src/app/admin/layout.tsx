@@ -10,7 +10,7 @@ const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
 type PendingCounts = {
   razors: number; soaps: number; aftershaves: number;
-  blades: number; brushes: number; database: number; bowls: number;
+  blades: number; brushes: number; database: number;
 };
 
 const TABS: { label: string; href: string; countKey?: keyof PendingCounts }[] = [
@@ -21,7 +21,6 @@ const TABS: { label: string; href: string; countKey?: keyof PendingCounts }[] = 
   { label: "Aftershaves", href: "/admin/aftershaves",  countKey: "aftershaves" },
   { label: "Blades",      href: "/admin/blades",       countKey: "blades" },
   { label: "Brushes",     href: "/admin/brushes",      countKey: "brushes" },
-  { label: "Bowls",       href: "/admin/bowls" },
   { label: "Database",    href: "/admin/database",     countKey: "database" },
   { label: "Promotion",   href: "/admin/promotion" },
 ];

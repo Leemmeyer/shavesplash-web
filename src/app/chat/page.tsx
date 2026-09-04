@@ -1,10 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
 const CHAT_EMOJIS = ["👍", "❤️", "🔥", "😂", "😊", "😮", "😢"];
+const URL_REGEX = /https?:\/\/[^\s]+/g;
+
+function ChatMessageText({ body, isOwn }: { body: string; isOwn: boolean }) {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  URL_REGEX.lastIndex = 0;
+  while ((match = URL_REGEX.exec(body)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={lastIndex}>{body.slice(lastIndex, match.index)}</span>);
+    }
+    const url = match[0];
+    parts.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`underline ${isOwn ? "text-[#1a3a5c]" : "text-blue-400"} hover:opacity-80`}
+      >
+        {url}
+      </a>
+    );
+    lastIndex = match.index + url.length;
+  }
+  if (lastIndex < body.length) {
+    parts.push(<span key={lastIndex}>{body.slice(lastIndex)}</span>);
+  }
+  return <>{parts}</>;
+}
 
 type ChatMsg = { id: string; userId: string; userName: string; body: string; createdAt: string; reactions: Record<string, string[]> };
 type OnlineUser = { id: string; name: string };
@@ -149,7 +179,7 @@ export default function ChatPage() {
                     ? "bg-[#c9a050] text-black rounded-br-sm"
                     : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
                 }`}>
-                  {msg.body}
+                  <ChatMessageText body={msg.body} isOwn={isOwn} />
                 </div>
 
                 {/* Hover actions */}

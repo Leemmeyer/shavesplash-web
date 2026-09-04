@@ -81,13 +81,13 @@ export default function MessagesPage() {
     <div className="max-w-3xl mx-auto px-6 py-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">
-          Messages
+          Direct Messages
         </h1>
         <button
           onClick={() => { setShowNewMsg((v) => !v); setSearchQuery(""); setSearchResults([]); }}
           className="text-sm bg-[#242424] border border-white/10 text-[#f5f2eb] px-4 py-2 rounded-xl hover:border-[#c9a050]/40 transition-colors"
         >
-          {showNewMsg ? "Cancel" : "+ New Message"}
+          {showNewMsg ? "Cancel" : "+ New DM"}
         </button>
       </div>
 
@@ -129,10 +129,10 @@ export default function MessagesPage() {
         <div className="text-gray-500 text-sm">Loading…</div>
       ) : conversations.length === 0 ? (
         <div className="text-center py-20 text-gray-500">
-          <p className="text-lg mb-2">No messages yet</p>
+          <p className="text-lg mb-2">No direct messages yet</p>
           <p className="text-sm">
-            Messages are created when you contact a seller in the{" "}
-            <Link href="/bst" className="text-[#c9a050] hover:underline">Marketplace</Link>.
+            DMs are created when you contact a seller in the{" "}
+            <Link href="/bst" className="text-[#c9a050] hover:underline">Marketplace</Link>, or start one from the button above.
           </p>
         </div>
       ) : (

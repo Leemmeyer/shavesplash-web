@@ -24,7 +24,7 @@ const NAV_LINKS: { href: string; label: string; external?: boolean; gold?: boole
   { href: "/logs", label: "History" },
   { href: "/analytics", label: "Analysis" },
   { href: "/bst", label: "Marketplace" },
-  { href: "/messages", label: "Messages" },
+  { href: "/messages", label: "DMs" },
   { href: "/forum", label: "Forum" },
   { href: "/sotd", label: "SOTD" },
   { href: "/database", label: "Gear Database" },

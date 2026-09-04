@@ -83,7 +83,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const [ageMonths, setAgeMonths] = useState("");
   const [size, setSize] = useState(prefillSize != null ? String(prefillSize) : "");
   const [listingType, setListingType] = useState<"for_sale" | "wtb" | "for_trade" | "pif">("for_sale");
-  const [shippingPaidBy, setShippingPaidBy] = useState<"seller" | "buyer">("seller");
+  const [shippingPaidBy, setShippingPaidBy] = useState("");
   const [isSet, setIsSet] = useState(false);
   const [setItemType, setSetItemType] = useState("");
   const [setItemPercentRemaining, setSetItemPercentRemaining] = useState("");
@@ -226,7 +226,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
         condition: condition || undefined,
         category,
         listingType,
-        ...(listingType !== "wtb" ? { shippingPaidBy } : {}),
+        ...(listingType !== "wtb" && shippingPaidBy.trim() ? { shippingPaidBy: shippingPaidBy.trim() } : {}),
         percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
         ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
         size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
@@ -320,25 +320,13 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                 {listingType !== "wtb" && (
                   <div className="mt-3">
                     <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1.5">Shipping</p>
-                    <div className="flex gap-2">
-                      {([
-                        { value: "seller", label: listingType === "pif" ? "Giver pays" : listingType === "for_trade" ? "Shipping included" : "Included (CONUS)" },
-                        { value: "buyer", label: listingType === "pif" ? "Recipient pays" : listingType === "for_trade" ? "Each pays own" : "Buyer pays" },
-                      ] as const).map(({ value, label }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setShippingPaidBy(value)}
-                          className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                            shippingPaidBy === value
-                              ? "bg-[#c9a050]/10 border-[#c9a050] text-[#c9a050]"
-                              : "border-white/10 text-gray-400 hover:border-white/20"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                    <textarea
+                      value={shippingPaidBy}
+                      onChange={(e) => setShippingPaidBy(e.target.value)}
+                      placeholder="e.g. Included CONUS, international extra, buyer pays"
+                      rows={2}
+                      className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50 resize-none"
+                    />
                   </div>
                 )}
               </div>

@@ -195,13 +195,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               ) : listing.listingType === "for_sale" ? (
                 <span className="text-gray-500 text-xl font-semibold">Price TBD</span>
               ) : null}
-              {listing.listingType !== "wtb" && listing.shippingPaidBy && (() => {
-                const isPaidBySeller = listing.shippingPaidBy === "seller" || listing.shippingPaidBy === "giver";
-                const label = isPaidBySeller
-                  ? listing.listingType === "pif" ? "Giver pays shipping" : listing.listingType === "for_trade" ? "Shipping included" : "Shipping included (CONUS)"
-                  : listing.listingType === "pif" ? "Recipient pays shipping" : listing.listingType === "for_trade" ? "Each pays own shipping" : "Buyer pays shipping";
+              {listing.shippingPaidBy && (() => {
+                const legacy: Record<string, string> = { seller: "Included (CONUS)", giver: "Included (CONUS)", buyer: "Buyer pays", receiver: "Buyer pays" };
+                const label = legacy[listing.shippingPaidBy] ?? listing.shippingPaidBy;
                 return (
-                  <span className={`rounded-lg px-3 py-1 text-sm font-medium border ${isPaidBySeller ? "bg-green-950 border-green-700/40 text-green-400" : "bg-[#242424] border-white/10 text-gray-400"}`}>
+                  <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
                     📦 {label}
                   </span>
                 );

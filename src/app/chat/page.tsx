@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
 type ChatMsg = { id: string; userId: string; userName: string; body: string; createdAt: string };
+type OnlineUser = { id: string; name: string };
 
 const ADMIN_EMAILS = new Set(["leemeyernyc@gmail.com", "teutonblade@shavesplash.com"]);
 
@@ -12,6 +13,7 @@ export default function ChatPage() {
   const { session } = useSession();
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -44,6 +46,7 @@ export default function ChatPage() {
             setTimeout(() => scrollToBottom(true), 50);
           } else if (data.type === "online") {
             setOnlineCount(data.count);
+            setOnlineUsers(data.users ?? []);
           } else if (data.type === "delete") {
             setMessages((prev) => prev.filter((m) => m.id !== data.id));
           }
@@ -93,9 +96,22 @@ export default function ChatPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">Chat</h1>
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${connected ? "bg-green-500/10 text-green-400" : "bg-white/5 text-gray-500"}`}>
-          <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-gray-600"}`} />
-          {connected ? `${onlineCount} online` : "Connecting…"}
+        <div className="relative group">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium cursor-default select-none ${connected ? "bg-green-500/10 text-green-400" : "bg-white/5 text-gray-500"}`}>
+            <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-gray-600"}`} />
+            {connected ? `${onlineCount} online` : "Connecting…"}
+          </div>
+          {onlineUsers.length > 0 && (
+            <div className="absolute right-0 top-full mt-2 hidden group-hover:block z-20 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-2xl py-2 min-w-[160px]">
+              <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wider px-3 pb-1.5">Online now</p>
+              {onlineUsers.map((u) => (
+                <div key={u.id} className="flex items-center gap-2 px-3 py-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                  <span className="text-[#f5f2eb] text-sm">{u.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

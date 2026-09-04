@@ -93,9 +93,9 @@ export default function ChatPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">Chat</h1>
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-500" : "bg-gray-600"}`} />
-          <span className="text-gray-500 text-sm">{connected ? `${onlineCount} online` : "Connecting…"}</span>
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${connected ? "bg-green-500/10 text-green-400" : "bg-white/5 text-gray-500"}`}>
+          <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-gray-600"}`} />
+          {connected ? `${onlineCount} online` : "Connecting…"}
         </div>
       </div>
 

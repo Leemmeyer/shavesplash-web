@@ -31,6 +31,9 @@ type Listing = {
   percentRemaining: number | null;
   ageMonths: number | null;
   size: number | null;
+  isSet: boolean;
+  setItemType: string | null;
+  setItemNotes: string | null;
   photoCount: number;
   seller: Seller;
 };
@@ -180,6 +183,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               {listing.listingType === "pif" && (
                 <span className="bg-purple-950 border border-purple-700/50 text-purple-400 rounded-lg px-3 py-1 text-sm font-bold">Pay it Forward</span>
               )}
+              {listing.isSet && (
+                <span className="bg-green-950 border border-green-700/40 text-green-400 rounded-lg px-3 py-1 text-sm font-bold">SET</span>
+              )}
               {listing.listingType === "pif" ? (
                 <span className="text-purple-400 text-2xl font-bold">Free</span>
               ) : listing.price > 0 ? (
@@ -221,6 +227,24 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <p className="text-sm font-semibold text-gray-400 mb-1 uppercase tracking-wider">Description</p>
               <p className="text-[#f5f2eb] text-sm leading-relaxed whitespace-pre-wrap">{listing.description}</p>
             </div>
+
+            {/* Set details */}
+            {listing.isSet && (
+              <div className="bg-green-950/40 rounded-2xl p-4 mb-6 border border-green-700/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-green-900 border border-green-700/50 text-green-400 rounded-lg px-2.5 py-0.5 text-xs font-bold">SET</span>
+                  <p className="text-green-300 text-sm font-semibold">Sold as a matching set</p>
+                </div>
+                {listing.setItemType && (
+                  <p className="text-gray-400 text-sm">
+                    Includes: <span className="text-gray-200 font-medium">{listing.setItemType}</span>
+                  </p>
+                )}
+                {listing.setItemNotes && (
+                  <p className="text-gray-400 text-sm mt-1 leading-relaxed">{listing.setItemNotes}</p>
+                )}
+              </div>
+            )}
 
             {/* Seller */}
             <div className="bg-[#242424] rounded-2xl p-4 mb-6 border border-white/5">

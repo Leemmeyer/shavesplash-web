@@ -16,6 +16,7 @@ type Listing = {
   status: string;
   listingType: string;
   isExpertListing: boolean;
+  isSet?: boolean;
   createdAt: string;
   expiresAt: string | null;
   views: number;
@@ -102,9 +103,12 @@ export default function BSTListingCard({ listing }: { listing: Listing }) {
             </>
           )}
           <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {listing.status === "SOLD" && (
                 <span className="bg-red-950 border border-red-700/50 text-red-400 rounded-lg px-2 py-0.5 text-[10px] font-bold">SOLD</span>
+              )}
+              {listing.isSet && (
+                <span className="bg-green-950 border border-green-700/30 text-green-400 rounded-lg px-2 py-0.5 text-[10px] font-bold">SET</span>
               )}
               <span className="text-[#c9a050] font-bold text-sm">
                 {listing.listingType === "pif" ? "PIF" : listing.listingType === "for_trade" ? "TRADE" : `$${listing.price.toFixed(2)}`}

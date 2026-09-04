@@ -84,6 +84,9 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const [size, setSize] = useState(prefillSize != null ? String(prefillSize) : "");
   const [listingType, setListingType] = useState<"for_sale" | "wtb" | "for_trade" | "pif">("for_sale");
   const [shippingPaidBy, setShippingPaidBy] = useState<"giver" | "receiver">("receiver");
+  const [isSet, setIsSet] = useState(false);
+  const [setItemType, setSetItemType] = useState("");
+  const [setItemNotes, setSetItemNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,6 +152,9 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
     setPercentRemaining("");
     setAgeMonths("");
     setListingType("for_sale");
+    setIsSet(false);
+    setSetItemType("");
+    setSetItemNotes("");
     setError(null);
     setSubmitting(false);
   };
@@ -220,6 +226,9 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
         percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
         ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
         size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
+        isSet: isItemCategory ? isSet : false,
+        setItemType: isItemCategory && isSet && setItemType ? setItemType : undefined,
+        setItemNotes: isItemCategory && isSet && setItemNotes.trim() ? setItemNotes.trim() : undefined,
         photos: photos.map((data, order) => ({ data, order })),
       });
 
@@ -508,6 +517,49 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                       </select>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Soap / Aftershave: Set toggle */}
+              {isItemCategory && (
+                <div className={`rounded-xl border p-4 transition-colors ${isSet ? "bg-green-950/40 border-green-700/40" : "bg-[#161616] border-white/10"}`}>
+                  <div className="flex items-center justify-between cursor-pointer" onClick={() => setIsSet((v) => !v)}>
+                    <div>
+                      <p className={`text-sm font-semibold ${isSet ? "text-green-300" : "text-gray-300"}`}>Selling as a matching set</p>
+                      <p className="text-gray-600 text-xs mt-0.5">e.g. soap + matching aftershave splash</p>
+                    </div>
+                    <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors ${isSet ? "bg-green-700 justify-end" : "bg-[#333] justify-start"}`}>
+                      <div className={`w-5 h-5 rounded-full ${isSet ? "bg-green-300" : "bg-gray-500"}`} />
+                    </div>
+                  </div>
+                  {isSet && (
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <label className={labelCls}>Accompanying item type</label>
+                        <select
+                          value={setItemType}
+                          onChange={(e) => setSetItemType(e.target.value)}
+                          className={selectCls}
+                        >
+                          <option value="">Select type…</option>
+                          {["Aftershave Splash", "Aftershave Balm", "Soap", "EDT/Cologne", "Other"].map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Set notes (optional)</label>
+                        <textarea
+                          value={setItemNotes}
+                          onChange={(e) => setSetItemNotes(e.target.value)}
+                          placeholder="e.g. Bay Rum soap + matching aftershave splash, both 90%+"
+                          maxLength={300}
+                          rows={2}
+                          className={inputCls}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

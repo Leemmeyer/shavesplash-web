@@ -26,7 +26,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 type DenItem = {
-  id: string; name: string; brand: string;
+  id: string; name: string; brand: string; photoUrl?: string | null;
   data: {
     notes?: string;
     // Razor
@@ -86,6 +86,15 @@ function ItemDetail({ item, categoryId }: { item: DenItem; categoryId: string })
 
   return (
     <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
+
+      {/* Photo */}
+      {item.photoUrl && (
+        <img
+          src={item.photoUrl}
+          alt={item.name}
+          className="w-full max-h-64 object-contain rounded-xl bg-black/20"
+        />
+      )}
 
       {/* Notes */}
       {d.notes && (
@@ -244,7 +253,7 @@ function ItemCard({ item, categoryId }: { item: DenItem; categoryId: string }) {
   const [expanded, setExpanded] = useState(false);
   const d = item.data;
 
-  const hasDetails = d.notes || d.metal || d.finish || d.construction || d.edgeType ||
+  const hasDetails = item.photoUrl || d.notes || d.metal || d.finish || d.construction || d.edgeType ||
     d.knot || d.diameter || d.bladeFormat || (d.sharpness && d.sharpness > 0) ||
     d.bladeCountryOfOrigin || d.bladeCoating || d.soapDensity || d.soapCushion ||
     d.soapSlickness || d.soapStability || d.soapScentStrength || d.soapHasMenthol !== undefined ||

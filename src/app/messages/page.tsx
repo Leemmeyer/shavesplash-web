@@ -87,7 +87,7 @@ export default function MessagesPage() {
           onClick={() => { setShowNewMsg((v) => !v); setSearchQuery(""); setSearchResults([]); }}
           className="text-sm bg-[#242424] border border-white/10 text-[#f5f2eb] px-4 py-2 rounded-xl hover:border-[#c9a050]/40 transition-colors"
         >
-          {showNewMsg ? "Cancel" : "+ New DM"}
+          {showNewMsg ? "Cancel" : "+ New Message"}
         </button>
       </div>
 

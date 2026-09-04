@@ -86,6 +86,8 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const [shippingPaidBy, setShippingPaidBy] = useState<"giver" | "receiver">("receiver");
   const [isSet, setIsSet] = useState(false);
   const [setItemType, setSetItemType] = useState("");
+  const [setItemPercentRemaining, setSetItemPercentRemaining] = useState("");
+  const [setItemSize, setSetItemSize] = useState("");
   const [setItemNotes, setSetItemNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +156,8 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
     setListingType("for_sale");
     setIsSet(false);
     setSetItemType("");
+    setSetItemPercentRemaining("");
+    setSetItemSize("");
     setSetItemNotes("");
     setError(null);
     setSubmitting(false);
@@ -228,6 +232,8 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
         size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
         isSet: isItemCategory ? isSet : false,
         setItemType: isItemCategory && isSet && setItemType ? setItemType : undefined,
+        setItemPercentRemaining: isItemCategory && isSet && setItemPercentRemaining ? parseInt(setItemPercentRemaining) : undefined,
+        setItemSize: isItemCategory && isSet && setItemSize ? parseFloat(setItemSize) : undefined,
         setItemNotes: isItemCategory && isSet && setItemNotes.trim() ? setItemNotes.trim() : undefined,
         photos: photos.map((data, order) => ({ data, order })),
       });
@@ -534,8 +540,9 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                   </div>
                   {isSet && (
                     <div className="mt-4 space-y-3">
+                      <p className="text-[10px] font-bold tracking-widest text-green-600 uppercase">Accompanying Item</p>
                       <div>
-                        <label className={labelCls}>Accompanying item type</label>
+                        <label className={labelCls}>Item type</label>
                         <select
                           value={setItemType}
                           onChange={(e) => setSetItemType(e.target.value)}
@@ -547,12 +554,39 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                           ))}
                         </select>
                       </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelCls}>Percent Remaining</label>
+                          <select
+                            value={setItemPercentRemaining}
+                            onChange={(e) => setSetItemPercentRemaining(e.target.value)}
+                            className={selectCls}
+                          >
+                            <option value="">Not specified</option>
+                            {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
+                              <option key={p} value={String(p)}>{p}%</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Size ({setItemType === "Soap" ? "oz" : "mL"}) — optional</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={setItemSize}
+                            onChange={(e) => setSetItemSize(e.target.value)}
+                            placeholder={setItemType === "Soap" ? "e.g. 4" : "e.g. 100"}
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
                       <div>
-                        <label className={labelCls}>Set notes (optional)</label>
+                        <label className={labelCls}>Notes (optional)</label>
                         <textarea
                           value={setItemNotes}
                           onChange={(e) => setSetItemNotes(e.target.value)}
-                          placeholder="e.g. Bay Rum soap + matching aftershave splash, both 90%+"
+                          placeholder="Any additional details about the set…"
                           maxLength={300}
                           rows={2}
                           className={inputCls}
@@ -611,6 +645,9 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
               {/* Percent Remaining + Age + Size — soap, aftershave, edp only */}
               {["soap", "aftershave", "edp"].includes(category) && (
                 <>
+                  {isSet && (
+                    <p className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Primary Item</p>
+                  )}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className={labelCls}>Percent Remaining</label>

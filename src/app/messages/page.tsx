@@ -81,7 +81,7 @@ export default function MessagesPage() {
     <div className="max-w-3xl mx-auto px-6 py-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">
-          Direct Messages
+          Messages
         </h1>
         <button
           onClick={() => { setShowNewMsg((v) => !v); setSearchQuery(""); setSearchResults([]); }}

@@ -83,7 +83,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   const [ageMonths, setAgeMonths] = useState("");
   const [size, setSize] = useState(prefillSize != null ? String(prefillSize) : "");
   const [listingType, setListingType] = useState<"for_sale" | "wtb" | "for_trade" | "pif">("for_sale");
-  const [shippingPaidBy, setShippingPaidBy] = useState<"giver" | "receiver">("receiver");
+  const [shippingPaidBy, setShippingPaidBy] = useState<"seller" | "buyer">("seller");
   const [isSet, setIsSet] = useState(false);
   const [setItemType, setSetItemType] = useState("");
   const [setItemPercentRemaining, setSetItemPercentRemaining] = useState("");
@@ -226,7 +226,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
         condition: condition || undefined,
         category,
         listingType,
-        ...(listingType === "pif" ? { shippingPaidBy } : {}),
+        ...(listingType !== "wtb" ? { shippingPaidBy } : {}),
         percentRemaining: hasLiquidFields && percentRemaining ? parseInt(percentRemaining) : undefined,
         ageMonths: hasLiquidFields && ageMonths ? parseInt(ageMonths) : undefined,
         size: !isNaN(resolvedSize ?? NaN) ? resolvedSize : undefined,
@@ -315,22 +315,27 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                   <p className="text-gray-600 text-xs mt-1.5">Post what you&apos;re offering to trade.</p>
                 )}
                 {listingType === "pif" && (
-                  <div className="mt-2">
-                    <p className="text-gray-600 text-xs mb-2">PIF = Pay it Forward. Give an item away for free.</p>
-                    <p className="text-gray-500 text-xs font-medium mb-1.5">Shipping paid by</p>
+                  <p className="text-gray-600 text-xs mt-1">PIF = Pay it Forward. Give an item away for free.</p>
+                )}
+                {listingType !== "wtb" && (
+                  <div className="mt-3">
+                    <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1.5">Shipping</p>
                     <div className="flex gap-2">
-                      {(["giver", "receiver"] as const).map((opt) => (
+                      {([
+                        { value: "seller", label: listingType === "pif" ? "Giver pays" : listingType === "for_trade" ? "Shipping included" : "Included (CONUS)" },
+                        { value: "buyer", label: listingType === "pif" ? "Recipient pays" : listingType === "for_trade" ? "Each pays own" : "Buyer pays" },
+                      ] as const).map(({ value, label }) => (
                         <button
-                          key={opt}
+                          key={value}
                           type="button"
-                          onClick={() => setShippingPaidBy(opt)}
-                          className={`flex-1 px-4 py-2 rounded-xl text-base font-medium border transition-colors capitalize ${
-                            shippingPaidBy === opt
+                          onClick={() => setShippingPaidBy(value)}
+                          className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                            shippingPaidBy === value
                               ? "bg-[#c9a050]/10 border-[#c9a050] text-[#c9a050]"
                               : "border-white/10 text-gray-400 hover:border-white/20"
                           }`}
                         >
-                          {opt}
+                          {label}
                         </button>
                       ))}
                     </div>

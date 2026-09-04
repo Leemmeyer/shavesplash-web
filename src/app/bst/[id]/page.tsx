@@ -195,11 +195,17 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               ) : listing.listingType === "for_sale" ? (
                 <span className="text-gray-500 text-xl font-semibold">Price TBD</span>
               ) : null}
-              {listing.listingType === "pif" && listing.shippingPaidBy && (
-                <span className="bg-purple-950 border border-purple-700/30 rounded-lg px-3 py-1 text-sm text-purple-300 capitalize">
-                  Shipping paid by {listing.shippingPaidBy}
-                </span>
-              )}
+              {listing.listingType !== "wtb" && listing.shippingPaidBy && (() => {
+                const isPaidBySeller = listing.shippingPaidBy === "seller" || listing.shippingPaidBy === "giver";
+                const label = isPaidBySeller
+                  ? listing.listingType === "pif" ? "Giver pays shipping" : listing.listingType === "for_trade" ? "Shipping included" : "Shipping included (CONUS)"
+                  : listing.listingType === "pif" ? "Recipient pays shipping" : listing.listingType === "for_trade" ? "Each pays own shipping" : "Buyer pays shipping";
+                return (
+                  <span className={`rounded-lg px-3 py-1 text-sm font-medium border ${isPaidBySeller ? "bg-green-950 border-green-700/40 text-green-400" : "bg-[#242424] border-white/10 text-gray-400"}`}>
+                    📦 {label}
+                  </span>
+                );
+              })()}
               {listing.condition && (
                 <span className="bg-[#242424] border border-white/10 rounded-lg px-3 py-1 text-sm text-gray-400">
                   {listing.condition}

@@ -126,7 +126,7 @@ export default function ChatPage() {
           return (
             <div key={msg.id} className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
               {!isOwn && (
-                <span className="text-[#c9a050] text-xs font-semibold mb-1 ml-1">{msg.userName}</span>
+                <span className="text-[#c9a050] text-xs font-semibold mb-1 ml-1">{msg.userName || msg.userId.slice(0, 8)}</span>
               )}
               <div className="group relative">
                 <div className={`max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${

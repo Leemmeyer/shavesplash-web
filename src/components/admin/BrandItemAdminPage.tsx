@@ -7,6 +7,7 @@ type Brand = {
   id: string;
   name: string;
   items: string[];
+  pendingItems: string[];
   sortOrder: number;
   pending: boolean;
 };
@@ -196,6 +197,16 @@ export default function BrandItemAdminPage({ apiPath, title, itemLabel, seedPath
     );
   };
 
+  const handleApproveItem = async (brandId: string, item: string) => {
+    const updated = await api.patch<{ brand: Brand }>(`${apiPath}/${brandId}/approve-item`, { item });
+    setBrands((prev) => prev.map((b) => b.id === brandId ? updated.brand : b));
+  };
+
+  const handleRejectItem = async (brandId: string, item: string) => {
+    const updated = await api.patch<{ brand: Brand }>(`${apiPath}/${brandId}/reject-item`, { item });
+    setBrands((prev) => prev.map((b) => b.id === brandId ? updated.brand : b));
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -212,6 +223,7 @@ export default function BrandItemAdminPage({ apiPath, title, itemLabel, seedPath
 
   const approved = brands.filter((b) => !b.pending);
   const pending = brands.filter((b) => b.pending);
+  const brandsWithPendingItems = brands.filter((b) => !b.pending && (b.pendingItems?.length ?? 0) > 0);
 
   return (
     <>
@@ -294,6 +306,42 @@ export default function BrandItemAdminPage({ apiPath, title, itemLabel, seedPath
                       >
                         Delete
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {brandsWithPendingItems.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-blue-400 uppercase tracking-wide mb-3">
+                🔍 Pending {itemLabel}s ({brandsWithPendingItems.reduce((acc, b) => acc + b.pendingItems.length, 0)})
+              </h2>
+              <div className="space-y-2">
+                {brandsWithPendingItems.map((brand) => (
+                  <div key={brand.id} className="bg-[#242424] rounded-2xl border border-blue-400/20 px-5 py-4">
+                    <p className="text-[#f5f2eb] font-semibold mb-3">{brand.name}</p>
+                    <div className="space-y-2">
+                      {brand.pendingItems.map((item) => (
+                        <div key={item} className="flex items-center justify-between gap-4 bg-[#1e1e1e] rounded-xl px-4 py-2.5">
+                          <p className="text-gray-300 text-sm">{item}</p>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleApproveItem(brand.id, item)}
+                              className="text-xs bg-[#c9a050] text-black font-semibold px-3 py-1.5 rounded-lg hover:bg-[#b8903f] transition-colors"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectItem(brand.id, item)}
+                              className="text-xs text-gray-500 hover:text-red-400 transition-colors px-2"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}

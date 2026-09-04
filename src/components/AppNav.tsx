@@ -46,6 +46,7 @@ export default function AppNav() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [notifUnread, setNotifUnread] = useState(0);
+  const [chatOnlineCount, setChatOnlineCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Close menu on route change; sync badge counts from localStorage
@@ -108,6 +109,18 @@ export default function AppNav() {
     const id = setInterval(fetch, 30_000);
     return () => clearInterval(id);
   }, [session]);
+
+  // Poll chat online count every 30s — no auth required
+  useEffect(() => {
+    const fetch = () => {
+      api.get<{ count: number }>("/api/room/online")
+        .then((d) => setChatOnlineCount(d.count))
+        .catch(() => {});
+    };
+    fetch();
+    const id = setInterval(fetch, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Close notification panel on outside click
   useEffect(() => {
@@ -263,6 +276,9 @@ export default function AppNav() {
                       {forumUnread > 99 ? "99+" : forumUnread}
                     </span>
                   )}
+                  {link.href === "/chat" && chatOnlineCount >= 2 && !pathname.startsWith("/chat") && (
+                    <span className="absolute top-0.5 -right-1 w-[9px] h-[9px] rounded-full bg-green-500 border border-[#1a1a1a]" />
+                  )}
                 </>
               );
               return link.external ? (
@@ -326,6 +342,9 @@ export default function AppNav() {
                     <span className="min-w-[18px] h-[18px] rounded-full bg-[#c9a050] text-[#1a1a1a] text-[10px] font-bold flex items-center justify-center px-1 leading-none">
                       {forumUnread > 99 ? "99+" : forumUnread}
                     </span>
+                  )}
+                  {link.href === "/chat" && chatOnlineCount >= 2 && !pathname.startsWith("/chat") && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
                   )}
                 </>
               );

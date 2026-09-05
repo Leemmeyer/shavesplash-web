@@ -739,7 +739,7 @@ function DatabasePageContent() {
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">Gear Database</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Community-contributed shaving gear</p>
+          <p className="text-gray-500 text-sm mt-0.5">Community-contributed shaving gear. Select items and add them to your den.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button

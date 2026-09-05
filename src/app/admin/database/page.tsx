@@ -719,6 +719,7 @@ export default function AdminDatabasePage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchApproving, setBatchApproving] = useState(false);
+  const [batchRejecting, setBatchRejecting] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -757,6 +758,14 @@ export default function AdminDatabasePage() {
     setBatchApproving(false);
   };
 
+  const handleBatchReject = async () => {
+    if (!selected.size || batchRejecting) return;
+    setBatchRejecting(true);
+    await Promise.all([...selected].map((id) => handleSubmission(id, "reject")));
+    setSelected(new Set());
+    setBatchRejecting(false);
+  };
+
   const handleEdit = async (id: string, action: "approve" | "reject") => {
     await api.post(`/api/admin/gear/edits/${id}/${action}`, {});
     setEdits((prev) => prev.filter((e) => e.id !== id));
@@ -788,6 +797,13 @@ export default function AdminDatabasePage() {
             <div className="flex items-center gap-3">
               <button onClick={toggleAll} className="text-xs text-[#c9a050] hover:text-[#b8903f] transition-colors">
                 {allSelected ? "Deselect All" : "Select All"}
+              </button>
+              <button
+                onClick={handleBatchReject}
+                disabled={selected.size === 0 || batchRejecting}
+                className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-500 transition-colors disabled:opacity-40"
+              >
+                {batchRejecting ? "Rejecting…" : `Reject Selected (${selected.size})`}
               </button>
               <button
                 onClick={handleBatchApprove}

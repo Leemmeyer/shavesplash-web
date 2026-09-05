@@ -87,7 +87,7 @@ function BatchGearSubmitModal({ items, categories, onClose }: {
   onClose: () => void;
 }) {
   const eligibleItems = useMemo(() => items.filter((i) => i.name?.trim()), [items]);
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(eligibleItems.map((i) => i.id)));
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [checkResults, setCheckResults] = useState<CheckResult[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -190,6 +190,11 @@ function BatchGearSubmitModal({ items, categories, onClose }: {
           <button onClick={onClose} className="text-gray-600 hover:text-white transition-colors text-xl leading-none">✕</button>
         </div>
 
+        {/* Instructional note */}
+        <div className="px-5 py-3 border-b border-white/5 shrink-0">
+          <p className="text-[#c9a050] text-xs font-medium">Before submitting please add item data and photo.</p>
+        </div>
+
         {/* Duplicate summary banner */}
         {checkResults && duplicateCount > 0 && (
           <div className="mx-5 mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
@@ -228,7 +233,7 @@ function BatchGearSubmitModal({ items, categories, onClose }: {
                 return (
                   <label
                     key={item.id}
-                    className={`flex items-start gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${isSelected ? "hover:bg-white/5" : "opacity-40"}`}
+                    className="flex items-start gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors hover:bg-white/5"
                   >
                     <input
                       type="checkbox"
@@ -237,7 +242,7 @@ function BatchGearSubmitModal({ items, categories, onClose }: {
                       className="mt-0.5 accent-[#c9a050] shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm truncate ${isSelected ? "text-[#f5f2eb]" : "text-gray-500"}`}>
+                      <p className={`text-sm truncate ${isSelected ? "text-[#f5f2eb]" : "text-gray-300"}`}>
                         {item.brand ? `${item.brand} ${item.name}` : item.name}
                       </p>
                       {isDupe && (

@@ -585,9 +585,11 @@ function PhotoThumbnail({ id }: { id: string }) {
 
 // ─── Cards ────────────────────────────────────────────────────────────────────
 
-function SubmissionCard({ item, onAction }: {
+function SubmissionCard({ item, onAction, isSelected, onToggle }: {
   item: GearSubmission;
   onAction: (id: string, action: "approve" | "reject" | "delete") => Promise<void>;
+  isSelected?: boolean;
+  onToggle?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<"approve" | "reject" | "delete" | null>(null);
@@ -625,6 +627,15 @@ function SubmissionCard({ item, onAction }: {
             <SubmitterBadge name={item.submittedByName} email={item.submittedByEmail} />
             <p className="text-[10px] text-gray-600 mt-1.5">Click to view all fields →</p>
           </div>
+          {onToggle && (
+            <input
+              type="checkbox"
+              checked={isSelected ?? false}
+              onChange={() => {}}
+              onClick={(e) => { e.stopPropagation(); onToggle(); }}
+              className="w-4 h-4 mt-0.5 accent-[#c9a050] shrink-0 cursor-pointer"
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5" onClick={(e) => e.stopPropagation()}>
@@ -706,6 +717,8 @@ export default function AdminDatabasePage() {
   const [submissions, setSubmissions] = useState<GearSubmission[]>([]);
   const [edits, setEdits] = useState<GearEdit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchApproving, setBatchApproving] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -724,6 +737,24 @@ export default function AdminDatabasePage() {
       await api.post(`/api/admin/gear/${id}/${action}`, {});
     }
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  };
+
+  const allSelected = submissions.length > 0 && submissions.every((s) => selected.has(s.id));
+
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(submissions.map((s) => s.id)));
+  };
+
+  const handleBatchApprove = async () => {
+    if (!selected.size || batchApproving) return;
+    setBatchApproving(true);
+    await Promise.all([...selected].map((id) => handleSubmission(id, "approve")));
+    setSelected(new Set());
+    setBatchApproving(false);
   };
 
   const handleEdit = async (id: string, action: "approve" | "reject") => {
@@ -750,12 +781,26 @@ export default function AdminDatabasePage() {
 
       {submissions.length > 0 && (
         <section>
-          <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider mb-4">
-            New Submissions ({submissions.length})
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider">
+              New Submissions ({submissions.length})
+            </h2>
+            <div className="flex items-center gap-3">
+              <button onClick={toggleAll} className="text-xs text-[#c9a050] hover:text-[#b8903f] transition-colors">
+                {allSelected ? "Deselect All" : "Select All"}
+              </button>
+              <button
+                onClick={handleBatchApprove}
+                disabled={selected.size === 0 || batchApproving}
+                className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-500 transition-colors disabled:opacity-40"
+              >
+                {batchApproving ? "Approving…" : `Approve Selected (${selected.size})`}
+              </button>
+            </div>
+          </div>
           <div className="space-y-3">
             {submissions.map((s) => (
-              <SubmissionCard key={s.id} item={s} onAction={handleSubmission} />
+              <SubmissionCard key={s.id} item={s} onAction={handleSubmission} isSelected={selected.has(s.id)} onToggle={() => toggleSelected(s.id)} />
             ))}
           </div>
         </section>

@@ -154,6 +154,8 @@ function BatchGearSubmitModal({ items, categories, onClose }: {
     setSubmitting(false);
   }
 
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
+  const toggleCat = (id: string) => setCollapsedCats((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
   const catLabel = (id: string) => categories.find((c) => c.id === id)?.label ?? id;
   const grouped = useMemo(() => {
     const map: Record<string, InventoryItem[]> = {};
@@ -224,9 +226,15 @@ function BatchGearSubmitModal({ items, categories, onClose }: {
         {/* Item list */}
         <div className="overflow-y-auto flex-1 px-2 py-2">
           {Object.entries(grouped).map(([catId, catItems]) => (
-            <div key={catId} className="mb-2">
-              <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wider px-3 py-1.5">{catLabel(catId)}</p>
-              {catItems.map((item) => {
+            <div key={catId} className="mb-1">
+              <button
+                onClick={() => toggleCat(catId)}
+                className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors"
+              >
+                <span className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider">{catLabel(catId)}</span>
+                <span className="text-gray-600 text-[10px]">{collapsedCats.has(catId) ? "▶" : "▼"}</span>
+              </button>
+              {!collapsedCats.has(catId) && catItems.map((item) => {
                 const isSelected = selected.has(item.id);
                 const result = resultMap[item.id];
                 const isDupe = result?.isDuplicate;

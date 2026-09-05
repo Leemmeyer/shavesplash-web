@@ -10,6 +10,8 @@ type GearSubmission = {
   name: string;
   data: Record<string, unknown>;
   hasPhoto: boolean;
+  possibleDuplicate: boolean;
+  duplicateMatch: string | null;
   status: string;
   submittedBy: string;
   submittedByName: string | null;
@@ -585,6 +587,16 @@ function PhotoThumbnail({ id }: { id: string }) {
 
 // ─── Cards ────────────────────────────────────────────────────────────────────
 
+function fieldCompletion(categoryId: string, data: Record<string, unknown>) {
+  const fields = ALL_FIELDS[categoryId] ?? [];
+  if (!fields.length) return null;
+  const filled = fields.filter(({ key }) => {
+    const v = data[key];
+    return v !== null && v !== undefined && v !== "" && v !== 0;
+  }).length;
+  return { filled, total: fields.length, pct: Math.round(filled / fields.length * 100) };
+}
+
 function SubmissionCard({ item, onAction, isSelected, onToggle }: {
   item: GearSubmission;
   onAction: (id: string, action: "approve" | "reject" | "delete") => Promise<void>;
@@ -625,6 +637,28 @@ function SubmissionCard({ item, onAction, isSelected, onToggle }: {
             </div>
             <p className="text-[#f5f2eb] font-semibold text-sm">{item.brand} — {item.name}</p>
             <SubmitterBadge name={item.submittedByName} email={item.submittedByEmail} />
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              {(() => {
+                const fc = fieldCompletion(item.categoryId, item.data);
+                const pct = fc?.pct ?? 0;
+                const color = pct >= 75 ? "text-green-400 border-green-500/30 bg-green-500/10"
+                  : pct >= 25 ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
+                  : "text-red-400 border-red-500/30 bg-red-500/10";
+                return fc ? (
+                  <span className={`text-[10px] border rounded-full px-2 py-0.5 font-medium ${color}`}>
+                    {fc.filled}/{fc.total} fields
+                  </span>
+                ) : null;
+              })()}
+              <span className={`text-[10px] border rounded-full px-2 py-0.5 font-medium ${item.hasPhoto ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-gray-500 border-white/10 bg-white/5"}`}>
+                {item.hasPhoto ? "Photo ✓" : "No photo"}
+              </span>
+              {item.possibleDuplicate && (
+                <span className="text-[10px] border rounded-full px-2 py-0.5 font-medium text-amber-400 border-amber-500/30 bg-amber-500/10" title={item.duplicateMatch ?? undefined}>
+                  ⚠ Possible duplicate{item.duplicateMatch ? `: ${item.duplicateMatch}` : ""}
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-gray-600 mt-1.5">Click to view all fields →</p>
           </div>
           {onToggle && (

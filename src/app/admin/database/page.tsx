@@ -407,11 +407,12 @@ function FullPhotoModal({ id, onClose }: { id: string; onClose: () => void }) {
 
 function SubmissionDetailModal({ item, onAction, onClose }: {
   item: GearSubmission;
-  onAction: (action: "approve" | "reject" | "delete") => Promise<void>;
+  onAction: (action: "approve" | "reject" | "delete", reasons?: { incompleteData: boolean; noPhoto: boolean }) => Promise<void>;
   onClose: () => void;
 }) {
   const [busy, setBusy] = useState<"approve" | "reject" | "delete" | null>(null);
   const [showPhoto, setShowPhoto] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -459,9 +460,9 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
   const setField = (key: string, value: unknown) =>
     setDraftData((prev) => ({ ...prev, [key]: value }));
 
-  const handle = async (action: "approve" | "reject" | "delete") => {
+  const handle = async (action: "approve" | "reject" | "delete", reasons?: { incompleteData: boolean; noPhoto: boolean }) => {
     setBusy(action);
-    await onAction(action);
+    await onAction(action, reasons);
     onClose();
   };
 
@@ -555,7 +556,7 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
                   className="flex-1 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors disabled:opacity-50">
                   {busy === "approve" ? "Approving…" : "Approve"}
                 </button>
-                <button onClick={() => handle("reject")} disabled={!!busy}
+                <button onClick={() => setShowRejectModal(true)} disabled={!!busy}
                   className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-500 transition-colors disabled:opacity-50">
                   {busy === "reject" ? "Rejecting…" : "Reject"}
                 </button>
@@ -569,6 +570,13 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
         </div>
       </div>
       {showPhoto && <FullPhotoModal id={item.id} onClose={() => setShowPhoto(false)} />}
+      {showRejectModal && (
+        <RejectReasonModal
+          item={item}
+          onConfirm={(reasons) => handle("reject", reasons)}
+          onClose={() => setShowRejectModal(false)}
+        />
+      )}
     </>
   );
 }
@@ -597,19 +605,64 @@ function fieldCompletion(categoryId: string, data: Record<string, unknown>) {
   return { filled, total: fields.length, pct: Math.round(filled / fields.length * 100) };
 }
 
+function RejectReasonModal({ item, onConfirm, onClose }: {
+  item: GearSubmission;
+  onConfirm: (reasons: { incompleteData: boolean; noPhoto: boolean }) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [incompleteData, setIncompleteData] = useState(false);
+  const [noPhoto, setNoPhoto] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const confirm = async () => {
+    setBusy(true);
+    await onConfirm({ incompleteData, noPhoto });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-[#f5f2eb] font-semibold text-base mb-1">Reject Submission</h3>
+        <p className="text-gray-500 text-xs mb-5">{item.brand} — {item.name}</p>
+        <p className="text-gray-400 text-xs mb-4">Select reason(s) to include in the rejection email to the submitter:</p>
+        <div className="space-y-3 mb-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={incompleteData} onChange={(e) => setIncompleteData(e.target.checked)} className="w-4 h-4 accent-[#c9a050]" />
+            <span className="text-sm text-[#f5f2eb]">Incomplete data</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={noPhoto} onChange={(e) => setNoPhoto(e.target.checked)} className="w-4 h-4 accent-[#c9a050]" />
+            <span className="text-sm text-[#f5f2eb]">No photo</span>
+          </label>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onClose} disabled={busy} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:bg-white/5 transition-colors disabled:opacity-40">
+            Cancel
+          </button>
+          <button onClick={confirm} disabled={busy} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-500 transition-colors disabled:opacity-40">
+            {busy ? "Rejecting…" : "Reject"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SubmissionCard({ item, onAction, isSelected, onToggle }: {
   item: GearSubmission;
-  onAction: (id: string, action: "approve" | "reject" | "delete") => Promise<void>;
+  onAction: (id: string, action: "approve" | "reject" | "delete", reasons?: { incompleteData: boolean; noPhoto: boolean }) => Promise<void>;
   isSelected?: boolean;
   onToggle?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [busy, setBusy] = useState<"approve" | "reject" | "delete" | null>(null);
   const [done, setDone] = useState(false);
 
-  const handle = async (action: "approve" | "reject" | "delete") => {
+  const handle = async (action: "approve" | "reject" | "delete", reasons?: { incompleteData: boolean; noPhoto: boolean }) => {
     setBusy(action);
-    await onAction(item.id, action);
+    await onAction(item.id, action, reasons);
     setBusy(null);
     setDone(true);
   };
@@ -677,7 +730,7 @@ function SubmissionCard({ item, onAction, isSelected, onToggle }: {
             className="px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50">
             {busy === "approve" ? "Approving…" : "Approve"}
           </button>
-          <button onClick={() => handle("reject")} disabled={!!busy}
+          <button onClick={() => setShowRejectModal(true)} disabled={!!busy}
             className="px-4 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-500 transition-colors disabled:opacity-50">
             {busy === "reject" ? "Rejecting…" : "Reject"}
           </button>
@@ -690,6 +743,13 @@ function SubmissionCard({ item, onAction, isSelected, onToggle }: {
 
       {open && (
         <SubmissionDetailModal item={item} onAction={handle} onClose={() => setOpen(false)} />
+      )}
+      {showRejectModal && (
+        <RejectReasonModal
+          item={item}
+          onConfirm={(reasons) => handle("reject", reasons)}
+          onClose={() => setShowRejectModal(false)}
+        />
       )}
     </>
   );
@@ -765,11 +825,11 @@ export default function AdminDatabasePage() {
 
   useEffect(() => { load(); }, []);
 
-  const handleSubmission = async (id: string, action: "approve" | "reject" | "delete") => {
+  const handleSubmission = async (id: string, action: "approve" | "reject" | "delete", reasons?: { incompleteData: boolean; noPhoto: boolean }) => {
     if (action === "delete") {
       await api.delete(`/api/admin/gear/${id}`);
     } else {
-      await api.post(`/api/admin/gear/${id}/${action}`, {});
+      await api.post(`/api/admin/gear/${id}/${action}`, reasons ?? {});
     }
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
   };

@@ -10,8 +10,6 @@ type GearSubmission = {
   name: string;
   data: Record<string, unknown>;
   hasPhoto: boolean;
-  possibleDuplicate: boolean;
-  duplicateMatch: string | null;
   status: string;
   submittedBy: string;
   submittedByName: string | null;
@@ -706,11 +704,7 @@ function SubmissionCard({ item, onAction, isSelected, onToggle }: {
               <span className={`text-[10px] border rounded-full px-2 py-0.5 font-medium ${item.hasPhoto ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-gray-500 border-white/10 bg-white/5"}`}>
                 {item.hasPhoto ? "Photo ✓" : "No photo"}
               </span>
-              {item.possibleDuplicate && (
-                <span className="text-[10px] border rounded-full px-2 py-0.5 font-medium text-amber-400 border-amber-500/30 bg-amber-500/10" title={item.duplicateMatch ?? undefined}>
-                  ⚠ Possible duplicate{item.duplicateMatch ? `: ${item.duplicateMatch}` : ""}
-                </span>
-              )}
+
             </div>
             <p className="text-[10px] text-gray-600 mt-1.5">Click to view all fields →</p>
           </div>

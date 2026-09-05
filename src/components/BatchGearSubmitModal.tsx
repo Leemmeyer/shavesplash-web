@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 
-type InventoryItem = { id: string; categoryId: string; name: string; brand: string };
+type InventoryItem = { id: string; categoryId: string; name: string; brand: string; data?: Record<string, unknown> };
 type CheckResult = { id: string; isDuplicate: boolean; matchType: "approved" | "pending" | null; matchedName: string | null };
 
 const CATEGORIES = [
@@ -100,7 +100,7 @@ export function BatchGearSubmitModal({ onClose }: { onClose: () => void }) {
     setError(null);
     try {
       const { submitted: count } = await api.post<{ submitted: number }>("/api/gear/batch-submit", {
-        items: toSubmit.map((i) => ({ categoryId: i.categoryId, brand: i.brand ?? "", name: i.name })),
+        items: toSubmit.map((i) => ({ categoryId: i.categoryId, brand: i.brand ?? "", name: i.name, data: i.data ?? {} })),
       });
       setSubmitted(count);
     } catch {

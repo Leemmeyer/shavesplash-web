@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
+import { BatchGearSubmitModal } from "@/components/BatchGearSubmitModal";
 
 const CATEGORIES = [
   { id: "all", label: "All" },
@@ -600,6 +601,7 @@ function DatabasePageContent() {
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [showBatchSubmit, setShowBatchSubmit] = useState(false);
   const [sort, setSort] = useState<"brand" | "name">(() => {
     try { return (localStorage.getItem(DB_SORT_KEY) as "brand" | "name") ?? "brand"; } catch { return "brand"; }
   });
@@ -739,11 +741,21 @@ function DatabasePageContent() {
           <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050]">Gear Database</h1>
           <p className="text-gray-500 text-sm mt-0.5">Community-contributed shaving gear</p>
         </div>
-        <Link href="/database/submit"
-          className="shrink-0 px-4 py-2 bg-[#c9a050] text-black rounded-xl text-sm font-semibold hover:bg-[#d4aa60] transition-colors">
-          + Submit Item
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowBatchSubmit(true)}
+            className="px-4 py-2 border border-[#c9a050]/40 text-[#c9a050] rounded-xl text-sm font-semibold hover:bg-[#c9a050]/10 transition-colors"
+          >
+            Batch Submission
+          </button>
+          <Link href="/database/submit"
+            className="px-4 py-2 bg-[#c9a050] text-black rounded-xl text-sm font-semibold hover:bg-[#d4aa60] transition-colors">
+            + Submit Item
+          </Link>
+        </div>
       </div>
+
+      {showBatchSubmit && <BatchGearSubmitModal onClose={() => setShowBatchSubmit(false)} />}
 
       {/* Search */}
       <div className="relative mb-4">

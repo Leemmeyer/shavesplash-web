@@ -100,7 +100,7 @@ export function BatchGearSubmitModal({ onClose }: { onClose: () => void }) {
     setError(null);
     try {
       const { submitted: count } = await api.post<{ submitted: number }>("/api/gear/batch-submit", {
-        items: toSubmit.map((i) => ({ categoryId: i.categoryId, brand: i.brand ?? "", name: i.name, data: i.data ?? {} })),
+        items: toSubmit.map((i) => ({ inventoryItemId: i.id, categoryId: i.categoryId, brand: i.brand ?? "", name: i.name, data: i.data ?? {} })),
       });
       setSubmitted(count);
     } catch {

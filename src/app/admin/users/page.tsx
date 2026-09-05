@@ -3,6 +3,29 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
+type SortCol = "user" | "email" | "logs" | "bst" | "posts" | "joined" | "lastSeen" | "status";
+type SortDir = "asc" | "desc";
+
+function SortTh({ label, col, current, dir, onSort, className }: {
+  label: string; col: SortCol; current: SortCol; dir: SortDir;
+  onSort: (col: SortCol) => void; className?: string;
+}) {
+  const active = current === col;
+  return (
+    <th
+      className={`font-medium cursor-pointer select-none group ${className ?? ""}`}
+      onClick={() => onSort(col)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <span className={`text-[10px] transition-opacity ${active ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}>
+          {active && dir === "asc" ? "▲" : "▼"}
+        </span>
+      </span>
+    </th>
+  );
+}
+
 type UserRow = {
   id: string;
   email: string;
@@ -107,6 +130,13 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sortCol, setSortCol] = useState<SortCol>("joined");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function handleSort(col: SortCol) {
+    if (col === sortCol) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
 
   // Delete user
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -184,14 +214,38 @@ export default function UsersPage() {
     setExpertPending(null);
   }
 
-  const filtered = users.filter((u) => {
-    const q = search.toLowerCase();
-    return (
-      u.email.toLowerCase().includes(q) ||
-      (u.profile?.displayName ?? "").toLowerCase().includes(q) ||
-      u.name.toLowerCase().includes(q)
-    );
-  });
+  const filtered = users
+    .filter((u) => {
+      const q = search.toLowerCase();
+      return (
+        u.email.toLowerCase().includes(q) ||
+        (u.profile?.displayName ?? "").toLowerCase().includes(q) ||
+        u.name.toLowerCase().includes(q)
+      );
+    })
+    .slice()
+    .sort((a, b) => {
+      let cmp = 0;
+      if (sortCol === "user") {
+        cmp = (a.profile?.displayName ?? a.name).localeCompare(b.profile?.displayName ?? b.name);
+      } else if (sortCol === "email") {
+        cmp = a.email.localeCompare(b.email);
+      } else if (sortCol === "logs") {
+        cmp = a._count.shaveLogs - b._count.shaveLogs;
+      } else if (sortCol === "bst") {
+        cmp = a._count.listings - b._count.listings;
+      } else if (sortCol === "posts") {
+        cmp = (a._count.forumThreads + a._count.forumReplies) - (b._count.forumThreads + b._count.forumReplies);
+      } else if (sortCol === "joined") {
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortCol === "lastSeen") {
+        cmp = (a.lastSeen ? new Date(a.lastSeen).getTime() : 0) - (b.lastSeen ? new Date(b.lastSeen).getTime() : 0);
+      } else if (sortCol === "status") {
+        const rank = (u: UserRow) => u.profile?.suspended ? 0 : u.profile?.isExpert ? 1 : 2;
+        cmp = rank(a) - rank(b);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
 
   if (loading) {
     return (
@@ -228,14 +282,14 @@ export default function UsersPage() {
         <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead>
             <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-wide">
-              <th className="text-left px-5 py-3 font-medium">User</th>
-              <th className="text-left px-5 py-3 font-medium hidden md:table-cell">Email</th>
-              <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">Logs</th>
-              <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">BST</th>
-              <th className="text-center px-4 py-3 font-medium hidden lg:table-cell">Posts</th>
-              <th className="text-left px-5 py-3 font-medium hidden sm:table-cell">Joined</th>
-              <th className="text-left px-5 py-3 font-medium hidden xl:table-cell">Last Seen</th>
-              <th className="text-center px-4 py-3 font-medium">Status</th>
+              <SortTh label="User" col="user" current={sortCol} dir={sortDir} onSort={handleSort} className="text-left px-5 py-3 hover:text-gray-300 transition-colors" />
+              <SortTh label="Email" col="email" current={sortCol} dir={sortDir} onSort={handleSort} className="text-left px-5 py-3 hidden md:table-cell hover:text-gray-300 transition-colors" />
+              <SortTh label="Logs" col="logs" current={sortCol} dir={sortDir} onSort={handleSort} className="text-center px-4 py-3 hidden lg:table-cell hover:text-gray-300 transition-colors" />
+              <SortTh label="BST" col="bst" current={sortCol} dir={sortDir} onSort={handleSort} className="text-center px-4 py-3 hidden lg:table-cell hover:text-gray-300 transition-colors" />
+              <SortTh label="Posts" col="posts" current={sortCol} dir={sortDir} onSort={handleSort} className="text-center px-4 py-3 hidden lg:table-cell hover:text-gray-300 transition-colors" />
+              <SortTh label="Joined" col="joined" current={sortCol} dir={sortDir} onSort={handleSort} className="text-left px-5 py-3 hidden sm:table-cell hover:text-gray-300 transition-colors" />
+              <SortTh label="Last Seen" col="lastSeen" current={sortCol} dir={sortDir} onSort={handleSort} className="text-left px-5 py-3 hidden xl:table-cell hover:text-gray-300 transition-colors" />
+              <SortTh label="Status" col="status" current={sortCol} dir={sortDir} onSort={handleSort} className="text-center px-4 py-3 hover:text-gray-300 transition-colors" />
               <th className="px-4 py-3" />
             </tr>
           </thead>

@@ -62,6 +62,16 @@ export function BatchGearSubmitModal({ onClose }: { onClose: () => void }) {
     setCollapsedCats((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
   }
 
+  function toggleCatAll(catItems: InventoryItem[]) {
+    const allSelected = catItems.every((i) => selected.has(i.id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) catItems.forEach((i) => next.delete(i.id));
+      else catItems.forEach((i) => next.add(i.id));
+      return next;
+    });
+  }
+
   async function handleCheck() {
     const toCheck = items.filter((i) => selected.has(i.id));
     if (!toCheck.length) return;
@@ -169,13 +179,21 @@ export function BatchGearSubmitModal({ onClose }: { onClose: () => void }) {
           ) : (
             Object.entries(grouped).map(([catId, catItems]) => (
               <div key={catId} className="mb-1">
-                <button
-                  onClick={() => toggleCat(catId)}
-                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors"
-                >
-                  <span className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider">{catLabel(catId)}</span>
-                  <span className="text-gray-600 text-[10px]">{collapsedCats.has(catId) ? "▶" : "▼"}</span>
-                </button>
+                <div className="flex items-center px-3 py-2 gap-2">
+                  <button
+                    onClick={() => toggleCat(catId)}
+                    className="flex items-center gap-2 flex-1 hover:opacity-70 transition-opacity text-left"
+                  >
+                    <span className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider">{catLabel(catId)}</span>
+                    <span className="text-gray-600 text-[10px]">{collapsedCats.has(catId) ? "▶" : "▼"}</span>
+                  </button>
+                  <button
+                    onClick={() => toggleCatAll(catItems)}
+                    className="text-[10px] text-[#c9a050] hover:text-[#b8903f] transition-colors font-medium shrink-0"
+                  >
+                    {catItems.every((i) => selected.has(i.id)) ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
                 {!collapsedCats.has(catId) && catItems.map((item) => {
                   const isSelected = selected.has(item.id);
                   const result = resultMap[item.id];

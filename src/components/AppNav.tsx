@@ -9,13 +9,27 @@ import { api } from "@/lib/api";
 
 type AppNotification = {
   id: string;
-  type: "forum_reply" | "sotd_comment" | "quote_reply";
+  type: "forum_reply" | "sotd_comment" | "quote_reply" | "dm";
   title: string;
   body: string;
   link: string;
   read: boolean;
   createdAt: string;
 };
+
+// Mobile stores links in mobile-route format. Map them to web URLs.
+function toWebLink(mobileLink: string): string {
+  const forumMatch = mobileLink.match(/\/forum-thread\?id=([^&]+)/);
+  if (forumMatch) return `/forum/${forumMatch[1]}`;
+
+  const convMatch = mobileLink.match(/\/conversation\?id=([^&]+)/);
+  if (convMatch) return `/messages/${convMatch[1]}`;
+
+  const sotdMatch = mobileLink.match(/\/sotd-detail/);
+  if (sotdMatch) return `/sotd`;
+
+  return mobileLink;
+}
 
 const ADMIN_EMAIL = "leemeyernyc@gmail.com";
 
@@ -212,7 +226,7 @@ export default function AppNav() {
                           <p className="text-gray-600 text-xs text-center py-8">No notifications yet</p>
                         ) : notifications.length === 0 ? null : (
                           notifications.map((n) => (
-                            <a key={n.id} href={n.link} onClick={() => { api.post(`/api/notifications/${n.id}/read`, {}).catch(() => {}); setNotifOpen(false); }} className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${n.read ? "opacity-60" : ""}`}>
+                            <a key={n.id} href={toWebLink(n.link)} onClick={() => { api.post(`/api/notifications/${n.id}/read`, {}).catch(() => {}); setNotifOpen(false); }} className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${n.read ? "opacity-60" : ""}`}>
                               <span className="text-base mt-0.5 shrink-0">{n.type === "forum_reply" ? "💬" : n.type === "quote_reply" ? "↩️" : "🪒"}</span>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[#f5f2eb] text-xs font-semibold leading-snug">{n.title}</p>

@@ -385,12 +385,12 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
           {usedItems.length > 0 && (
             <div className="flex flex-col gap-1.5">
               {(gearExpanded ? usedItems : usedItems.slice(0, GEAR_LIMIT)).map(([catId, s]) => (
-                <div key={catId} className="flex items-center gap-2 min-w-0">
-                  <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24 flex items-center gap-1">
+                <div key={catId} className="flex items-start gap-2">
+                  <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24 flex items-center gap-1 pt-px">
                     <CategoryIcon catId={catId} />
                     {s.categoryName ?? CATEGORY_LABELS[catId] ?? catId}
                   </span>
-                  <span className="text-gray-200 text-xs truncate">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
+                  <span className="text-gray-200 text-xs">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
                 </div>
               ))}
               {usedItems.length > GEAR_LIMIT && (

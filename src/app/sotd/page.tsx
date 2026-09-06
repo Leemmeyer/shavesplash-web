@@ -383,9 +383,9 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
         <div className="flex-1 min-w-0 flex flex-col gap-3">
           {/* Gear */}
           {usedItems.length > 0 && (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 overflow-x-auto scrollbar-hide">
               {(gearExpanded ? usedItems : usedItems.slice(0, GEAR_LIMIT)).map(([catId, s]) => (
-                <div key={catId} className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <div key={catId} className="flex items-center gap-2">
                   <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24 flex items-center gap-1">
                     <CategoryIcon catId={catId} />
                     {s.categoryName ?? CATEGORY_LABELS[catId] ?? catId}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 import { BatchGearSubmitModal } from "@/components/BatchGearSubmitModal";
+import { useSession } from "@/lib/session-context";
 
 const CATEGORIES = [
   { id: "all", label: "All" },
@@ -217,11 +218,13 @@ function DetailSpecs({ item }: { item: GearItem }) {
   );
 }
 
-function DetailModal({ item, selected, onToggle, onEdit, onClose }: {
-  item: GearItem; selected: boolean;
-  onToggle: () => void; onEdit: () => void; onClose: () => void;
+function DetailModal({ item, selected, isAdmin, onToggle, onEdit, onDelete, onClose }: {
+  item: GearItem; selected: boolean; isAdmin: boolean;
+  onToggle: () => void; onEdit: () => void; onDelete: () => void; onClose: () => void;
 }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!item.hasPhoto) return;
@@ -270,19 +273,35 @@ function DetailModal({ item, selected, onToggle, onEdit, onClose }: {
         </div>
 
         {/* Footer actions */}
-        <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex gap-3">
-          <button
-            onClick={onEdit}
-            className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] hover:border-white/20 transition-colors"
-          >
-            Propose Edit
-          </button>
-          <button
-            onClick={onToggle}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${selected ? "bg-[#c9a050]/20 border border-[#c9a050]/60 text-[#c9a050]" : "bg-[#c9a050] text-black hover:bg-[#d4aa60]"}`}
-          >
-            {selected ? "✓ Selected for Den" : "Add to Den"}
-          </button>
+        <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex flex-col gap-2">
+          <div className="flex gap-3">
+            <button
+              onClick={onEdit}
+              className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] hover:border-white/20 transition-colors"
+            >
+              Propose Edit
+            </button>
+            <button
+              onClick={onToggle}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${selected ? "bg-[#c9a050]/20 border border-[#c9a050]/60 text-[#c9a050]" : "bg-[#c9a050] text-black hover:bg-[#d4aa60]"}`}
+            >
+              {selected ? "✓ Selected for Den" : "Add to Den"}
+            </button>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={async () => {
+                if (!confirmDelete) { setConfirmDelete(true); return; }
+                setDeleting(true);
+                await api.delete(`/api/admin/gear/${item.id}`).catch(() => {});
+                onDelete();
+              }}
+              disabled={deleting}
+              className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${confirmDelete ? "bg-red-600 text-white hover:bg-red-500" : "border border-red-900/40 text-red-700 hover:border-red-700 hover:text-red-500"}`}
+            >
+              {deleting ? "Deleting…" : confirmDelete ? "Confirm Delete" : "Delete from Database"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -584,7 +603,11 @@ function GearCard({
 
 const DB_SORT_KEY = "shavesplash-db-sort";
 
+const ADMIN_EMAIL = "leemeyernyc@gmail.com";
+
 function DatabasePageContent() {
+  const { session } = useSession();
+  const isAdmin = session?.user.email === ADMIN_EMAIL;
   const [items, setItems] = useState<GearItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
@@ -886,8 +909,10 @@ function DatabasePageContent() {
         <DetailModal
           item={viewItem}
           selected={selected.has(viewItem.id)}
+          isAdmin={isAdmin}
           onToggle={() => toggleSelect(viewItem.id)}
           onEdit={() => { setViewItem(null); setEditItem(viewItem); }}
+          onDelete={() => { setItems((prev) => prev.filter((i) => i.id !== viewItem.id)); setViewItem(null); }}
           onClose={() => setViewItem(null)}
         />
       )}

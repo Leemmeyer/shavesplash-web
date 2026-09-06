@@ -364,8 +364,9 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
         </span>
       </div>
 
-      {/* Body: photo left, gear + scores right */}
-      <div className="flex gap-4 px-4 pb-4">
+      {/* Body: photo left, gear + scores right — scrolls horizontally on narrow screens */}
+      <div className="overflow-x-auto scrollbar-hide">
+      <div className="flex gap-4 px-4 pb-4 w-max min-w-full">
         {post.hasPhoto && (
           <button
             onClick={() => photoUrl && setLightboxOpen(true)}
@@ -380,10 +381,10 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
           </button>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
+        <div className="flex-1 flex flex-col gap-3">
           {/* Gear */}
           {usedItems.length > 0 && (
-            <div className="flex flex-col gap-1.5 overflow-x-auto scrollbar-hide">
+            <div className="flex flex-col gap-1.5">
               {(gearExpanded ? usedItems : usedItems.slice(0, GEAR_LIMIT)).map(([catId, s]) => (
                 <div key={catId} className="flex items-center gap-2">
                   <span className="text-gray-600 text-xs shrink-0 whitespace-nowrap w-24 flex items-center gap-1">
@@ -429,6 +430,7 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       <div className="px-4 pb-4 space-y-3">

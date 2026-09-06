@@ -699,14 +699,12 @@ function GearCard({
           >
             Propose edit →
           </button>
-          {item.commentCount > 0 && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onComment(); }}
-              className="text-xs text-gray-500 hover:text-[#c9a050] transition-colors flex items-center gap-1"
-            >
-              💬 {item.commentCount}
-            </button>
-          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); onComment(); }}
+            className="text-xs text-gray-500 hover:text-[#c9a050] transition-colors flex items-center gap-1"
+          >
+            💬{item.commentCount > 0 ? ` ${item.commentCount}` : ""}
+          </button>
         </div>
       </div>
     </div>

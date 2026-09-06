@@ -27,7 +27,16 @@ type GearItem = {
   name: string;
   data: Record<string, unknown>;
   hasPhoto: boolean;
+  commentCount: number;
   createdAt: string;
+};
+
+type GearComment = {
+  id: string;
+  body: string;
+  createdAt: string;
+  userId: string;
+  authorName: string;
 };
 
 type FilterOption = { value: string; label: string };
@@ -218,13 +227,21 @@ function DetailSpecs({ item }: { item: GearItem }) {
   );
 }
 
-function DetailModal({ item, selected, isAdmin, onToggle, onEdit, onDelete, onClose }: {
-  item: GearItem; selected: boolean; isAdmin: boolean;
+function DetailModal({ item, selected, isAdmin, scrollToComments, onToggle, onEdit, onDelete, onClose, onCommentPosted, onCommentDeleted }: {
+  item: GearItem; selected: boolean; isAdmin: boolean; scrollToComments: boolean;
   onToggle: () => void; onEdit: () => void; onDelete: () => void; onClose: () => void;
+  onCommentPosted?: () => void; onCommentDeleted?: () => void;
 }) {
+  const { session } = useSession();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [comments, setComments] = useState<GearComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentBody, setCommentBody] = useState("");
+  const [posting, setPosting] = useState(false);
+  const commentsRef = useRef<HTMLDivElement>(null);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!item.hasPhoto) return;
@@ -232,6 +249,40 @@ function DetailModal({ item, selected, isAdmin, onToggle, onEdit, onDelete, onCl
       .then((d) => setPhotoUrl(d.photoUrl))
       .catch(() => {});
   }, [item.id, item.hasPhoto]);
+
+  useEffect(() => {
+    setCommentsLoading(true);
+    api.get<{ comments: GearComment[] }>(`/api/gear/${item.id}/comments`)
+      .then((d) => setComments(d.comments))
+      .catch(() => {})
+      .finally(() => setCommentsLoading(false));
+  }, [item.id]);
+
+  useEffect(() => {
+    if (!scrollToComments || commentsLoading) return;
+    setTimeout(() => {
+      commentsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }, [scrollToComments, commentsLoading]);
+
+  const handlePostComment = async () => {
+    if (!commentBody.trim() || posting) return;
+    setPosting(true);
+    try {
+      const { comment } = await api.post<{ comment: GearComment }>(`/api/gear/${item.id}/comments`, { body: commentBody.trim() });
+      setComments((prev) => [comment, ...prev]);
+      setCommentBody("");
+      onCommentPosted?.();
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    await api.delete(`/api/gear/${item.id}/comments/${commentId}`).catch(() => {});
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    onCommentDeleted?.();
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
@@ -270,6 +321,59 @@ function DetailModal({ item, selected, isAdmin, onToggle, onEdit, onDelete, onCl
 
           {/* Specs */}
           <DetailSpecs item={item} />
+
+          {/* Comments */}
+          <div ref={commentsRef} className="mt-6 pt-5 border-t border-white/5">
+            <p className="text-[#f5f2eb] text-sm font-semibold mb-3">
+              Community Comments {comments.length > 0 && <span className="text-gray-500 font-normal">({comments.length})</span>}
+            </p>
+
+            {commentsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="w-4 h-4 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-gray-600 text-xs text-center py-4">No comments yet. Be the first!</p>
+            ) : (
+              <div className="space-y-3 mb-4">
+                {comments.map((c) => (
+                  <div key={c.id} className="bg-[#161616] rounded-xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[#c9a050] text-xs font-semibold">{c.authorName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600 text-xs">{new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                        {(isAdmin || c.userId === session?.user.id) && (
+                          <button onClick={() => handleDeleteComment(c.id)} className="text-gray-700 hover:text-red-500 text-xs transition-colors">✕</button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[#f5f2eb] text-sm leading-relaxed">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {session && (
+              <div className="mt-3">
+                <textarea
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  placeholder="Share your experience with this item…"
+                  rows={3}
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#f5f2eb] placeholder-gray-600 outline-none focus:border-[#c9a050]/50 resize-none"
+                />
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={handlePostComment}
+                    disabled={!commentBody.trim() || posting}
+                    className="px-4 py-2 bg-[#c9a050] text-black text-sm font-semibold rounded-xl hover:bg-[#d4aa60] transition-colors disabled:opacity-40"
+                  >
+                    {posting ? "Posting…" : "Post"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer actions */}
@@ -556,10 +660,10 @@ function EditScentFields({ data, setField }: { data: Record<string, unknown>; se
 // ─── Gear Card ────────────────────────────────────────────────────────────────
 
 function GearCard({
-  item, selected, onToggle, onEdit, onView,
+  item, selected, onToggle, onEdit, onView, onComment,
 }: {
   item: GearItem; selected: boolean;
-  onToggle: () => void; onEdit: () => void; onView: () => void;
+  onToggle: () => void; onEdit: () => void; onView: () => void; onComment: () => void;
 }) {
   const preview = specPreview(item);
 
@@ -588,12 +692,22 @@ function GearCard({
         <p className="text-[#f5f2eb] text-sm font-semibold leading-snug mt-0.5 line-clamp-2">{item.name}</p>
         {preview && <p className="text-gray-600 text-xs mt-1.5 line-clamp-1">{preview}</p>}
 
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          className="mt-auto pt-2.5 text-xs text-gray-600 hover:text-[#c9a050] transition-colors text-left"
-        >
-          Propose edit →
-        </button>
+        <div className="mt-auto pt-2.5 flex items-center justify-between">
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="text-xs text-gray-600 hover:text-[#c9a050] transition-colors"
+          >
+            Propose edit →
+          </button>
+          {item.commentCount > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onComment(); }}
+              className="text-xs text-gray-500 hover:text-[#c9a050] transition-colors flex items-center gap-1"
+            >
+              💬 {item.commentCount}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -619,6 +733,7 @@ function DatabasePageContent() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editItem, setEditItem] = useState<GearItem | null>(null);
   const [viewItem, setViewItem] = useState<GearItem | null>(null);
+  const [scrollToComments, setScrollToComments] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
@@ -878,6 +993,7 @@ function DatabasePageContent() {
               onToggle={() => toggleSelect(item.id)}
               onEdit={() => setEditItem(item)}
               onView={() => setViewItem(item)}
+              onComment={() => { setScrollToComments(true); setViewItem(item); }}
             />
           ))}
         </div>
@@ -910,10 +1026,13 @@ function DatabasePageContent() {
           item={viewItem}
           selected={selected.has(viewItem.id)}
           isAdmin={isAdmin}
+          scrollToComments={scrollToComments}
           onToggle={() => toggleSelect(viewItem.id)}
           onEdit={() => { setViewItem(null); setEditItem(viewItem); }}
-          onDelete={() => { setItems((prev) => prev.filter((i) => i.id !== viewItem.id)); setViewItem(null); }}
-          onClose={() => setViewItem(null)}
+          onDelete={() => { setItems((prev) => prev.filter((i) => i.id !== viewItem.id)); setViewItem(null); setScrollToComments(false); }}
+          onClose={() => { setViewItem(null); setScrollToComments(false); }}
+          onCommentPosted={() => setItems((prev) => prev.map((i) => i.id === viewItem.id ? { ...i, commentCount: i.commentCount + 1 } : i))}
+          onCommentDeleted={() => setItems((prev) => prev.map((i) => i.id === viewItem.id ? { ...i, commentCount: Math.max(0, i.commentCount - 1) } : i))}
         />
       )}
 

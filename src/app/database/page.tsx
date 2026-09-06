@@ -699,9 +699,9 @@ function GearCard({
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onComment(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-[#c9a050]/15 border border-white/10 hover:border-[#c9a050]/40 text-gray-400 hover:text-[#c9a050] transition-all text-xs font-medium"
+            className="flex items-center gap-1 text-gray-500 hover:text-[#c9a050] transition-colors text-xs"
           >
-            💬{item.commentCount > 0 ? <span className="text-[#c9a050] font-semibold">{item.commentCount}</span> : null}
+            💬{item.commentCount > 0 && <span>{item.commentCount}</span>}
           </button>
         </div>
       </div>

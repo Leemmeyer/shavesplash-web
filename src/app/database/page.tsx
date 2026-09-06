@@ -191,7 +191,7 @@ function DetailSpecs({ item }: { item: GearItem }) {
 
   const hasIngredients = !!d.ingredients && ["soaps", "aftershaves", "balms", "preshaves", "edpedt"].includes(cat);
   const plates = Array.isArray(d.plates) ? (d.plates as { name: string; type: string; bladeGap?: number; exposure?: number }[]) : [];
-  if (rows.length === 0 && !d.scentDescription && !hasIngredients && plates.length === 0) return null;
+  if (rows.length === 0 && !hasIngredients && plates.length === 0) return null;
 
   return (
     <div className="mt-4">
@@ -209,12 +209,6 @@ function DetailSpecs({ item }: { item: GearItem }) {
               </div>
             ))}
           </div>
-        </div>
-      )}
-      {!!d.scentDescription && (
-        <div className="mt-3 pt-3 border-t border-white/5">
-          <p className="text-gray-500 text-xs uppercase tracking-wider mb-1.5">Description</p>
-          <p className="text-[#f5f2eb] text-sm leading-relaxed">{String(d.scentDescription)}</p>
         </div>
       )}
       {hasIngredients && (

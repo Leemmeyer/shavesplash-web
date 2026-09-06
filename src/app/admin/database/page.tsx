@@ -67,18 +67,12 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "bladeFormat", label: "Format" },
     { key: "bladeCountryOfOrigin", label: "Country of Origin" },
     { key: "bladeCoating", label: "Coating" },
-    { key: "sharpness", label: "Sharpness" },
   ],
   brushes: [
     { key: "knot", label: "Knot" },
     { key: "diameter", label: "Diameter" },
   ],
   soaps: [
-    { key: "soapDensity", label: "Density" },
-    { key: "soapCushion", label: "Cushion" },
-    { key: "soapSlickness", label: "Slickness" },
-    { key: "soapStability", label: "Stability" },
-    { key: "soapScentStrength", label: "Scent Strength" },
     { key: "soapHasMenthol", label: "Menthol" },
     { key: "soapIsTallow", label: "Base" },
     { key: "scentFamily", label: "Scent Family" },
@@ -91,7 +85,6 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "size", label: "Size (oz)" },
   ],
   aftershaves: [
-    { key: "aftershaveScentStrength", label: "Scent Strength" },
     { key: "scentFamily", label: "Scent Family" },
     { key: "familySubtype", label: "Subtype" },
     { key: "topNotes", label: "Top Notes" },
@@ -110,7 +103,6 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "ingredients", label: "Ingredients" },
   ],
   edpedt: [
-    { key: "edpedtScentStrength", label: "Scent Strength" },
     { key: "scentFamily", label: "Scent Family" },
     { key: "familySubtype", label: "Subtype" },
     { key: "topNotes", label: "Top Notes" },

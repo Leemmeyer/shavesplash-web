@@ -147,26 +147,14 @@ function DetailSpecs({ item }: { item: GearItem }) {
     if (d.bladeFormat) rows.push({ label: "Format", value: String(d.bladeFormat) });
     if (d.bladeCountryOfOrigin) rows.push({ label: "Country", value: String(d.bladeCountryOfOrigin) });
     if (d.bladeCoating) rows.push({ label: "Coating", value: String(d.bladeCoating) });
-    if (d.sharpness) rows.push({ label: "Sharpness", value: `${d.sharpness}/10` });
   }
   if (cat === "brushes") {
     if (d.knot) rows.push({ label: "Knot", value: String(d.knot) });
     if (d.diameter) rows.push({ label: "Diameter", value: String(d.diameter) });
   }
   if (cat === "soaps") {
-    if (d.soapDensity) rows.push({ label: "Density", value: `${d.soapDensity}/10` });
-    if (d.soapCushion) rows.push({ label: "Cushion", value: `${d.soapCushion}/10` });
-    if (d.soapSlickness) rows.push({ label: "Slickness", value: `${d.soapSlickness}/10` });
-    if (d.soapStability) rows.push({ label: "Stability", value: `${d.soapStability}/10` });
-    if (d.soapScentStrength) rows.push({ label: "Scent Strength", value: `${d.soapScentStrength}/10` });
     if (d.soapHasMenthol != null) rows.push({ label: "Menthol", value: d.soapHasMenthol ? "Yes" : "No" });
     if (d.soapIsTallow != null) rows.push({ label: "Base", value: d.soapIsTallow ? "Tallow" : "Vegan" });
-  }
-  if (cat === "aftershaves") {
-    if (d.aftershaveScentStrength) rows.push({ label: "Scent Strength", value: `${d.aftershaveScentStrength}/10` });
-  }
-  if (cat === "edpedt") {
-    if (d.edpedtScentStrength) rows.push({ label: "Scent Strength", value: `${d.edpedtScentStrength}/10` });
   }
   if (cat === "preshaves") {
     if (d.preshaveType) rows.push({ label: "Type", value: String(d.preshaveType) });

@@ -241,7 +241,6 @@ function DetailModal({ item, selected, isAdmin, scrollToComments, onToggle, onEd
   const [commentBody, setCommentBody] = useState("");
   const [posting, setPosting] = useState(false);
   const commentsRef = useRef<HTMLDivElement>(null);
-  const scrollBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!item.hasPhoto) return;
@@ -287,10 +286,10 @@ function DetailModal({ item, selected, isAdmin, scrollToComments, onToggle, onEd
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div
-        className="bg-[#1e1e1e] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 max-h-[90vh] flex flex-col"
+        className="bg-[#1e1e1e] w-full sm:max-w-3xl rounded-t-2xl sm:rounded-2xl border border-white/10 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header — full width */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/5 shrink-0">
           <span className="text-xs text-gray-500 uppercase tracking-wider">
             {categoryIcon(item.categoryId)} {categoryLabel(item.categoryId)}
@@ -298,33 +297,32 @@ function DetailModal({ item, selected, isAdmin, scrollToComments, onToggle, onEd
           <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-xl leading-none">✕</button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-5 pb-5">
-          {/* Photo */}
-          {item.hasPhoto && (
-            <div className="aspect-square bg-[#161616] rounded-xl overflow-hidden mt-4">
-              {photoUrl
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={photoUrl} alt={item.name} className="w-full h-full object-contain" />
-                : <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
-                  </div>
-              }
-            </div>
-          )}
+        {/* Body: single column on mobile, two columns on desktop */}
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-y-auto sm:overflow-hidden">
 
-          {/* Identity */}
-          <div className="mt-4">
-            <p className="text-[#c9a050] text-sm font-medium">{item.brand}</p>
-            <h2 className="text-[#f5f2eb] text-xl font-bold leading-snug mt-0.5">{item.name}</h2>
+          {/* Left column: photo + identity + specs */}
+          <div className="px-5 pt-4 pb-2 sm:pb-5 sm:w-1/2 sm:overflow-y-auto sm:border-r sm:border-white/5">
+            {item.hasPhoto && (
+              <div className="aspect-square bg-[#161616] rounded-xl overflow-hidden">
+                {photoUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={photoUrl} alt={item.name} className="w-full h-full object-contain" />
+                  : <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+                    </div>
+                }
+              </div>
+            )}
+            <div className="mt-4">
+              <p className="text-[#c9a050] text-sm font-medium">{item.brand}</p>
+              <h2 className="text-[#f5f2eb] text-xl font-bold leading-snug mt-0.5">{item.name}</h2>
+            </div>
+            <DetailSpecs item={item} />
           </div>
 
-          {/* Specs */}
-          <DetailSpecs item={item} />
-
-          {/* Comments */}
-          <div ref={commentsRef} className="mt-6 pt-5 border-t border-white/5">
-            <p className="text-[#f5f2eb] text-sm font-semibold mb-3">
+          {/* Right column: comments */}
+          <div ref={commentsRef} className="px-5 pt-4 pb-4 sm:w-1/2 sm:overflow-y-auto border-t sm:border-t-0 border-white/5 flex flex-col">
+            <p className="text-[#f5f2eb] text-sm font-semibold mb-3 shrink-0">
               Community Comments {comments.length > 0 && <span className="text-gray-500 font-normal">({comments.length})</span>}
             </p>
 
@@ -354,7 +352,7 @@ function DetailModal({ item, selected, isAdmin, scrollToComments, onToggle, onEd
             )}
 
             {session && (
-              <div className="mt-3">
+              <div className="mt-auto pt-3">
                 <textarea
                   value={commentBody}
                   onChange={(e) => setCommentBody(e.target.value)}
@@ -376,7 +374,7 @@ function DetailModal({ item, selected, isAdmin, scrollToComments, onToggle, onEd
           </div>
         </div>
 
-        {/* Footer actions */}
+        {/* Footer actions — full width */}
         <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex flex-col gap-2">
           <div className="flex gap-3">
             <button

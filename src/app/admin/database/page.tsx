@@ -793,6 +793,8 @@ function EditCard({ edit, onAction }: {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+type ApprovedItem = { id: string; categoryId: string; brand: string; name: string };
+
 export default function AdminDatabasePage() {
   const [submissions, setSubmissions] = useState<GearSubmission[]>([]);
   const [edits, setEdits] = useState<GearEdit[]>([]);
@@ -800,6 +802,11 @@ export default function AdminDatabasePage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchApproving, setBatchApproving] = useState(false);
   const [batchRejecting, setBatchRejecting] = useState(false);
+  const [approvedItems, setApprovedItems] = useState<ApprovedItem[]>([]);
+  const [approvedSearch, setApprovedSearch] = useState("");
+  const [approvedLoading, setApprovedLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -807,6 +814,24 @@ export default function AdminDatabasePage() {
       .then((d) => { setSubmissions(d.submissions); setEdits(d.edits); })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  const loadApproved = (q: string) => {
+    setApprovedLoading(true);
+    const params = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+    api.get<{ items: ApprovedItem[] }>(`/api/gear${params}`)
+      .then((d) => setApprovedItems(d.items))
+      .catch(() => {})
+      .finally(() => setApprovedLoading(false));
+  };
+
+  const handleDeleteApproved = async (id: string) => {
+    if (confirmDeleteId !== id) { setConfirmDeleteId(id); return; }
+    setDeletingId(id);
+    setConfirmDeleteId(null);
+    await api.delete(`/api/admin/gear/${id}`).catch(() => {});
+    setApprovedItems((prev) => prev.filter((i) => i.id !== id));
+    setDeletingId(null);
   };
 
   useEffect(() => { load(); }, []);
@@ -920,6 +945,59 @@ export default function AdminDatabasePage() {
           <p className="text-gray-600">Nothing pending review.</p>
         </div>
       )}
+
+      <section>
+        <h2 className="text-[#f5f2eb] font-semibold text-sm uppercase tracking-wider mb-4">
+          Approved Database Items
+        </h2>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={approvedSearch}
+            onChange={(e) => setApprovedSearch(e.target.value)}
+            placeholder="Search brand or name…"
+            className="flex-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-sm text-[#f5f2eb] placeholder-gray-600 outline-none focus:border-[#c9a050]"
+          />
+          <button
+            onClick={() => loadApproved(approvedSearch)}
+            disabled={approvedLoading}
+            className="px-4 py-2 bg-[#c9a050] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#b8903f] transition-colors disabled:opacity-50"
+          >
+            {approvedLoading ? "…" : "Search"}
+          </button>
+        </div>
+
+        {approvedItems.length > 0 && (
+          <div className="space-y-1">
+            {approvedItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between px-4 py-3 bg-[#1e1e1e] rounded-lg border border-[#2a2a2a]">
+                <div>
+                  <span className="text-[#f5f2eb] text-sm font-medium">{item.brand} {item.name}</span>
+                  <span className="ml-2 text-gray-600 text-xs">{CATEGORY_LABELS[item.categoryId] ?? item.categoryId}</span>
+                </div>
+                <button
+                  onClick={() => handleDeleteApproved(item.id)}
+                  disabled={deletingId === item.id}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                    confirmDeleteId === item.id
+                      ? "bg-red-600 text-white hover:bg-red-500"
+                      : "bg-[#2a2a2a] text-gray-400 hover:text-red-400"
+                  }`}
+                >
+                  {deletingId === item.id ? "Deleting…" : confirmDeleteId === item.id ? "Confirm Delete" : "Delete"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {approvedItems.length === 0 && approvedSearch && !approvedLoading && (
+          <p className="text-gray-600 text-sm text-center py-6">No items found.</p>
+        )}
+        {approvedItems.length === 0 && !approvedSearch && (
+          <p className="text-gray-600 text-sm text-center py-6">Search to browse approved items.</p>
+        )}
+      </section>
     </div>
   );
 }

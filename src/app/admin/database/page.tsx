@@ -773,7 +773,10 @@ function EditCard({ edit, onAction }: {
       <div className="space-y-1 mt-2">
         {brand && <p className="text-xs"><span className="text-gray-600">Brand → </span><span className="text-[#f5f2eb]">{brand}</span></p>}
         {name && <p className="text-xs"><span className="text-gray-600">Name → </span><span className="text-[#f5f2eb]">{name}</span></p>}
-        {data && Object.entries(data).filter(([, v]) => v !== null && v !== undefined && v !== "" && v !== 0).map(([k, v]) => (
+        {data && Object.entries(data).filter(([k, v]) =>
+          v !== null && v !== undefined && v !== "" && v !== 0 &&
+          !['scentDescription','shaveSplashUrl','buy','soapCatalogId','soapCatalogUrlPath','soapCatalogBrand','soapCatalogName','bladeCatalogId','soapDensity','soapCushion','soapSlickness','soapStability','soapScentStrength','aftershaveScentStrength','edpedtScentStrength','sharpness'].includes(k)
+        ).map(([k, v]) => (
           <p key={k} className="text-xs"><span className="text-gray-600">{k} → </span><span className="text-[#f5f2eb]">{String(v)}</span></p>
         ))}
       </div>

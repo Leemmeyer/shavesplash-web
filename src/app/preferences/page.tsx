@@ -29,6 +29,11 @@ function PreferencesContent() {
   const [savingName, setSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
 
+  // Email notification prefs
+  type EmailPrefs = { forumReplies: boolean; quoteReplies: boolean; sotdComments: boolean; directMessages: boolean };
+  const [emailPrefs, setEmailPrefs] = useState<EmailPrefs>({ forumReplies: true, quoteReplies: true, sotdComments: true, directMessages: true });
+  const [savingEmailPref, setSavingEmailPref] = useState(false);
+
   // Clear all data
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearConfirmText, setClearConfirmText] = useState("");
@@ -165,6 +170,20 @@ function PreferencesContent() {
   }, []);
 
   useEffect(() => {
+    api.get<{ prefs: EmailPrefs }>("/api/preferences/email-notifs")
+      .then((d) => setEmailPrefs(d.prefs))
+      .catch(() => {});
+  }, []);
+
+  const handleEmailPrefToggle = async (key: keyof EmailPrefs) => {
+    const next = { ...emailPrefs, [key]: !emailPrefs[key] };
+    setEmailPrefs(next);
+    setSavingEmailPref(true);
+    await api.put("/api/preferences/email-notifs", next).catch(() => {});
+    setSavingEmailPref(false);
+  };
+
+  useEffect(() => {
     if (!session) return;
     api.get<{ profile: { displayName?: string | null } }>("/api/bst/profile")
       .then((d) => { if (d.profile?.displayName) setDisplayName(d.profile.displayName); })
@@ -287,6 +306,35 @@ function PreferencesContent() {
           <p className="text-gray-500 text-xs leading-relaxed">
             <strong className="text-gray-400">To update these:</strong> Change your Result Options or Score Parameters in the ShaveSplash mobile app (Settings → Score Parameters / Result Options), then press Sync. The web app will pick up the changes automatically.
           </p>
+        </div>
+
+        {/* Email Alerts */}
+        <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6">
+          <h2 className="text-[#f5f2eb] font-semibold text-base mb-1">Email Alerts</h2>
+          <p className="text-gray-500 text-xs mb-4">
+            Choose which activity triggers an email notification. {savingEmailPref && <span className="text-[#c9a050]">Saving…</span>}
+          </p>
+          <div className="space-y-3">
+            {([
+              { key: "forumReplies",   label: "Forum Replies",   sub: "When someone replies to your forum post" },
+              { key: "quoteReplies",   label: "Quote Replies",   sub: "When someone quotes your post" },
+              { key: "sotdComments",   label: "SOTD Comments",   sub: "When someone comments on your shave" },
+              { key: "directMessages", label: "Direct Messages", sub: "When you receive a new message" },
+            ] as { key: keyof EmailPrefs; label: string; sub: string }[]).map(({ key, label, sub }) => (
+              <div key={key} className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[#f5f2eb] text-sm font-medium">{label}</p>
+                  <p className="text-gray-500 text-xs">{sub}</p>
+                </div>
+                <button
+                  onClick={() => handleEmailPrefToggle(key)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${emailPrefs[key] ? "bg-[#c9a050]" : "bg-[#333]"}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${emailPrefs[key] ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Share My Den */}

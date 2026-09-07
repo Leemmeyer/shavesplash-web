@@ -633,21 +633,28 @@ function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; e
           <h2 className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-lg">Shave of the Week</h2>
           <p className="text-gray-600 text-xs">{weekLabel}</p>
         </div>
-        <div className="px-4 pb-2 flex justify-center">
-          <button
-            onClick={() => setModalOpen(true)}
-            className="relative group"
-            style={{
-              padding: 3,
-              borderRadius: 16,
-              background: "linear-gradient(135deg, #c9a050 0%, #f5d98b 40%, #a0722a 70%, #c9a050 100%)",
-              boxShadow: "0 0 12px rgba(201,160,80,0.35)",
-            }}
-          >
-            <div className="relative overflow-hidden" style={{ borderRadius: 13, width: 200, height: 200 }}>
-              <img src={photoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
+        <div className="pb-3 pt-1 flex justify-center">
+          <button onClick={() => setModalOpen(true)} className="relative group">
+            {/* Outer moulding — beveled gold gradient */}
+            <div style={{
+              padding: 10,
+              background: "linear-gradient(145deg, #f0d878 0%, #c9a050 25%, #8a6010 50%, #c9a050 75%, #f0d878 100%)",
+              boxShadow: [
+                "0 8px 24px rgba(0,0,0,0.6)",
+                "inset 0 2px 3px rgba(255,255,255,0.55)",
+                "inset 0 -2px 3px rgba(0,0,0,0.5)",
+                "inset 2px 0 3px rgba(255,255,255,0.25)",
+                "inset -2px 0 3px rgba(0,0,0,0.4)",
+              ].join(", "),
+            }}>
+              {/* Inner dark liner — like the rabbet of a real frame */}
+              <div style={{ background: "#100c02", padding: 3 }}>
+                <div className="relative overflow-hidden" style={{ width: 200, height: 200 }}>
+                  <img src={photoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
+                  </div>
+                </div>
               </div>
             </div>
           </button>

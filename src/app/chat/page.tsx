@@ -47,6 +47,7 @@ export default function ChatPage() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [input, setInput] = useState("");
+  const inputRef = useRef("");
   const [connected, setConnected] = useState(false);
   const [pickerMsgId, setPickerMsgId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -109,9 +110,10 @@ export default function ChatPage() {
   }, [session, connect]);
 
   const send = () => {
-    const body = input.trim();
+    const body = inputRef.current.trim();
     if (!body || wsRef.current?.readyState !== WebSocket.OPEN) return;
     wsRef.current.send(JSON.stringify({ type: "message", body }));
+    inputRef.current = "";
     setInput("");
   };
 
@@ -262,7 +264,7 @@ export default function ChatPage() {
         <input
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => { inputRef.current = e.target.value; setInput(e.target.value); }}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Message…"
           className="flex-1 bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 focus:outline-none focus:border-[#c9a050]/50"

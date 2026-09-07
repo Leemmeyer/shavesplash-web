@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, memo } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
@@ -199,7 +199,7 @@ function CommentEmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
 }
 
 // ── SOTD Card ────────────────────────────────────────────────────────────────
-function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
+const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
   post: SotdPost;
   onReact: (logId: string, emoji: string) => void;
   session: { user: { id: string } } | null;
@@ -590,7 +590,7 @@ function SotdCard({ post, onReact, session, isAdmin, onRemoved }: {
     </div>
     </>
   );
-}
+});
 
 // ── Stats Sidebar ─────────────────────────────────────────────────────────────
 function StatsSidebar() {

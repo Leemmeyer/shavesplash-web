@@ -634,29 +634,84 @@ function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; e
           <p className="text-gray-600 text-xs">{weekLabel}</p>
         </div>
         <div className="pb-3 pt-1 flex justify-center">
-          <button onClick={() => setModalOpen(true)} className="relative group">
-            {/* Outer moulding — beveled gold gradient */}
-            <div style={{
-              padding: 10,
-              background: "linear-gradient(145deg, #f0d878 0%, #c9a050 25%, #8a6010 50%, #c9a050 75%, #f0d878 100%)",
-              boxShadow: [
-                "0 8px 24px rgba(0,0,0,0.6)",
-                "inset 0 2px 3px rgba(255,255,255,0.55)",
-                "inset 0 -2px 3px rgba(0,0,0,0.5)",
-                "inset 2px 0 3px rgba(255,255,255,0.25)",
-                "inset -2px 0 3px rgba(0,0,0,0.4)",
-              ].join(", "),
-            }}>
-              {/* Inner dark liner — like the rabbet of a real frame */}
-              <div style={{ background: "#100c02", padding: 3 }}>
-                <div className="relative overflow-hidden" style={{ width: 200, height: 200 }}>
-                  <img src={photoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
-                  </div>
-                </div>
+          <button
+            onClick={() => setModalOpen(true)}
+            className="relative group"
+            style={{ width: 260, height: 260, filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.65))" }}
+          >
+            {/* Photo sits behind the SVG frame */}
+            <div className="absolute overflow-hidden" style={{ top: 30, left: 30, width: 200, height: 200 }}>
+              <img src={photoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
               </div>
             </div>
+            {/* Art Nouveau SVG frame overlay */}
+            <svg width="260" height="260" viewBox="0 0 260 260" className="absolute inset-0" style={{ pointerEvents: "none" }}>
+              <defs>
+                <linearGradient id="an-gold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#f5e090" />
+                  <stop offset="20%" stopColor="#d4a840" />
+                  <stop offset="50%" stopColor="#8a6010" />
+                  <stop offset="80%" stopColor="#c9a050" />
+                  <stop offset="100%" stopColor="#f0d060" />
+                </linearGradient>
+              </defs>
+              {/* Frame fill — compound path with photo cutout */}
+              <path d="M0,0H260V260H0ZM30,30H230V230H30Z" fill="url(#an-gold)" fillRule="evenodd" />
+              {/* Bevel: outer edge highlight/shadow planes */}
+              <path d="M0,0H260L256,4H4Z" fill="rgba(255,245,180,0.45)" />
+              <path d="M0,0L4,4V256L0,260Z" fill="rgba(255,245,180,0.25)" />
+              <path d="M4,256H256L260,260H0Z" fill="rgba(0,0,0,0.35)" />
+              <path d="M256,4L260,0V260L256,256Z" fill="rgba(0,0,0,0.25)" />
+              {/* Bevel: inner edge reversed for depth-step effect */}
+              <path d="M30,30H230L226,34H34Z" fill="rgba(0,0,0,0.22)" />
+              <path d="M30,30L34,34V226L30,230Z" fill="rgba(0,0,0,0.22)" />
+              <path d="M34,226H226L230,230H30Z" fill="rgba(255,245,180,0.2)" />
+              <path d="M226,34L230,30V230L226,226Z" fill="rgba(255,245,180,0.15)" />
+              {/* Double ruled border lines */}
+              <rect x="3" y="3" width="254" height="254" stroke="rgba(255,240,160,0.5)" strokeWidth="0.75" fill="none" />
+              <rect x="6" y="6" width="248" height="248" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" fill="none" />
+              <rect x="27" y="27" width="206" height="206" stroke="rgba(255,240,160,0.45)" strokeWidth="0.75" fill="none" />
+              <rect x="29" y="29" width="202" height="202" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" fill="none" />
+              {/* Corner ornaments — top-left archetype mirrored to all 4 corners */}
+              {(["translate(0,0) scale(1,1)", "translate(260,0) scale(-1,1)", "translate(0,260) scale(1,-1)", "translate(260,260) scale(-1,-1)"] as const).map((tf, i) => (
+                <g key={i} transform={tf} fill="#7a5010" stroke="rgba(240,210,100,0.35)" strokeWidth="0.4">
+                  {/* 6-petal rosette at corner (15,15) */}
+                  <path d="M15,15 C12,11 12,7 15,6 C18,7 18,11 15,15Z" />
+                  <path d="M15,15 C17,10 20,8 23,11 C23,14 20,16 15,15Z" />
+                  <path d="M15,15 C20,14 23,16 23,20 C20,22 17,20 15,15Z" />
+                  <path d="M15,15 C18,19 18,23 15,24 C12,23 12,19 15,15Z" />
+                  <path d="M15,15 C13,20 10,22 7,20 C7,16 10,14 15,15Z" />
+                  <path d="M15,15 C10,16 7,14 7,11 C10,8 13,10 15,15Z" />
+                  <circle cx="15" cy="15" r="2.5" fill="#4a2e08" stroke="none" />
+                  {/* Sinuous vine along top border half (x: 30→130) */}
+                  <path d="M30,15 C50,10 65,20 85,15 C100,10 115,18 130,15" stroke="#7a5010" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                  {/* Leaves alternating above/below top vine */}
+                  <path d="M52,13 C50,7 54,5 57,8 C57,11 55,13 52,13Z" />
+                  <path d="M75,17 C73,23 77,25 80,22 C80,19 78,17 75,17Z" />
+                  <path d="M100,13 C98,7 102,5 105,8 C105,11 103,13 100,13Z" />
+                  <path d="M118,17 C116,23 120,25 123,22 C123,19 121,17 118,17Z" />
+                  {/* Sinuous vine along left border half (y: 30→130) */}
+                  <path d="M15,30 C10,50 20,65 15,85 C10,100 18,115 15,130" stroke="#7a5010" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                  {/* Leaves alternating left/right of left vine */}
+                  <path d="M13,52 C7,50 5,54 8,57 C11,57 13,55 13,52Z" />
+                  <path d="M17,75 C23,73 25,77 22,80 C19,80 17,78 17,75Z" />
+                  <path d="M13,100 C7,98 5,102 8,105 C11,105 13,103 13,100Z" />
+                  <path d="M17,118 C23,116 25,120 22,123 C19,123 17,121 17,118Z" />
+                </g>
+              ))}
+              {/* 4-petal bud where corner vines meet at each border midpoint */}
+              {([[130, 15], [245, 130], [130, 245], [15, 130]] as [number, number][]).map(([cx, cy], i) => (
+                <g key={i} fill="#7a5010" transform={`translate(${cx},${cy})`}>
+                  <path d="M0,-5 C1,-3 1,-1 0,0 C-1,-1 -1,-3 0,-5Z" />
+                  <path d="M5,0 C3,1 1,1 0,0 C1,-1 3,-1 5,0Z" />
+                  <path d="M0,5 C1,3 1,1 0,0 C-1,1 -1,3 0,5Z" />
+                  <path d="M-5,0 C-3,1 -1,1 0,0 C-1,-1 -3,-1 -5,0Z" />
+                  <circle r="2" fill="#4a2e08" />
+                </g>
+              ))}
+            </svg>
           </button>
         </div>
         <div className="px-4 py-3 flex items-center justify-between">

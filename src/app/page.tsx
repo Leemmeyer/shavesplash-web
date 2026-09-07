@@ -7,13 +7,13 @@ export default function Home() {
 
         {/* Hero */}
         <div className="flex flex-col items-center text-center px-6 pt-8 pb-12">
-          <h1 className="font-[family-name:var(--font-fredericka)] text-2xl md:text-4xl text-[#f5f2eb] mb-2 leading-tight max-w-2xl">
-            Home of the ShaveSplash{" "}
-            <span className="text-[#c9a050]">Buy · Sell · Trade</span> Marketplace
+          <h1 className="font-[family-name:var(--font-fredericka)] text-2xl md:text-4xl text-[#c9a050] mb-2 leading-tight max-w-2xl">
+            Move Your Shave to the Cloud
           </h1>
 
-          <p className="text-[#c9a050] text-base md:text-lg font-semibold mt-1 mb-1">
-            Move Your Shave to the Cloud
+          <p className="text-[#f5f2eb] text-base md:text-lg font-semibold mt-1 mb-1">
+            Home of the ShaveSplash{" "}
+            <span className="text-[#c9a050]">Buy · Sell · Trade</span> Marketplace
           </p>
 
           <p className="text-gray-500 text-sm max-w-md mb-2 leading-relaxed">

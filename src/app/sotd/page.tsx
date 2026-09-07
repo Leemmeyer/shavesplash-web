@@ -391,7 +391,7 @@ const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRem
                     <CategoryIcon catId={catId} />
                     {s.categoryName ?? CATEGORY_LABELS[catId] ?? catId}
                   </span>
-                  <span className="text-gray-200 text-xs whitespace-nowrap">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
+                  <span className="text-gray-200 text-xs">{s.itemName}{s.plate ? ` · ${s.plate}` : ""}{s.bladeUses != null ? ` · ${s.bladeUses}×` : ""}</span>
                 </div>
               ))}
               {usedItems.length > GEAR_LIMIT && (

@@ -594,7 +594,7 @@ const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRem
 
 // ── Stats Sidebar ─────────────────────────────────────────────────────────────
 function StatsSidebar() {
-  const [period, setPeriod] = useState<"week" | "month" | "all">("all");
+  const [period, setPeriod] = useState<"week" | "month" | "all">("week");
   const [stats, setStats] = useState<Record<string, { name: string; count: number }[]>>({});
   const [loading, setLoading] = useState(true);
 
@@ -650,8 +650,6 @@ function StatsSidebar() {
         <div className="flex justify-center py-8">
           <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
         </div>
-      ) : STAT_CATS.every((cat) => !(stats[cat] ?? []).length) ? (
-        <p className="text-gray-600 text-xs text-center py-4">No shaves shared this {period === "week" ? "week" : period === "month" ? "month" : "time"} yet.</p>
       ) : (
         <div className="space-y-4">
           {STAT_CATS.map((cat) => {

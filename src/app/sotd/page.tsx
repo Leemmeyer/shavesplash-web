@@ -633,119 +633,23 @@ function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; e
           <h2 className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-lg">Shave of the Week</h2>
           <p className="text-gray-600 text-xs">{weekLabel}</p>
         </div>
-        <div className="pb-3 pt-1 flex justify-center">
+        <div className="px-4 pb-2 flex justify-center">
           <button
             onClick={() => setModalOpen(true)}
             className="relative group"
-            style={{ width: 272, height: 272, filter: "drop-shadow(0 12px 36px rgba(0,0,0,0.9))" }}
+            style={{
+              padding: 3,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #c9a050 0%, #f5d98b 40%, #a0722a 70%, #c9a050 100%)",
+              boxShadow: "0 0 12px rgba(201,160,80,0.35)",
+            }}
           >
-            {/* Photo sits behind the SVG frame */}
-            <div className="absolute overflow-hidden" style={{ top: 36, left: 36, width: 200, height: 200 }}>
+            <div className="relative overflow-hidden" style={{ borderRadius: 13, width: 200, height: 200 }}>
               <img src={photoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
               </div>
             </div>
-            {/* Baroque picture frame SVG */}
-            <svg width="272" height="272" viewBox="0 0 272 272" className="absolute inset-0" style={{ pointerEvents: "none" }}>
-              <defs>
-                <linearGradient id="df-frame" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#5c1e0c"/>
-                  <stop offset="35%" stopColor="#2e0c04"/>
-                  <stop offset="65%" stopColor="#3c1408"/>
-                  <stop offset="100%" stopColor="#5c1e0c"/>
-                </linearGradient>
-                <linearGradient id="df-liner-h" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f5e080"/>
-                  <stop offset="40%" stopColor="#c9a050"/>
-                  <stop offset="100%" stopColor="#7a5010"/>
-                </linearGradient>
-                <linearGradient id="df-liner-v" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#f5e080"/>
-                  <stop offset="40%" stopColor="#c9a050"/>
-                  <stop offset="100%" stopColor="#7a5010"/>
-                </linearGradient>
-              </defs>
-
-              {/* Dark mahogany frame fill (compound path — photo area cut out) */}
-              <path d="M0,0H272V272H0ZM36,36H236V236H36Z" fill="url(#df-frame)" fillRule="evenodd"/>
-              {/* Outer edge highlight */}
-              <path d="M0,0H272L272,3H0Z" fill="rgba(200,150,60,0.25)"/>
-              <path d="M0,0L3,0L3,272L0,272Z" fill="rgba(200,150,60,0.15)"/>
-
-              {/* === BAROQUE SCROLLWORK ===
-                  Top-border group rotated 90°×4 to cover all four sides.
-                  rotate(0)=top, rotate(90)=left, rotate(180)=bottom, rotate(270)=right */}
-              {(["rotate(0,136,136)","rotate(90,136,136)","rotate(180,136,136)","rotate(270,136,136)"] as const).map((tf, i) => (
-                <g key={i} transform={tf} fill="#c9a050">
-                  {/* S-wave backbone: 5 cycles across x=36..236, center y=15 */}
-                  <path
-                    d="M36,15 C42,6 50,6 56,15 C62,24 70,24 76,15 C82,6 90,6 96,15 C102,24 110,24 116,15 C122,6 130,6 136,15 C142,24 150,24 156,15 C162,6 170,6 176,15 C182,24 190,24 196,15 C202,6 210,6 216,15 C222,24 230,24 236,15"
-                    stroke="#c9a050" strokeWidth="2" fill="none" strokeLinecap="round"
-                  />
-                  {/* Upward acanthus leaves at peaks (x≈46,86,126,166,206 y≈6) */}
-                  <path d="M41,11 C40,4 46,1 52,4 C51,11 46,13 41,11Z"/>
-                  <path d="M81,11 C80,4 86,1 92,4 C91,11 86,13 81,11Z"/>
-                  <path d="M121,11 C120,4 126,1 132,4 C131,11 126,13 121,11Z"/>
-                  <path d="M161,11 C160,4 166,1 172,4 C171,11 166,13 161,11Z"/>
-                  <path d="M201,11 C200,4 206,1 212,4 C211,11 206,13 201,11Z"/>
-                  {/* Inner accent curl at each upward peak */}
-                  <path d="M43,9 C42,6 46,4 50,6 C49,9 46,10 43,9Z"/>
-                  <path d="M83,9 C82,6 86,4 90,6 C89,9 86,10 83,9Z"/>
-                  <path d="M123,9 C122,6 126,4 130,6 C129,9 126,10 123,9Z"/>
-                  <path d="M163,9 C162,6 166,4 170,6 C169,9 166,10 163,9Z"/>
-                  <path d="M203,9 C202,6 206,4 210,6 C209,9 206,10 203,9Z"/>
-                  {/* Downward acanthus leaves at troughs (x≈66,106,146,186,226 y≈24) */}
-                  <path d="M61,19 C60,26 66,29 72,26 C71,19 66,17 61,19Z"/>
-                  <path d="M101,19 C100,26 106,29 112,26 C111,19 106,17 101,19Z"/>
-                  <path d="M141,19 C140,26 146,29 152,26 C151,19 146,17 141,19Z"/>
-                  <path d="M181,19 C180,26 186,29 192,26 C191,19 186,17 181,19Z"/>
-                  <path d="M221,19 C220,26 226,29 232,26 C231,19 226,17 221,19Z"/>
-                  {/* Inner accent curl at each downward trough */}
-                  <path d="M63,21 C62,24 66,26 70,24 C69,21 66,20 63,21Z"/>
-                  <path d="M103,21 C102,24 106,26 110,24 C109,21 106,20 103,21Z"/>
-                  <path d="M143,21 C142,24 146,26 150,24 C149,21 146,20 143,21Z"/>
-                  <path d="M183,21 C182,24 186,26 190,24 C189,21 186,20 183,21Z"/>
-                  <path d="M223,21 C222,24 226,26 230,24 C229,21 226,20 223,21Z"/>
-                  {/* Scroll-end curls at band edges */}
-                  <path d="M36,15 C33,11 32,6 36,7 C38,11 37,14 36,15Z"/>
-                  <path d="M236,15 C239,11 240,6 236,7 C234,11 235,14 236,15Z"/>
-                </g>
-              ))}
-
-              {/* === 8-PETAL CORNER ROSETTES === */}
-              {([[18,18],[254,18],[18,254],[254,254]] as [number,number][]).map(([cx,cy],i) => (
-                <g key={i} fill="#c9a050" transform={`translate(${cx},${cy})`}>
-                  <path d="M0,-14 C2,-9 2,-5 0,0 C-2,-5 -2,-9 0,-14Z"/>
-                  <path d="M14,0 C9,2 5,2 0,0 C5,-2 9,-2 14,0Z"/>
-                  <path d="M0,14 C2,9 2,5 0,0 C-2,5 -2,9 0,14Z"/>
-                  <path d="M-14,0 C-9,2 -5,2 0,0 C-5,-2 -9,-2 -14,0Z"/>
-                  <path d="M10,-10 C7,-7 4,-4 0,0 C1,-5 4,-8 10,-10Z"/>
-                  <path d="M10,10 C7,7 4,4 0,0 C5,1 8,4 10,10Z"/>
-                  <path d="M-10,10 C-7,7 -4,4 0,0 C-5,1 -8,4 -10,10Z"/>
-                  <path d="M-10,-10 C-7,-7 -4,-4 0,0 C-5,-1 -8,-4 -10,-10Z"/>
-                  <circle r="4.5" fill="#4a1a06"/>
-                  <circle r="2.5" fill="#c9a050"/>
-                  <circle r="1" fill="#f0d060"/>
-                </g>
-              ))}
-
-              {/* === GOLD LINER (6 px strip framing the photo) === */}
-              <rect x="36" y="30" width="200" height="6" fill="url(#df-liner-h)"/>
-              <rect x="36" y="236" width="200" height="6" fill="url(#df-liner-h)"/>
-              <rect x="30" y="36" width="6" height="200" fill="url(#df-liner-v)"/>
-              <rect x="236" y="36" width="6" height="200" fill="url(#df-liner-v)"/>
-              <rect x="30" y="30" width="6" height="6" fill="#c9a050"/>
-              <rect x="236" y="30" width="6" height="6" fill="#c9a050"/>
-              <rect x="30" y="236" width="6" height="6" fill="#c9a050"/>
-              <rect x="236" y="236" width="6" height="6" fill="#c9a050"/>
-
-              {/* === BORDER LINES === */}
-              <rect x="1" y="1" width="270" height="270" stroke="rgba(0,0,0,0.75)" strokeWidth="2" fill="none"/>
-              <rect x="3" y="3" width="266" height="266" stroke="rgba(190,140,40,0.3)" strokeWidth="0.75" fill="none"/>
-              <rect x="35" y="35" width="202" height="202" stroke="rgba(200,155,50,0.55)" strokeWidth="1" fill="none"/>
-              <rect x="36" y="36" width="200" height="200" stroke="rgba(0,0,0,0.65)" strokeWidth="1.5" fill="none"/>
-            </svg>
           </button>
         </div>
         <div className="px-4 py-3 flex items-center justify-between">

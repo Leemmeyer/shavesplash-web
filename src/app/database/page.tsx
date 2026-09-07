@@ -795,6 +795,23 @@ function DatabasePageContent() {
     finally { setReplacing(false); }
   };
 
+  const handleAddDuplicatesAnyway = async () => {
+    if (replacing) return;
+    setReplacing(true);
+    try {
+      const { created } = await api.post<{ created: string[]; replaced: string[]; duplicates: never[] }>(
+        "/api/gear/add-to-den",
+        { ids: duplicatePending.map((d) => d.gearId), force: true }
+      );
+      setDuplicatePending([]);
+      if (created.length > 0) {
+        setAddedCount((n) => n + created.length);
+        setTimeout(() => setAddedCount(0), 3000);
+      }
+    } catch {}
+    finally { setReplacing(false); }
+  };
+
   // Derive unique brands for current filter
   const brands = [...new Set(items.map((i) => i.brand))].sort();
 
@@ -1076,19 +1093,28 @@ function DatabasePageContent() {
               ))}
             </ul>
             <p className="text-gray-600 text-xs mb-5">Replace your existing {duplicatePending.length === 1 ? "item" : "items"} with the gear database version?</p>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReplaceDuplicates}
+                  disabled={replacing}
+                  className="flex-1 px-4 py-2 bg-[#c9a050] text-black rounded-xl text-sm font-semibold hover:bg-[#d4aa60] transition-colors disabled:opacity-50"
+                >
+                  {replacing ? "Working…" : "Replace"}
+                </button>
+                <button
+                  onClick={handleAddDuplicatesAnyway}
+                  disabled={replacing}
+                  className="flex-1 px-4 py-2 border border-white/15 rounded-xl text-sm text-gray-300 hover:border-white/30 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  Add Anyway
+                </button>
+              </div>
               <button
                 onClick={() => setDuplicatePending([])}
-                className="flex-1 px-4 py-2 border border-white/15 rounded-xl text-sm text-gray-400 hover:text-white hover:border-white/30 transition-colors"
+                className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-400 transition-colors"
               >
                 Keep Existing
-              </button>
-              <button
-                onClick={handleReplaceDuplicates}
-                disabled={replacing}
-                className="flex-1 px-4 py-2 bg-[#c9a050] text-black rounded-xl text-sm font-semibold hover:bg-[#d4aa60] transition-colors disabled:opacity-50"
-              >
-                {replacing ? "Replacing…" : "Replace"}
               </button>
             </div>
           </div>

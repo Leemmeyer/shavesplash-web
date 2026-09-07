@@ -732,7 +732,7 @@ function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; e
           className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center p-6 overflow-y-auto"
           onClick={() => setModalOpen(false)}
         >
-          <div className="w-full max-w-lg mt-8 mb-8" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-2xl mt-8 mb-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-xl">Shave of the Week</span>
               <button onClick={() => setModalOpen(false)} className="text-white/60 hover:text-white text-2xl leading-none">✕</button>

@@ -637,80 +637,114 @@ function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; e
           <button
             onClick={() => setModalOpen(true)}
             className="relative group"
-            style={{ width: 260, height: 260, filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.65))" }}
+            style={{ width: 272, height: 272, filter: "drop-shadow(0 12px 36px rgba(0,0,0,0.9))" }}
           >
             {/* Photo sits behind the SVG frame */}
-            <div className="absolute overflow-hidden" style={{ top: 30, left: 30, width: 200, height: 200 }}>
+            <div className="absolute overflow-hidden" style={{ top: 36, left: 36, width: 200, height: 200 }}>
               <img src={photoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
               </div>
             </div>
-            {/* Art Nouveau SVG frame overlay */}
-            <svg width="260" height="260" viewBox="0 0 260 260" className="absolute inset-0" style={{ pointerEvents: "none" }}>
+            {/* Baroque picture frame SVG */}
+            <svg width="272" height="272" viewBox="0 0 272 272" className="absolute inset-0" style={{ pointerEvents: "none" }}>
               <defs>
-                <linearGradient id="an-gold" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#f5e090" />
-                  <stop offset="20%" stopColor="#d4a840" />
-                  <stop offset="50%" stopColor="#8a6010" />
-                  <stop offset="80%" stopColor="#c9a050" />
-                  <stop offset="100%" stopColor="#f0d060" />
+                <linearGradient id="df-frame" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#5c1e0c"/>
+                  <stop offset="35%" stopColor="#2e0c04"/>
+                  <stop offset="65%" stopColor="#3c1408"/>
+                  <stop offset="100%" stopColor="#5c1e0c"/>
+                </linearGradient>
+                <linearGradient id="df-liner-h" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f5e080"/>
+                  <stop offset="40%" stopColor="#c9a050"/>
+                  <stop offset="100%" stopColor="#7a5010"/>
+                </linearGradient>
+                <linearGradient id="df-liner-v" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#f5e080"/>
+                  <stop offset="40%" stopColor="#c9a050"/>
+                  <stop offset="100%" stopColor="#7a5010"/>
                 </linearGradient>
               </defs>
-              {/* Frame fill — compound path with photo cutout */}
-              <path d="M0,0H260V260H0ZM30,30H230V230H30Z" fill="url(#an-gold)" fillRule="evenodd" />
-              {/* Bevel: outer edge highlight/shadow planes */}
-              <path d="M0,0H260L256,4H4Z" fill="rgba(255,245,180,0.45)" />
-              <path d="M0,0L4,4V256L0,260Z" fill="rgba(255,245,180,0.25)" />
-              <path d="M4,256H256L260,260H0Z" fill="rgba(0,0,0,0.35)" />
-              <path d="M256,4L260,0V260L256,256Z" fill="rgba(0,0,0,0.25)" />
-              {/* Bevel: inner edge reversed for depth-step effect */}
-              <path d="M30,30H230L226,34H34Z" fill="rgba(0,0,0,0.22)" />
-              <path d="M30,30L34,34V226L30,230Z" fill="rgba(0,0,0,0.22)" />
-              <path d="M34,226H226L230,230H30Z" fill="rgba(255,245,180,0.2)" />
-              <path d="M226,34L230,30V230L226,226Z" fill="rgba(255,245,180,0.15)" />
-              {/* Double ruled border lines */}
-              <rect x="3" y="3" width="254" height="254" stroke="rgba(255,240,160,0.5)" strokeWidth="0.75" fill="none" />
-              <rect x="6" y="6" width="248" height="248" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" fill="none" />
-              <rect x="27" y="27" width="206" height="206" stroke="rgba(255,240,160,0.45)" strokeWidth="0.75" fill="none" />
-              <rect x="29" y="29" width="202" height="202" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" fill="none" />
-              {/* Corner ornaments — top-left archetype mirrored to all 4 corners */}
-              {(["translate(0,0) scale(1,1)", "translate(260,0) scale(-1,1)", "translate(0,260) scale(1,-1)", "translate(260,260) scale(-1,-1)"] as const).map((tf, i) => (
-                <g key={i} transform={tf} fill="#7a5010" stroke="rgba(240,210,100,0.35)" strokeWidth="0.4">
-                  {/* 6-petal rosette at corner (15,15) */}
-                  <path d="M15,15 C12,11 12,7 15,6 C18,7 18,11 15,15Z" />
-                  <path d="M15,15 C17,10 20,8 23,11 C23,14 20,16 15,15Z" />
-                  <path d="M15,15 C20,14 23,16 23,20 C20,22 17,20 15,15Z" />
-                  <path d="M15,15 C18,19 18,23 15,24 C12,23 12,19 15,15Z" />
-                  <path d="M15,15 C13,20 10,22 7,20 C7,16 10,14 15,15Z" />
-                  <path d="M15,15 C10,16 7,14 7,11 C10,8 13,10 15,15Z" />
-                  <circle cx="15" cy="15" r="2.5" fill="#4a2e08" stroke="none" />
-                  {/* Sinuous vine along top border half (x: 30→130) */}
-                  <path d="M30,15 C50,10 65,20 85,15 C100,10 115,18 130,15" stroke="#7a5010" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                  {/* Leaves alternating above/below top vine */}
-                  <path d="M52,13 C50,7 54,5 57,8 C57,11 55,13 52,13Z" />
-                  <path d="M75,17 C73,23 77,25 80,22 C80,19 78,17 75,17Z" />
-                  <path d="M100,13 C98,7 102,5 105,8 C105,11 103,13 100,13Z" />
-                  <path d="M118,17 C116,23 120,25 123,22 C123,19 121,17 118,17Z" />
-                  {/* Sinuous vine along left border half (y: 30→130) */}
-                  <path d="M15,30 C10,50 20,65 15,85 C10,100 18,115 15,130" stroke="#7a5010" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                  {/* Leaves alternating left/right of left vine */}
-                  <path d="M13,52 C7,50 5,54 8,57 C11,57 13,55 13,52Z" />
-                  <path d="M17,75 C23,73 25,77 22,80 C19,80 17,78 17,75Z" />
-                  <path d="M13,100 C7,98 5,102 8,105 C11,105 13,103 13,100Z" />
-                  <path d="M17,118 C23,116 25,120 22,123 C19,123 17,121 17,118Z" />
+
+              {/* Dark mahogany frame fill (compound path — photo area cut out) */}
+              <path d="M0,0H272V272H0ZM36,36H236V236H36Z" fill="url(#df-frame)" fillRule="evenodd"/>
+              {/* Outer edge highlight */}
+              <path d="M0,0H272L272,3H0Z" fill="rgba(200,150,60,0.25)"/>
+              <path d="M0,0L3,0L3,272L0,272Z" fill="rgba(200,150,60,0.15)"/>
+
+              {/* === BAROQUE SCROLLWORK ===
+                  Top-border group rotated 90°×4 to cover all four sides.
+                  rotate(0)=top, rotate(90)=left, rotate(180)=bottom, rotate(270)=right */}
+              {(["rotate(0,136,136)","rotate(90,136,136)","rotate(180,136,136)","rotate(270,136,136)"] as const).map((tf, i) => (
+                <g key={i} transform={tf} fill="#c9a050">
+                  {/* S-wave backbone: 5 cycles across x=36..236, center y=15 */}
+                  <path
+                    d="M36,15 C42,6 50,6 56,15 C62,24 70,24 76,15 C82,6 90,6 96,15 C102,24 110,24 116,15 C122,6 130,6 136,15 C142,24 150,24 156,15 C162,6 170,6 176,15 C182,24 190,24 196,15 C202,6 210,6 216,15 C222,24 230,24 236,15"
+                    stroke="#c9a050" strokeWidth="2" fill="none" strokeLinecap="round"
+                  />
+                  {/* Upward acanthus leaves at peaks (x≈46,86,126,166,206 y≈6) */}
+                  <path d="M41,11 C40,4 46,1 52,4 C51,11 46,13 41,11Z"/>
+                  <path d="M81,11 C80,4 86,1 92,4 C91,11 86,13 81,11Z"/>
+                  <path d="M121,11 C120,4 126,1 132,4 C131,11 126,13 121,11Z"/>
+                  <path d="M161,11 C160,4 166,1 172,4 C171,11 166,13 161,11Z"/>
+                  <path d="M201,11 C200,4 206,1 212,4 C211,11 206,13 201,11Z"/>
+                  {/* Inner accent curl at each upward peak */}
+                  <path d="M43,9 C42,6 46,4 50,6 C49,9 46,10 43,9Z"/>
+                  <path d="M83,9 C82,6 86,4 90,6 C89,9 86,10 83,9Z"/>
+                  <path d="M123,9 C122,6 126,4 130,6 C129,9 126,10 123,9Z"/>
+                  <path d="M163,9 C162,6 166,4 170,6 C169,9 166,10 163,9Z"/>
+                  <path d="M203,9 C202,6 206,4 210,6 C209,9 206,10 203,9Z"/>
+                  {/* Downward acanthus leaves at troughs (x≈66,106,146,186,226 y≈24) */}
+                  <path d="M61,19 C60,26 66,29 72,26 C71,19 66,17 61,19Z"/>
+                  <path d="M101,19 C100,26 106,29 112,26 C111,19 106,17 101,19Z"/>
+                  <path d="M141,19 C140,26 146,29 152,26 C151,19 146,17 141,19Z"/>
+                  <path d="M181,19 C180,26 186,29 192,26 C191,19 186,17 181,19Z"/>
+                  <path d="M221,19 C220,26 226,29 232,26 C231,19 226,17 221,19Z"/>
+                  {/* Inner accent curl at each downward trough */}
+                  <path d="M63,21 C62,24 66,26 70,24 C69,21 66,20 63,21Z"/>
+                  <path d="M103,21 C102,24 106,26 110,24 C109,21 106,20 103,21Z"/>
+                  <path d="M143,21 C142,24 146,26 150,24 C149,21 146,20 143,21Z"/>
+                  <path d="M183,21 C182,24 186,26 190,24 C189,21 186,20 183,21Z"/>
+                  <path d="M223,21 C222,24 226,26 230,24 C229,21 226,20 223,21Z"/>
+                  {/* Scroll-end curls at band edges */}
+                  <path d="M36,15 C33,11 32,6 36,7 C38,11 37,14 36,15Z"/>
+                  <path d="M236,15 C239,11 240,6 236,7 C234,11 235,14 236,15Z"/>
                 </g>
               ))}
-              {/* 4-petal bud where corner vines meet at each border midpoint */}
-              {([[130, 15], [245, 130], [130, 245], [15, 130]] as [number, number][]).map(([cx, cy], i) => (
-                <g key={i} fill="#7a5010" transform={`translate(${cx},${cy})`}>
-                  <path d="M0,-5 C1,-3 1,-1 0,0 C-1,-1 -1,-3 0,-5Z" />
-                  <path d="M5,0 C3,1 1,1 0,0 C1,-1 3,-1 5,0Z" />
-                  <path d="M0,5 C1,3 1,1 0,0 C-1,1 -1,3 0,5Z" />
-                  <path d="M-5,0 C-3,1 -1,1 0,0 C-1,-1 -3,-1 -5,0Z" />
-                  <circle r="2" fill="#4a2e08" />
+
+              {/* === 8-PETAL CORNER ROSETTES === */}
+              {([[18,18],[254,18],[18,254],[254,254]] as [number,number][]).map(([cx,cy],i) => (
+                <g key={i} fill="#c9a050" transform={`translate(${cx},${cy})`}>
+                  <path d="M0,-14 C2,-9 2,-5 0,0 C-2,-5 -2,-9 0,-14Z"/>
+                  <path d="M14,0 C9,2 5,2 0,0 C5,-2 9,-2 14,0Z"/>
+                  <path d="M0,14 C2,9 2,5 0,0 C-2,5 -2,9 0,14Z"/>
+                  <path d="M-14,0 C-9,2 -5,2 0,0 C-5,-2 -9,-2 -14,0Z"/>
+                  <path d="M10,-10 C7,-7 4,-4 0,0 C1,-5 4,-8 10,-10Z"/>
+                  <path d="M10,10 C7,7 4,4 0,0 C5,1 8,4 10,10Z"/>
+                  <path d="M-10,10 C-7,7 -4,4 0,0 C-5,1 -8,4 -10,10Z"/>
+                  <path d="M-10,-10 C-7,-7 -4,-4 0,0 C-5,-1 -8,-4 -10,-10Z"/>
+                  <circle r="4.5" fill="#4a1a06"/>
+                  <circle r="2.5" fill="#c9a050"/>
+                  <circle r="1" fill="#f0d060"/>
                 </g>
               ))}
+
+              {/* === GOLD LINER (6 px strip framing the photo) === */}
+              <rect x="36" y="30" width="200" height="6" fill="url(#df-liner-h)"/>
+              <rect x="36" y="236" width="200" height="6" fill="url(#df-liner-h)"/>
+              <rect x="30" y="36" width="6" height="200" fill="url(#df-liner-v)"/>
+              <rect x="236" y="36" width="6" height="200" fill="url(#df-liner-v)"/>
+              <rect x="30" y="30" width="6" height="6" fill="#c9a050"/>
+              <rect x="236" y="30" width="6" height="6" fill="#c9a050"/>
+              <rect x="30" y="236" width="6" height="6" fill="#c9a050"/>
+              <rect x="236" y="236" width="6" height="6" fill="#c9a050"/>
+
+              {/* === BORDER LINES === */}
+              <rect x="1" y="1" width="270" height="270" stroke="rgba(0,0,0,0.75)" strokeWidth="2" fill="none"/>
+              <rect x="3" y="3" width="266" height="266" stroke="rgba(190,140,40,0.3)" strokeWidth="0.75" fill="none"/>
+              <rect x="35" y="35" width="202" height="202" stroke="rgba(200,155,50,0.55)" strokeWidth="1" fill="none"/>
+              <rect x="36" y="36" width="200" height="200" stroke="rgba(0,0,0,0.65)" strokeWidth="1.5" fill="none"/>
             </svg>
           </button>
         </div>

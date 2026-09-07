@@ -737,6 +737,8 @@ function DatabasePageContent() {
   const [scrollToComments, setScrollToComments] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
+  const [duplicatePending, setDuplicatePending] = useState<Array<{ gearId: string; name: string; brand: string }>>([]);
+  const [replacing, setReplacing] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
 
   const fetchItems = useCallback(() => {
@@ -765,12 +767,32 @@ function DatabasePageContent() {
     if (selected.size === 0 || adding) return;
     setAdding(true);
     try {
-      const { created } = await api.post<{ created: string[] }>("/api/gear/add-to-den", { ids: [...selected] });
-      setAddedCount(created.length);
+      const { created, duplicates } = await api.post<{
+        created: string[];
+        replaced: string[];
+        duplicates: Array<{ gearId: string; name: string; brand: string }>;
+      }>("/api/gear/add-to-den", { ids: [...selected], replace: false });
       setSelected(new Set());
-      setTimeout(() => setAddedCount(0), 3000);
+      if (duplicates.length > 0) setDuplicatePending(duplicates);
+      if (created.length > 0) {
+        setAddedCount(created.length);
+        setTimeout(() => setAddedCount(0), 3000);
+      }
     } catch {}
     finally { setAdding(false); }
+  };
+
+  const handleReplaceDuplicates = async () => {
+    if (replacing) return;
+    setReplacing(true);
+    try {
+      await api.post("/api/gear/add-to-den", {
+        ids: duplicatePending.map((d) => d.gearId),
+        replace: true,
+      });
+      setDuplicatePending([]);
+    } catch {}
+    finally { setReplacing(false); }
   };
 
   // Derive unique brands for current filter
@@ -1039,6 +1061,39 @@ function DatabasePageContent() {
 
       {/* Edit modal */}
       {editItem && <EditModal item={editItem} onClose={() => setEditItem(null)} />}
+
+      {/* Duplicate-replace dialog */}
+      {duplicatePending.length > 0 && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6">
+          <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-[#f5f2eb] font-semibold text-base mb-1">Already in Your Den</h3>
+            <p className="text-gray-500 text-sm mb-3">
+              {duplicatePending.length === 1 ? "This item is" : "These items are"} already in your den:
+            </p>
+            <ul className="space-y-1 mb-4 max-h-40 overflow-y-auto">
+              {duplicatePending.map((d) => (
+                <li key={d.gearId} className="text-gray-300 text-sm">· {d.brand} {d.name}</li>
+              ))}
+            </ul>
+            <p className="text-gray-600 text-xs mb-5">Replace your existing {duplicatePending.length === 1 ? "item" : "items"} with the gear database version?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDuplicatePending([])}
+                className="flex-1 px-4 py-2 border border-white/15 rounded-xl text-sm text-gray-400 hover:text-white hover:border-white/30 transition-colors"
+              >
+                Keep Existing
+              </button>
+              <button
+                onClick={handleReplaceDuplicates}
+                disabled={replacing}
+                className="flex-1 px-4 py-2 bg-[#c9a050] text-black rounded-xl text-sm font-semibold hover:bg-[#d4aa60] transition-colors disabled:opacity-50"
+              >
+                {replacing ? "Replacing…" : "Replace"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

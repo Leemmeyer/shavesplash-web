@@ -592,6 +592,93 @@ const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRem
   );
 });
 
+// ── Shave of the Week ─────────────────────────────────────────────────────────
+interface WinnerPost extends SotdPost { totalReactions: number }
+
+function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; email: string } } | null; isAdmin: boolean }) {
+  const [winner, setWinner] = useState<WinnerPost | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [weekLabel, setWeekLabel] = useState<string>("");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    api.get<{ winner: WinnerPost | null; weekStart: string; weekEnd: string }>("/api/sotd/winner")
+      .then(async (d) => {
+        if (!d.winner) return;
+        setWinner(d.winner);
+        const start = new Date(d.weekStart);
+        const end = new Date(d.weekEnd);
+        const fmt = (dt: Date) => dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        setWeekLabel(`${fmt(start)} – ${fmt(end)}`);
+        const photo = await api.get<{ photoUrl: string | null }>(`/api/logs/${d.winner.id}/photo`).catch(() => ({ photoUrl: null }));
+        if (photo.photoUrl) setPhotoUrl(photo.photoUrl);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleWinnerReact = async (logId: string, emoji: string) => {
+    if (!session) return;
+    try {
+      const { reactions } = await api.post<{ reactions: Record<string, ReactionGroup> }>(`/api/sotd/${logId}/reactions`, { emoji });
+      setWinner((prev) => prev ? { ...prev, reactions } : null);
+    } catch { /* ignore */ }
+  };
+
+  if (!winner || !photoUrl) return null;
+
+  return (
+    <>
+      <div className="bg-[#1e1e1e] border border-white/5 rounded-2xl overflow-hidden mb-4">
+        <div className="px-4 pt-3 pb-2">
+          <h2 className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-lg">Shave of the Week</h2>
+          <p className="text-gray-600 text-xs">{weekLabel}</p>
+        </div>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="w-full block relative group"
+        >
+          <img src={photoUrl} alt="Shave of the Week" className="w-full aspect-square object-cover" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full">View Post</span>
+          </div>
+        </button>
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-gray-300 text-sm font-semibold">{winner.isAnonymous ? "Anonymous" : (winner.authorName ?? "User")}</p>
+            <p className="text-gray-600 text-xs">{winner.totalReactions} reaction{winner.totalReactions !== 1 ? "s" : ""}</p>
+          </div>
+          <span
+            className="px-2 py-0.5 rounded-lg text-xs font-bold border"
+            style={{ color: resultColor(winner.resultRank, winner.resultOptionsCount), borderColor: resultColor(winner.resultRank, winner.resultOptionsCount) + "66", backgroundColor: resultColor(winner.resultRank, winner.resultOptionsCount) + "1a" }}
+          >{winner.result}</span>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center p-6 overflow-y-auto"
+          onClick={() => setModalOpen(false)}
+        >
+          <div className="w-full max-w-lg mt-8 mb-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-[family-name:var(--font-fredericka)] text-[#c9a050] text-xl">Shave of the Week</span>
+              <button onClick={() => setModalOpen(false)} className="text-white/60 hover:text-white text-2xl leading-none">✕</button>
+            </div>
+            <SotdCard
+              post={winner}
+              onReact={handleWinnerReact}
+              session={session}
+              isAdmin={isAdmin}
+              onRemoved={() => setModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Stats Sidebar ─────────────────────────────────────────────────────────────
 function StatsSidebar() {
   const [period, setPeriod] = useState<"week" | "month" | "all">("week");
@@ -901,6 +988,7 @@ export default function SotdPage() {
 
         {/* Sidebar */}
         <div className="hidden lg:block w-72 shrink-0">
+          <SotdWeekWinner session={session} isAdmin={admin} />
           <StatsSidebar />
         </div>
       </div>

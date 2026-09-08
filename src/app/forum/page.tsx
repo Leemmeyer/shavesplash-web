@@ -30,12 +30,12 @@ function loadReadState(): Record<string, number> {
 
 const CATEGORIES = [
   { value: "general", label: "General Discussion" },
+  { value: "journals", label: "Journals" },
   { value: "razors", label: "Razors" },
   { value: "soap-aftershave", label: "Soap/Aftershave" },
   { value: "brushes", label: "Brushes" },
   { value: "blades", label: "Blades" },
   { value: "fragrance", label: "Fragrance" },
-  { value: "journals", label: "Journals" },
 ];
 
 interface Thread {

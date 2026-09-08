@@ -35,6 +35,7 @@ const CATEGORIES = [
   { value: "brushes", label: "Brushes" },
   { value: "blades", label: "Blades" },
   { value: "fragrance", label: "Fragrance" },
+  { value: "journals", label: "Journals" },
 ];
 
 interface Thread {
@@ -366,7 +367,12 @@ export default function ForumPage() {
                 </div>
                 <p className={`text-sm line-clamp-2 mb-3 ${unread ? "text-gray-500" : "text-gray-600"}`}>{thread.body}</p>
                 <div className="flex items-center gap-3 text-xs text-gray-600 min-w-0">
-                  <span className="bg-[#c9a050]/10 text-[#c9a050] px-2.5 py-0.5 rounded-full shrink-0">
+                  <span
+                    className="px-2.5 py-0.5 rounded-full shrink-0"
+                    style={thread.category === "journals"
+                      ? { background: "rgba(74,144,217,0.12)", color: "#4a90d9" }
+                      : { background: "rgba(201,160,80,0.10)", color: "#c9a050" }}
+                  >
                     {categoryLabel(thread.category)}
                   </span>
                   <span className="shrink-0 flex items-center gap-1.5">

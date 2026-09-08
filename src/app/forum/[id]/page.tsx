@@ -98,6 +98,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   "brushes": "Brushes",
   "blades": "Blades",
   "fragrance": "Fragrance",
+  "journals": "Journals",
 };
 
 function displayName(author: Author) {
@@ -453,7 +454,12 @@ export default function ThreadPage() {
       {/* Thread header */}
       <div className="bg-[#242424] border border-white/5 rounded-2xl p-6 mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <span className="text-xs bg-[#c9a050]/10 text-[#c9a050] px-3 py-1 rounded-full">
+          <span
+            className="text-xs px-3 py-1 rounded-full"
+            style={thread.category === "journals"
+              ? { background: "rgba(74,144,217,0.12)", color: "#4a90d9" }
+              : { background: "rgba(201,160,80,0.10)", color: "#c9a050" }}
+          >
             {CATEGORY_LABELS[thread.category] ?? thread.category}
           </span>
           <div className="flex items-center gap-2">

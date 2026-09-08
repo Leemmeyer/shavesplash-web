@@ -12,6 +12,7 @@ const CATEGORIES = [
   { value: "brushes", label: "Brushes" },
   { value: "blades", label: "Blades" },
   { value: "fragrance", label: "Fragrance" },
+  { value: "journals", label: "Journals" },
 ];
 
 function fileToBase64(file: File): Promise<string> {

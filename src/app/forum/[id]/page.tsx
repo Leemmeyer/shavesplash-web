@@ -105,6 +105,7 @@ function PhotoGrid({ photos, onExpand }: { photos: string[]; onExpand: (src: str
       <img
         src={photos[0]}
         alt="Post photo"
+        loading="lazy"
         onClick={() => onExpand(photos[0]!)}
         className="w-full max-h-96 object-contain rounded-xl bg-[#111] cursor-pointer hover:opacity-90 transition-opacity mb-4"
       />
@@ -118,6 +119,7 @@ function PhotoGrid({ photos, onExpand }: { photos: string[]; onExpand: (src: str
           key={i}
           src={url}
           alt={`Photo ${i + 1}`}
+          loading="lazy"
           onClick={() => onExpand(url)}
           className="w-full aspect-square object-contain rounded-xl bg-[#111] cursor-pointer hover:opacity-90 transition-opacity"
         />

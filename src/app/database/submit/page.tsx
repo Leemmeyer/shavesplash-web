@@ -78,6 +78,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [prefilling, setPrefilling] = useState(!!fromDenId);
   const [duplicates, setDuplicates] = useState<{ id: string; brand: string; name: string }[]>([]);
   const dupeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dupeConfirm, setDupeConfirm] = useState<{ matchType: "approved" | "pending" | null; matchedName: string | null } | null>(null);
 
   // Razor
   const [edgeType, setEdgeType] = useState("");
@@ -209,10 +210,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const isStraight = isRazor && edgeType === "Straight";
   const hasScent = isSoap || isAftershave;
 
-  const handleSubmit = async () => {
-    if (!brand.trim()) { setError("Brand is required"); return; }
-    if (!name.trim()) { setError("Name is required"); return; }
-    setError(null);
+  const doSubmit = async () => {
     setSaving(true);
 
     const data: Record<string, unknown> = {};
@@ -281,6 +279,28 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!brand.trim()) { setError("Brand is required"); return; }
+    if (!name.trim()) { setError("Name is required"); return; }
+    setError(null);
+    setSaving(true);
+    try {
+      const { results } = await api.post<{ results: { id: string; isDuplicate: boolean; matchType: "approved" | "pending" | null; matchedName: string | null }[] }>(
+        "/api/gear/batch-check",
+        { items: [{ id: "check", categoryId, brand: brand.trim(), name: name.trim() }] }
+      );
+      const result = results[0];
+      if (result?.isDuplicate) {
+        setSaving(false);
+        setDupeConfirm({ matchType: result.matchType, matchedName: result.matchedName });
+        return;
+      }
+    } catch {
+      // if check fails, proceed with submission
+    }
+    await doSubmit();
   };
 
   if (prefilling) {
@@ -645,10 +665,37 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
           </Link>
           <button type="button" onClick={handleSubmit} disabled={saving}
             className="flex-1 py-3 rounded-xl bg-[#c9a050] text-[#1a1a1a] font-semibold text-sm hover:bg-[#d4aa60] transition-colors disabled:opacity-50">
-            {saving ? "Submitting…" : "Submit for Review"}
+            {saving ? "Checking…" : "Submit for Review"}
           </button>
         </div>
       </div>
+
+      {dupeConfirm && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 max-w-sm w-full">
+            <p className="text-amber-400 font-semibold text-base mb-2">⚠️ Possible Duplicate Found</p>
+            <p className="text-gray-400 text-sm mb-1">
+              {dupeConfirm.matchType === "approved" ? "Already in Gear Database" : "Already pending review"}:
+            </p>
+            <p className="text-[#f5f2eb] text-sm font-medium mb-4">{dupeConfirm.matchedName}</p>
+            <p className="text-gray-500 text-xs mb-5">You can still submit if this is a different version or variant.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDupeConfirm(null)}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-[#f5f2eb] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => { setDupeConfirm(null); await doSubmit(); }}
+                className="flex-1 py-2.5 rounded-xl bg-[#c9a050] text-[#1a1a1a] font-semibold text-sm hover:bg-[#d4aa60] transition-colors"
+              >
+                Submit Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

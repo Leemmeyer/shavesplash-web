@@ -323,6 +323,7 @@ export default function ThreadPage() {
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editReplyBody, setEditReplyBody] = useState("");
   const [savingReply, setSavingReply] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [replySearch, setReplySearch] = useState("");
   const [taggedReplyUsers, setTaggedReplyUsers] = useState<{ id: string; displayName: string }[]>([]);
   const [replyMentionQuery, setReplyMentionQuery] = useState<string | null>(null);
@@ -533,6 +534,16 @@ export default function ThreadPage() {
             {CATEGORY_LABELS[thread.category] ?? thread.category}
           </span>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`https://shavesplash.app/forum/${id}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              {copied ? "Copied!" : "Share"}
+            </button>
             {session?.user.id === thread.author.id && canEdit(thread.createdAt) && !editingThread && (
               <button onClick={startEditThread} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Edit</button>
             )}

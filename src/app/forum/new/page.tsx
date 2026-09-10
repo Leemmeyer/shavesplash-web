@@ -15,10 +15,25 @@ const CATEGORIES = [
   { value: "fragrance", label: "Fragrance" },
 ];
 
-function fileToBase64(file: File): Promise<string> {
+const MAX_PHOTOS = 4;
+
+function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -30,7 +45,7 @@ export default function NewThreadPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("general");
-  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [photoDataUrls, setPhotoDataUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,14 +55,21 @@ export default function NewThreadPage() {
   }, [session, loading, router]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const remaining = MAX_PHOTOS - photoDataUrls.length;
+    const toProcess = files.slice(0, remaining);
     try {
-      const dataUrl = await fileToBase64(file);
-      setPhotoDataUrl(dataUrl);
+      const compressed = await Promise.all(toProcess.map(compressImage));
+      setPhotoDataUrls((prev) => [...prev, ...compressed]);
     } catch {
       setError("Failed to read image.");
     }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoDataUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +82,7 @@ export default function NewThreadPage() {
         title: title.trim(),
         body: body.trim(),
         category,
-        ...(photoDataUrl ? { photoUrl: photoDataUrl } : {}),
+        ...(photoDataUrls.length ? { photoUrls: photoDataUrls } : {}),
       });
       router.push(`/forum/${thread.id}`);
     } catch {
@@ -117,24 +139,34 @@ export default function NewThreadPage() {
           />
         </div>
 
-        {/* Photo */}
+        {/* Photos */}
         <div>
-          <label className="block text-sm text-gray-400 mb-2">Photo (optional)</label>
-          {photoDataUrl ? (
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photoDataUrl}
-                alt="Attached photo"
-                className="w-full max-h-64 object-cover rounded-xl"
-              />
-              <button
-                type="button"
-                onClick={() => { setPhotoDataUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors text-sm"
-              >
-                ✕
-              </button>
+          <label className="block text-sm text-gray-400 mb-2">
+            Photos (optional, up to {MAX_PHOTOS})
+          </label>
+          {photoDataUrls.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {photoDataUrls.map((url, i) => (
+                <div key={i} className="relative w-24 h-24 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="w-full h-full object-contain rounded-xl bg-[#1a1a1a] border border-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white text-xs hover:bg-black/90 transition-colors"
+                  >✕</button>
+                </div>
+              ))}
+              {photoDataUrls.length < MAX_PHOTOS && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 shrink-0 border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-600 hover:border-white/40 hover:text-gray-400 transition-colors"
+                >
+                  <span className="text-xl">+</span>
+                  <span className="text-[10px]">Add photo</span>
+                </button>
+              )}
             </div>
           ) : (
             <div
@@ -142,13 +174,14 @@ export default function NewThreadPage() {
               className="border border-dashed border-white/15 rounded-xl flex flex-col items-center justify-center py-10 cursor-pointer hover:border-white/30 transition-colors"
             >
               <span className="text-2xl mb-2">🖼️</span>
-              <span className="text-sm text-gray-500">Click to attach a photo</span>
+              <span className="text-sm text-gray-500">Click to attach photos</span>
             </div>
           )}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
             onChange={handleFileChange}
           />

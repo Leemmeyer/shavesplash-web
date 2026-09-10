@@ -67,10 +67,70 @@ interface Author {
 
 type ReactionGroup = { count: number; reacted: boolean };
 
+const MAX_REPLY_PHOTOS = 4;
+
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getPhotos(item: { photoUrl?: string | null; photoUrls?: string[] | null }): string[] {
+  if (item.photoUrls?.length) return item.photoUrls;
+  if (item.photoUrl) return [item.photoUrl];
+  return [];
+}
+
+function PhotoGrid({ photos, onExpand }: { photos: string[]; onExpand: (src: string) => void }) {
+  if (!photos.length) return null;
+  if (photos.length === 1) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photos[0]}
+        alt="Post photo"
+        onClick={() => onExpand(photos[0]!)}
+        className="w-full max-h-96 object-contain rounded-xl bg-[#111] cursor-pointer hover:opacity-90 transition-opacity mb-4"
+      />
+    );
+  }
+  return (
+    <div className={`grid gap-2 mb-4 ${photos.length === 2 ? "grid-cols-2" : "grid-cols-2"}`}>
+      {photos.map((url, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={i}
+          src={url}
+          alt={`Photo ${i + 1}`}
+          onClick={() => onExpand(url)}
+          className="w-full aspect-square object-contain rounded-xl bg-[#111] cursor-pointer hover:opacity-90 transition-opacity"
+        />
+      ))}
+    </div>
+  );
+}
+
 interface Reply {
   id: string;
   body: string;
   photoUrl?: string | null;
+  photoUrls?: string[] | null;
   author: Author;
   createdAt: string;
   updatedAt: string;
@@ -84,6 +144,7 @@ interface Thread {
   category: string;
   isPinned: boolean;
   photoUrl?: string | null;
+  photoUrls?: string[] | null;
   createdAt: string;
   updatedAt: string;
   author: Author;
@@ -252,7 +313,8 @@ export default function ThreadPage() {
   const router = useRouter();
   const [thread, setThread] = useState<Thread | null>(null);
   const [replyBody, setReplyBody] = useState("");
-  const [replyPhotoDataUrl, setReplyPhotoDataUrl] = useState<string | null>(null);
+  const [replyPhotoDataUrls, setReplyPhotoDataUrls] = useState<string[]>([]);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editingThread, setEditingThread] = useState(false);
   const [editThreadTitle, setEditThreadTitle] = useState("");
@@ -322,6 +384,13 @@ export default function ThreadPage() {
       .catch(() => router.push("/forum"));
   }, [id, router]);
 
+  useEffect(() => {
+    if (!lightboxSrc) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLightboxSrc(null); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [lightboxSrc]);
+
   const handleQuoteReply = (author: string, body: string) => {
     const cleaned = body.replace(/^> .+$/gm, '').trim();
     const clipped = cleaned.length > 150 ? cleaned.slice(0, 150).trimEnd() + '…' : cleaned;
@@ -352,27 +421,28 @@ export default function ThreadPage() {
   };
 
   const handleReplyFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setReplyPhotoDataUrl(reader.result as string);
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
+    const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+    setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
+    if (replyFileInputRef.current) replyFileInputRef.current.value = "";
   };
 
   const handleReply = async () => {
-    if ((!replyBody.trim() && !replyPhotoDataUrl) || submitting || !session) return;
+    if ((!replyBody.trim() && !replyPhotoDataUrls.length) || submitting || !session) return;
     setSubmitting(true);
     try {
       const { reply } = await api.post<{ reply: Reply }>(
         `/api/forum/threads/${id}/replies`,
         {
           body: replyBody.trim() || " ",
-          ...(replyPhotoDataUrl ? { photoUrl: replyPhotoDataUrl } : {}),
+          ...(replyPhotoDataUrls.length ? { photoUrls: replyPhotoDataUrls } : {}),
         }
       );
       setThread((t) => t ? { ...t, replies: [...t.replies, reply] } : t);
       setReplyBody("");
-      setReplyPhotoDataUrl(null);
+      setReplyPhotoDataUrls([]);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch { /* ignore */ } finally { setSubmitting(false); }
   };
@@ -511,14 +581,7 @@ export default function ThreadPage() {
           </>
         )}
 
-        {thread.photoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thread.photoUrl}
-            alt="Thread photo"
-            className="w-full max-h-80 object-cover rounded-xl mb-4"
-          />
-        )}
+        <PhotoGrid photos={getPhotos(thread)} onExpand={setLightboxSrc} />
         <div className="flex items-center gap-2 text-xs text-gray-600 border-t border-white/5 pt-4 mb-3">
           <span className="font-medium text-gray-400">{displayName(thread.author)}</span>
           {thread.author.profile?.isExpert && <span className="text-[#c9a050] text-[10px] font-bold tracking-wide">★ Expert</span>}
@@ -639,10 +702,7 @@ export default function ThreadPage() {
               ) : (
                 <>
                   <div className="text-gray-300 text-sm leading-relaxed mb-3">{renderBody(reply.body)}</div>
-                  {reply.photoUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={reply.photoUrl} alt="Reply photo" className="w-full max-h-64 object-cover rounded-xl mb-3" />
-                  )}
+                  <PhotoGrid photos={getPhotos(reply)} onExpand={setLightboxSrc} />
                 </>
               )}
 
@@ -675,15 +735,29 @@ export default function ThreadPage() {
             rows={4}
             className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-y focus:outline-none focus:border-[#c9a050]/40 mb-3"
           />
-          {replyPhotoDataUrl ? (
-            <div className="relative mb-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={replyPhotoDataUrl} alt="Attached photo" className="w-full max-h-48 object-cover rounded-xl" />
-              <button
-                type="button"
-                onClick={() => { setReplyPhotoDataUrl(null); if (replyFileInputRef.current) replyFileInputRef.current.value = ""; }}
-                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors text-sm"
-              >✕</button>
+          {replyPhotoDataUrls.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {replyPhotoDataUrls.map((url, i) => (
+                <div key={i} className="relative w-20 h-20 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="w-full h-full object-contain rounded-xl bg-[#1a1a1a] border border-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => setReplyPhotoDataUrls((prev) => prev.filter((_, j) => j !== i))}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white text-xs hover:bg-black/90 transition-colors"
+                  >✕</button>
+                </div>
+              ))}
+              {replyPhotoDataUrls.length < MAX_REPLY_PHOTOS && (
+                <button
+                  type="button"
+                  onClick={() => replyFileInputRef.current?.click()}
+                  className="w-20 h-20 shrink-0 border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-600 hover:border-white/40 hover:text-gray-400 transition-colors"
+                >
+                  <span className="text-lg">+</span>
+                  <span className="text-[10px]">Add</span>
+                </button>
+              )}
             </div>
           ) : (
             <div
@@ -691,13 +765,13 @@ export default function ThreadPage() {
               className="border border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 py-3 mb-3 cursor-pointer hover:border-white/25 transition-colors"
             >
               <span className="text-lg">🖼️</span>
-              <span className="text-xs text-gray-500">Attach a photo (optional)</span>
+              <span className="text-xs text-gray-500">Attach photos (optional)</span>
             </div>
           )}
-          <input ref={replyFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplyFileChange} />
+          <input ref={replyFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleReplyFileChange} />
           <button
             onClick={handleReply}
-            disabled={(!replyBody.trim() && !replyPhotoDataUrl) || submitting}
+            disabled={(!replyBody.trim() && !replyPhotoDataUrls.length) || submitting}
             className="bg-[#c9a050] text-black font-semibold px-6 py-2.5 rounded-xl hover:bg-[#b8903f] disabled:opacity-40 transition-colors text-sm"
           >
             {submitting ? "Posting…" : "Post Reply"}
@@ -712,6 +786,25 @@ export default function ThreadPage() {
           >
             Sign in
           </Link>
+        </div>
+      )}
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setLightboxSrc(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt="Full size"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors text-lg"
+          >✕</button>
         </div>
       )}
     </div>

@@ -6,6 +6,9 @@ import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
+const DM_EMOJIS = ["👍", "❤️", "🔥", "😂", "😊", "😮", "😢"];
+type ReactionGroup = { count: number; reacted: boolean };
+
 function LinkedBody({ body, isMe }: { body: string; isMe: boolean }) {
   const parts = body.split(/(https?:\/\/[^\s]+)/);
   return (
@@ -30,6 +33,7 @@ interface Message {
   sender: { id: string; name: string };
   createdAt: string;
   readAt?: string | null;
+  reactions: Record<string, ReactionGroup>;
 }
 
 interface ConversationDetail {
@@ -59,6 +63,7 @@ export default function ConversationPage() {
   const [deletingMsg, setDeletingMsg] = useState<string | null>(null);
   const [confirmDeleteConv, setConfirmDeleteConv] = useState(false);
   const [deletingConv, setDeletingConv] = useState(false);
+  const [pickerMsgId, setPickerMsgId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,7 +75,7 @@ export default function ConversationPage() {
     api.get<{ conversation: ConversationDetail }>(`/api/bst/conversations/${id}`)
       .then((d) => {
         setConv(d.conversation);
-        setMessages(d.conversation.messages ?? []);
+        setMessages((d.conversation.messages ?? []).map(m => ({ ...m, reactions: m.reactions ?? {} })));
       })
       .catch(() => router.push("/messages"));
     api.patch(`/api/bst/conversations/${id}/read`).catch(() => {});
@@ -97,7 +102,7 @@ export default function ConversationPage() {
         `/api/bst/conversations/${id}/messages`,
         { body: body.trim(), ...(pendingImage ? { imageData: pendingImage } : {}) }
       );
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => [...prev, { ...message, reactions: message.reactions ?? {} }]);
       setBody("");
       setPendingImage(null);
     } catch {
@@ -128,6 +133,17 @@ export default function ConversationPage() {
       setDeletingConv(false);
       setConfirmDeleteConv(false);
     }
+  };
+
+  const handleReact = async (msgId: string, emoji: string) => {
+    setPickerMsgId(null);
+    try {
+      const { reactions } = await api.post<{ reactions: Record<string, ReactionGroup> }>(
+        `/api/bst/conversations/${id}/messages/${msgId}/react`,
+        { emoji }
+      );
+      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, reactions } : m));
+    } catch { /* ignore */ }
   };
 
   if (loading || !session || !conv) return null;
@@ -186,38 +202,87 @@ export default function ConversationPage() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-4 mb-4">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-4 mb-4" onClick={() => setPickerMsgId(null)}>
         {messages.length === 0 && (
           <p className="text-gray-600 text-sm text-center mt-8">No messages yet. Say hello!</p>
         )}
         {messages.map((msg) => {
           const isMe = msg.senderId === session.user.id;
+          const activeReactions = DM_EMOJIS.filter(e => (msg.reactions?.[e]?.count ?? 0) > 0);
           return (
             <div key={msg.id} className={`flex flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
               <span className="text-xs text-gray-500 px-2">{senderName(msg.senderId)}</span>
-              <div className={`max-w-[75%] rounded-2xl overflow-hidden text-sm leading-relaxed ${
-                isMe ? "bg-[#c9a050] text-black rounded-br-sm" : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
-              }`}>
-                {msg.imageData && (
-                  <img src={msg.imageData} alt="attachment" className="w-full max-w-xs object-cover" />
+              <div className="relative group">
+                {/* Emoji reaction button — appears on hover */}
+                <button
+                  onClick={() => setPickerMsgId(p => p === msg.id ? null : msg.id)}
+                  className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-lg z-10
+                    ${isMe ? "-left-8" : "-right-8"}`}
+                  title="React"
+                >
+                  😊
+                </button>
+                {/* Emoji picker popover */}
+                {pickerMsgId === msg.id && (
+                  <div className={`absolute z-20 bottom-full mb-2 flex gap-1 bg-[#2e2e2e] border border-white/10 rounded-2xl px-3 py-2 shadow-xl
+                    ${isMe ? "right-0" : "left-0"}`}>
+                    {DM_EMOJIS.map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReact(msg.id, emoji)}
+                        className={`text-xl w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/10
+                          ${msg.reactions?.[emoji]?.reacted ? "bg-[#c9a050]/20" : ""}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 )}
-                {msg.body.trim() && <LinkedBody body={msg.body} isMe={isMe} />}
-                <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                  <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
-                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                  {isMe && (
-                    <button
-                      onClick={() => handleDeleteMessage(msg.id)}
-                      disabled={deletingMsg === msg.id}
-                      className="text-[10px] text-black/60 hover:text-red-700 transition-colors"
-                      title="Delete message"
-                    >
-                      {deletingMsg === msg.id ? "…" : "✕"}
-                    </button>
+                <div className={`max-w-[75%] rounded-2xl overflow-hidden text-sm leading-relaxed ${
+                  isMe ? "bg-[#c9a050] text-black rounded-br-sm" : "bg-[#2a2a2a] text-[#f5f2eb] rounded-bl-sm"
+                }`}>
+                  {msg.imageData && (
+                    <img src={msg.imageData} alt="attachment" className="w-full max-w-xs object-cover" />
                   )}
+                  {msg.body.trim() && <LinkedBody body={msg.body} isMe={isMe} />}
+                  <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                    <p className={`text-xs ${isMe ? "text-black/50" : "text-gray-600"}`}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    {isMe && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        disabled={deletingMsg === msg.id}
+                        className="text-[10px] text-black/60 hover:text-red-700 transition-colors"
+                        title="Delete message"
+                      >
+                        {deletingMsg === msg.id ? "…" : "✕"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
+              {/* Reaction pills */}
+              {activeReactions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1 px-1">
+                  {activeReactions.map(emoji => {
+                    const g = msg.reactions[emoji]!;
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReact(msg.id, emoji)}
+                        className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm border transition-colors
+                          ${g.reacted
+                            ? "bg-[#c9a050]/15 border-[#c9a050]/50 text-[#c9a050]"
+                            : "bg-[#2a2a2a] border-white/10 text-gray-400 hover:border-white/20"}`}
+                      >
+                        <span>{emoji}</span>
+                        <span className="text-xs font-semibold">{g.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}

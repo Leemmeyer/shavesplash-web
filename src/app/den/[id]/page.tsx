@@ -174,6 +174,7 @@ function ItemDetailContent({ id }: { id: string }) {
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
 
   // Edit form — plates (razors)
   const [editPlates, setEditPlates] = useState<RazorPlate[]>([]);
@@ -246,6 +247,32 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditError(null);
     setEditPhotoPreview(null);
     setShowEdit(true);
+  };
+
+  const processEditPhoto = (file: File) => {
+    const supported = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!supported.includes(file.type)) {
+      setEditError('Unsupported photo format. Please use JPEG, PNG, or WEBP.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setEditPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
+        setEditError(null);
+      };
+      img.onerror = () => setEditError('Could not read photo.');
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => setEditError('Could not read photo.');
+    reader.readAsDataURL(file);
   };
 
   const handleCatalogSelect = (entry: CatalogEntry) => {
@@ -594,8 +621,11 @@ function ItemDetailContent({ id }: { id: string }) {
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Photo</label>
               <div
-                className="relative aspect-square w-28 bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/10 cursor-pointer group"
+                className={`relative aspect-square w-28 bg-[#1e1e1e] rounded-xl overflow-hidden border cursor-pointer group transition-colors ${isDraggingPhoto ? "border-[#c9a050]/60 bg-[#c9a050]/5" : "border-white/10"}`}
                 onClick={() => (document.getElementById('den-photo-upload') as HTMLInputElement)?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingPhoto(true); }}
+                onDragLeave={() => setIsDraggingPhoto(false)}
+                onDrop={(e) => { e.preventDefault(); setIsDraggingPhoto(false); const f = e.dataTransfer.files[0]; if (f) processEditPhoto(f); }}
               >
                 {(editPhotoPreview ?? photoUrl)
                   // eslint-disable-next-line @next/next/no-img-element
@@ -613,33 +643,7 @@ function ItemDetailContent({ id }: { id: string }) {
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const supported = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-                  if (!supported.includes(file.type)) {
-                    setEditError('Unsupported photo format. Please use JPEG, PNG, or WEBP. On iPhone, go to Settings → Camera → Formats → Most Compatible.');
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const img = new Image();
-                    img.onload = () => {
-                      const MAX = 800;
-                      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-                      const canvas = document.createElement('canvas');
-                      canvas.width = Math.round(img.width * scale);
-                      canvas.height = Math.round(img.height * scale);
-                      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-                      setEditPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
-                      setEditError(null);
-                    };
-                    img.onerror = () => setEditError('Could not read photo. Please try a JPEG or PNG file.');
-                    img.src = reader.result as string;
-                  };
-                  reader.onerror = () => setEditError('Could not read photo. Please try a JPEG or PNG file.');
-                  reader.readAsDataURL(file);
-                }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) processEditPhoto(f); }}
               />
             </div>
 

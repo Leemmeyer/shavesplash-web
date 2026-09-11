@@ -316,6 +316,7 @@ export default function ThreadPage() {
   const [thread, setThread] = useState<Thread | null>(null);
   const [replyBody, setReplyBody] = useState("");
   const [replyPhotoDataUrls, setReplyPhotoDataUrls] = useState<string[]>([]);
+  const [isDraggingReply, setIsDraggingReply] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editingThread, setEditingThread] = useState(false);
@@ -430,6 +431,16 @@ export default function ThreadPage() {
     const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
     setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
     if (replyFileInputRef.current) replyFileInputRef.current.value = "";
+  };
+
+  const handleReplyDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingReply(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    if (!files.length) return;
+    const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
+    const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+    setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
   };
 
   const handleReply = async () => {
@@ -779,10 +790,13 @@ export default function ThreadPage() {
           ) : (
             <div
               onClick={() => replyFileInputRef.current?.click()}
-              className="border border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 py-3 mb-3 cursor-pointer hover:border-white/25 transition-colors"
+              onDragOver={(e) => { e.preventDefault(); setIsDraggingReply(true); }}
+              onDragLeave={() => setIsDraggingReply(false)}
+              onDrop={handleReplyDrop}
+              className={`border border-dashed rounded-xl flex items-center justify-center gap-2 py-3 mb-3 cursor-pointer transition-colors ${isDraggingReply ? "border-[#c9a050]/60 bg-[#c9a050]/5" : "border-white/10 hover:border-white/25"}`}
             >
               <span className="text-lg">🖼️</span>
-              <span className="text-xs text-gray-500">Attach photos (optional)</span>
+              <span className="text-xs text-gray-500">{isDraggingReply ? "Drop to attach" : "Attach photos (optional)"}</span>
             </div>
           )}
           <input ref={replyFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleReplyFileChange} />

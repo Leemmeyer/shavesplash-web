@@ -74,6 +74,7 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [brand, setBrand] = useState("");
   const [name, setName] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -200,6 +201,29 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
     }, 600);
     return () => { if (dupeTimer.current) clearTimeout(dupeTimer.current); };
   }, [brand, name, categoryId]);
+
+  const processPhoto = (file: File) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Please use JPEG, PNG, or WEBP.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
+        setError(null);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const isRazor = categoryId === "razors";
   const isBlade = categoryId === "blades";
@@ -410,32 +434,15 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">✕</button>
                 </div>
               ) : (
-                <label className="w-20 aspect-square bg-[#242424] border border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-white/20 transition-colors shrink-0">
+                <label
+                  className={`w-20 aspect-square bg-[#242424] border rounded-xl flex items-center justify-center cursor-pointer transition-colors shrink-0 ${isDragging ? "border-[#c9a050]/60 bg-[#c9a050]/5" : "border-white/10 hover:border-white/20"}`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) processPhoto(f); }}
+                >
                   <span className="text-gray-600 text-xs text-center leading-tight">Add<br/>Photo</span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                        setError('Please use JPEG, PNG, or WEBP.'); return;
-                      }
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        const img = new Image();
-                        img.onload = () => {
-                          const MAX = 800;
-                          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-                          const canvas = document.createElement('canvas');
-                          canvas.width = Math.round(img.width * scale);
-                          canvas.height = Math.round(img.height * scale);
-                          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-                          setPhotoPreview(canvas.toDataURL('image/jpeg', 0.7));
-                          setError(null);
-                        };
-                        img.src = reader.result as string;
-                      };
-                      reader.readAsDataURL(file);
-                    }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) processPhoto(f); }}
                   />
                 </label>
               )}

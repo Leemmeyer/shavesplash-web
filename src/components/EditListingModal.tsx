@@ -80,6 +80,7 @@ export default function EditListingModal({ listing, onClose, onSaved }: Props) {
 
   // photos: base64 strings; null = keep existing (from server); string = new/kept
   const [photos, setPhotos] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [photosLoading, setPhotosLoading] = useState(true);
   const [isExpert, setIsExpert] = useState(false);
 
@@ -215,6 +216,13 @@ export default function EditListingModal({ listing, onClose, onSaved }: Props) {
     e.target.value = "";
   };
 
+  const handleDroppedFiles = async (files: File[]) => {
+    const toProcess = files.filter(f => f.type.startsWith("image/")).slice(0, MAX_PHOTOS - photos.length);
+    if (!toProcess.length) return;
+    const encoded = await Promise.all(toProcess.map(resizeToBase64));
+    setPhotos((prev) => [...prev, ...encoded]);
+  };
+
   const isRazor = category === "razor";
   const priceRequired = listingType === "for_sale";
   const conditionRequired = listingType === "for_sale";
@@ -341,6 +349,12 @@ export default function EditListingModal({ listing, onClose, onSaved }: Props) {
             {photosLoading ? (
               <p className="text-xs text-gray-600">Loading photos…</p>
             ) : (
+              <div
+                className={`rounded-xl transition-colors ${isDragging ? "ring-2 ring-[#c9a050]/50 bg-[#c9a050]/5" : ""}`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleDroppedFiles(Array.from(e.dataTransfer.files)); }}
+              >
               <div className="grid grid-cols-3 gap-2 mb-2">
                 {photos.map((data, i) => (
                   <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#161616]">
@@ -370,6 +384,7 @@ export default function EditListingModal({ listing, onClose, onSaved }: Props) {
                 )}
               </div>
             )}
+              </div>
             <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
           </div>
 

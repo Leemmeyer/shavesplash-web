@@ -46,6 +46,7 @@ export default function NewThreadPage() {
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("general");
   const [photoDataUrls, setPhotoDataUrls] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +71,20 @@ export default function NewThreadPage() {
 
   const removePhoto = (index: number) => {
     setPhotoDataUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    if (!files.length) return;
+    const toProcess = files.slice(0, MAX_PHOTOS - photoDataUrls.length);
+    try {
+      const compressed = await Promise.all(toProcess.map(compressImage));
+      setPhotoDataUrls((prev) => [...prev, ...compressed]);
+    } catch {
+      setError("Failed to read image.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,6 +159,12 @@ export default function NewThreadPage() {
           <label className="block text-sm text-gray-400 mb-2">
             Photos (optional, up to {MAX_PHOTOS})
           </label>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`rounded-xl transition-colors ${isDragging ? "ring-2 ring-[#c9a050]/50 bg-[#c9a050]/5" : ""}`}
+          >
           {photoDataUrls.length > 0 ? (
             <div className="flex flex-wrap gap-2 mb-2">
               {photoDataUrls.map((url, i) => (
@@ -185,6 +206,7 @@ export default function NewThreadPage() {
             className="hidden"
             onChange={handleFileChange}
           />
+          </div>
         </div>
 
         {error && <p className="text-red-400 text-sm">{error}</p>}

@@ -69,6 +69,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
   // form state
   const [displayName, setDisplayName] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -171,6 +172,13 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
     const encoded = await Promise.all(files.map(resizeToBase64));
     setPhotos((prev) => [...prev, ...encoded]);
     e.target.value = "";
+  };
+
+  const handleDroppedFiles = async (files: File[]) => {
+    const toProcess = files.filter(f => f.type.startsWith("image/")).slice(0, MAX_PHOTOS - photos.length);
+    if (!toProcess.length) return;
+    const encoded = await Promise.all(toProcess.map(resizeToBase64));
+    setPhotos((prev) => [...prev, ...encoded]);
   };
 
   const cleanDisplayName = displayName.trim();
@@ -334,6 +342,12 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
               {/* Photos */}
               <div>
                 <label className={labelCls}>Photos (up to {MAX_PHOTOS}){!isExpert && <span className="text-gray-600 normal-case font-normal ml-1">· Expert gets 10</span>}</label>
+                <div
+                  className={`rounded-xl transition-colors ${isDragging ? "ring-2 ring-[#c9a050]/50 bg-[#c9a050]/5" : ""}`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleDroppedFiles(Array.from(e.dataTransfer.files)); }}
+                >
                 <div className="grid grid-cols-3 gap-2 mb-2">
                   {photos.map((data, i) => (
                     <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#161616]">
@@ -370,6 +384,7 @@ export default function CreateListingModal({ prefillTitle, prefillCategory, pref
                   onChange={handleFiles}
                   className="hidden"
                 />
+                </div>
               </div>
 
               {/* Category */}

@@ -10,7 +10,9 @@ import CatalogPicker, { CatalogEntry } from "@/components/CatalogPicker";
 const EDGE_TYPE_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"] as const;
 const CONSTRUCTION_OPTIONS = ["1pc", "2pc", "3pc", "4pc", "Adjustable"] as const;
 const METAL_OPTIONS = ["Aluminum", "Brass", "Bronze", "Copper", "Steel", "Titanium", "Zamak"] as const;
-const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished"] as const;
+const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished", "Chrome"] as const;
+const TREATMENT_OPTIONS = ["Anodized", "Plated", "Coated"] as const;
+const COLOR_OPTIONS = ["Black", "Blue", "Gold", "Green", "Grey", "Orange", "Purple", "Red", "Silver", "White", "Yellow"] as const;
 const KNOT_OPTIONS = ["Badger", "Boar", "Horse", "Mixed", "Synthetic"] as const;
 const DIAMETER_OPTIONS = [
   "16mm","17mm","18mm","19mm","20mm","22mm","24mm","25mm","26mm","27mm","28mm","29mm",
@@ -262,6 +264,8 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
   const [weight, setWeight] = useState("");
   const [metal, setMetal] = useState<string>("");
   const [finish, setFinish] = useState<string>("");
+  const [treatment, setTreatment] = useState<string>("");
+  const [color, setColor] = useState<string>("");
   const [straightWidth, setStraightWidth] = useState<string>("");
   const [straightPoint, setStraightPoint] = useState<string>("");
   const [straightHollow, setStraightHollow] = useState<string>("");
@@ -392,6 +396,8 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
       if (weight.trim()) data.weight = parseInt(weight, 10);
       if (metal) data.metal = metal;
       if (finish) data.finish = finish;
+      if (treatment) data.treatment = treatment;
+      if (color) data.color = color;
       if (handleModel.trim()) data.handleModel = handleModel.trim();
       data.plates = plates;
       if (isStraight) {
@@ -593,6 +599,8 @@ function NewItemForm({ categoryId }: { categoryId: string }) {
             <SelectField label="Construction" value={construction} options={CONSTRUCTION_OPTIONS} onChange={setConstruction} />
             <SelectField label="Metal" value={metal} options={METAL_OPTIONS} onChange={setMetal} />
             <SelectField label="Finish" value={finish} options={FINISH_OPTIONS} onChange={setFinish} />
+            <SelectField label="Treatment" value={treatment} options={TREATMENT_OPTIONS} onChange={setTreatment} />
+            <SelectField label="Color" value={color} options={COLOR_OPTIONS} onChange={setColor} />
             <div>
               <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Handle Model</label>
               <input value={handleModel} onChange={(e) => setHandleModel(e.target.value)} placeholder="e.g. Fatip Grande"

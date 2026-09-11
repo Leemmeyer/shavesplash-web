@@ -9,7 +9,9 @@ import { api } from "@/lib/api";
 const EDGE_TYPE_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE", "Straight"] as const;
 const CONSTRUCTION_OPTIONS = ["1pc", "2pc", "3pc", "4pc", "Adjustable"] as const;
 const METAL_OPTIONS = ["Aluminum", "Brass", "Bronze", "Copper", "Steel", "Titanium", "Zamak"] as const;
-const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished"] as const;
+const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished", "Chrome"] as const;
+const TREATMENT_OPTIONS = ["Anodized", "Plated", "Coated"] as const;
+const COLOR_OPTIONS = ["Black", "Blue", "Gold", "Green", "Grey", "Orange", "Purple", "Red", "Silver", "White", "Yellow"] as const;
 const KNOT_OPTIONS = ["Badger", "Boar", "Horse", "Mixed", "Synthetic"] as const;
 const DIAMETER_OPTIONS = ["20mm","22mm","24mm","25mm","26mm","27mm","28mm","29mm","30mm","31mm","32mm"] as const;
 const BLADE_FORMAT_OPTIONS = ["Double Edge", "GEM", "Injector", "AC", "SE"] as const;
@@ -88,6 +90,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const [weight, setWeight] = useState("");
   const [metal, setMetal] = useState("");
   const [finish, setFinish] = useState("");
+  const [treatment, setTreatment] = useState("");
+  const [color, setColor] = useState("");
   const [plates, setPlates] = useState<{ name: string; type: string; bladeGap: string; exposure: string }[]>([]);
   const [straightWidth, setStraightWidth] = useState("");
   const [straightPoint, setStraightPoint] = useState("");
@@ -138,6 +142,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
         if (item.weight != null) setWeight(String(item.weight));
         if (item.metal) setMetal(item.metal as string);
         if (item.finish) setFinish(item.finish as string);
+        if (item.treatment) setTreatment(item.treatment as string);
+        if (item.color) setColor(item.color as string);
         if (item.straightWidth) setStraightWidth(item.straightWidth as string);
         if (item.straightPoint) setStraightPoint(item.straightPoint as string);
         if (item.straightHollow) setStraightHollow(item.straightHollow as string);
@@ -222,6 +228,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
       if (weight.trim()) data.weight = parseInt(weight, 10);
       if (metal) data.metal = metal;
       if (finish) data.finish = finish;
+      if (treatment) data.treatment = treatment;
+      if (color) data.color = color;
       const validPlates = plates.filter((p) => p.name.trim());
       if (validPlates.length > 0) {
         data.plates = validPlates.map((p) => ({
@@ -444,6 +452,8 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
             <SelectField label="Construction" value={construction} options={CONSTRUCTION_OPTIONS} onChange={setConstruction} />
             <SelectField label="Metal" value={metal} options={METAL_OPTIONS} onChange={setMetal} />
             <SelectField label="Finish" value={finish} options={FINISH_OPTIONS} onChange={setFinish} />
+            <SelectField label="Treatment" value={treatment} options={TREATMENT_OPTIONS} onChange={setTreatment} />
+            <SelectField label="Color" value={color} options={COLOR_OPTIONS} onChange={setColor} />
             <div className="grid grid-cols-3 gap-3">
               {[["Blade Gap (mm)", bladeGap, setBladeGap], ["Exposure (mm)", exposure, setExposure], ["Weight (g)", weight, setWeight]].map(([label, val, set]) => (
                 <div key={String(label)}>

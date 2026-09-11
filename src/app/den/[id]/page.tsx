@@ -26,7 +26,9 @@ const EDGE_TYPE_LABELS: Record<string, string> = {
 };
 const CONSTRUCTION_OPTIONS = ["1pc", "2pc", "3pc", "4pc", "Adjustable"] as const;
 const METAL_OPTIONS = ["Aluminum", "Brass", "Bronze", "Copper", "Steel", "Titanium", "Zamak"] as const;
-const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished"] as const;
+const FINISH_OPTIONS = ["Machined", "Brushed", "Satin", "Polished", "Mirror Polished", "Chrome"] as const;
+const TREATMENT_OPTIONS = ["Anodized", "Plated", "Coated"] as const;
+const COLOR_OPTIONS = ["Black", "Blue", "Gold", "Green", "Grey", "Orange", "Purple", "Red", "Silver", "White", "Yellow"] as const;
 const KNOT_OPTIONS = ["Badger", "Boar", "Horse", "Mixed", "Synthetic"] as const;
 const DIAMETER_OPTIONS = [
   "16mm","17mm","18mm","19mm","20mm","22mm","24mm","25mm","26mm","27mm","28mm","29mm",
@@ -59,7 +61,7 @@ type InventoryItem = {
   id: string; categoryId: string; name: string; brand: string;
   notes?: string; hasPhoto?: boolean; photoUrl?: string | null; createdAt: number;
   // Razor
-  edgeType?: string; construction?: string; metal?: string; finish?: string;
+  edgeType?: string; construction?: string; metal?: string; finish?: string; treatment?: string; color?: string;
   weight?: number; bladeGap?: number; exposure?: number; plates?: RazorPlate[];
   handleModel?: string;
   straightWidth?: string; straightPoint?: string; straightHollow?: string;
@@ -119,6 +121,8 @@ function ItemDetailContent({ id }: { id: string }) {
   const [editWeight, setEditWeight] = useState("");
   const [editMetal, setEditMetal] = useState<string | undefined>(undefined);
   const [editFinish, setEditFinish] = useState<string | undefined>(undefined);
+  const [editTreatment, setEditTreatment] = useState<string | undefined>(undefined);
+  const [editColor, setEditColor] = useState<string | undefined>(undefined);
   const [editHandleModel, setEditHandleModel] = useState("");
   const [editStraightWidth, setEditStraightWidth] = useState<string | undefined>(undefined);
   const [editStraightPoint, setEditStraightPoint] = useState<string | undefined>(undefined);
@@ -205,6 +209,8 @@ function ItemDetailContent({ id }: { id: string }) {
     setEditWeight(item.weight?.toString() ?? "");
     setEditMetal(item.metal);
     setEditFinish(item.finish);
+    setEditTreatment(item.treatment);
+    setEditColor(item.color);
     setEditHandleModel(item.handleModel ?? "");
     setEditStraightWidth(item.straightWidth);
     setEditStraightPoint(item.straightPoint);
@@ -290,6 +296,8 @@ function ItemDetailContent({ id }: { id: string }) {
       if (editWeight.trim()) data.weight = parseInt(editWeight, 10);
       if (editMetal) data.metal = editMetal;
       if (editFinish) data.finish = editFinish;
+      if (editTreatment) data.treatment = editTreatment;
+      if (editColor) data.color = editColor;
       if (editHandleModel.trim()) data.handleModel = editHandleModel.trim();
       data.plates = editPlates;
       if (isStraight) {
@@ -462,6 +470,8 @@ function ItemDetailContent({ id }: { id: string }) {
             {item.construction && <Spec label="Construction" value={item.construction} />}
             {item.metal && <Spec label="Metal" value={item.metal} />}
             {item.finish && <Spec label="Finish" value={item.finish} />}
+            {item.treatment && <Spec label="Treatment" value={item.treatment} />}
+            {item.color && <Spec label="Color" value={item.color} />}
             {item.weight != null && item.weight > 0 && <Spec label="Weight" value={`${item.weight}g`} />}
             {item.bladeGap != null && <Spec label="Blade Gap" value={`${item.bladeGap}mm`} />}
             {item.exposure != null && <Spec label="Exposure" value={`${item.exposure}mm`} />}
@@ -704,6 +714,22 @@ function ItemDetailContent({ id }: { id: string }) {
                     value={editFinish}
                     onChange={setEditFinish}
                     placeholder="Select finish"
+                  />
+                </Field>
+                <Field label="Treatment">
+                  <SelectField
+                    options={TREATMENT_OPTIONS as unknown as string[]}
+                    value={editTreatment}
+                    onChange={setEditTreatment}
+                    placeholder="Select treatment"
+                  />
+                </Field>
+                <Field label="Color">
+                  <SelectField
+                    options={COLOR_OPTIONS as unknown as string[]}
+                    value={editColor}
+                    onChange={setEditColor}
+                    placeholder="Select color"
                   />
                 </Field>
                 <Field label="Handle Model">

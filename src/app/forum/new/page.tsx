@@ -192,6 +192,28 @@ export default function NewThreadPage() {
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
+            onPaste={async (e) => {
+              const items = Array.from(e.clipboardData.items);
+              const imageItems = items.filter((i) => i.type.startsWith("image/"));
+              if (imageItems.length > 0) {
+                e.preventDefault();
+                const files = imageItems.map((i) => i.getAsFile()).filter((f): f is File => f !== null);
+                const remaining = MAX_PHOTOS - photoDataUrls.length;
+                if (files.length && remaining > 0) {
+                  try {
+                    const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+                    setPhotoDataUrls((prev) => [...prev, ...compressed]);
+                  } catch {
+                    setError("Failed to read image.");
+                  }
+                }
+                return;
+              }
+              const text = e.clipboardData.getData("text/plain");
+              if (/^(file:\/\/|\/Users\/|\/private\/|\/var\/folders\/)/.test(text)) {
+                e.preventDefault();
+              }
+            }}
             placeholder="Share your thoughts, questions, or experience…"
             rows={8}
             className="w-full bg-[#242424] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-y focus:outline-none focus:border-[#c9a050]/40"

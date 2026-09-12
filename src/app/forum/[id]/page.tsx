@@ -797,6 +797,25 @@ export default function ThreadPage() {
             ref={textareaRef}
             value={replyBody}
             onChange={(e) => setReplyBody(e.target.value)}
+            onPaste={async (e) => {
+              const items = Array.from(e.clipboardData.items);
+              const imageItems = items.filter((i) => i.type.startsWith("image/"));
+              if (imageItems.length > 0) {
+                e.preventDefault();
+                const files = imageItems.map((i) => i.getAsFile()).filter((f): f is File => f !== null);
+                const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
+                if (files.length && remaining > 0) {
+                  const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+                  setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
+                }
+                return;
+              }
+              // Block file paths (Photos.app Cmd+C copies a path, not image data)
+              const text = e.clipboardData.getData("text/plain");
+              if (/^(file:\/\/|\/Users\/|\/private\/|\/var\/folders\/)/.test(text)) {
+                e.preventDefault();
+              }
+            }}
             placeholder="Share your thoughts…"
             rows={4}
             className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f5f2eb] placeholder-gray-600 resize-y focus:outline-none focus:border-[#c9a050]/40 mb-3"

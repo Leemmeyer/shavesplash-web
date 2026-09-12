@@ -73,47 +73,27 @@ export default function NewThreadPage() {
     setPhotoDataUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const photoDataUrlsRef = useRef<string[]>([]);
-  photoDataUrlsRef.current = photoDataUrls;
-
-  useEffect(() => {
-    const onDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-    };
-    const onDragLeave = (e: DragEvent) => {
-      if (!e.relatedTarget) setIsDragging(false);
-    };
-    const onDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const allFiles: File[] = e.dataTransfer?.files.length
-        ? Array.from(e.dataTransfer.files)
-        : Array.from(e.dataTransfer?.items ?? [])
-            .filter((i) => i.kind === "file")
-            .map((i) => i.getAsFile()!)
-            .filter(Boolean);
-      const files = allFiles.filter((f) => f.type.startsWith("image/") || f.type === "");
-      if (!files.length) return;
-      const remaining = MAX_PHOTOS - photoDataUrlsRef.current.length;
-      if (remaining <= 0) return;
-      const toProcess = files.slice(0, remaining);
-      try {
-        const compressed = await Promise.all(toProcess.map(compressImage));
-        setPhotoDataUrls((prev) => [...prev, ...compressed]);
-      } catch {
-        setError("Failed to read image.");
-      }
-    };
-    document.addEventListener("dragover", onDragOver);
-    document.addEventListener("dragleave", onDragLeave);
-    document.addEventListener("drop", onDrop);
-    return () => {
-      document.removeEventListener("dragover", onDragOver);
-      document.removeEventListener("dragleave", onDragLeave);
-      document.removeEventListener("drop", onDrop);
-    };
-  }, []);
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const allFiles: File[] = e.dataTransfer.files.length
+      ? Array.from(e.dataTransfer.files)
+      : Array.from(e.dataTransfer.items)
+          .filter((i) => i.kind === "file")
+          .map((i) => i.getAsFile()!)
+          .filter(Boolean);
+    const files = allFiles.filter((f) => f.type.startsWith("image/") || f.type === "");
+    if (!files.length) return;
+    const remaining = MAX_PHOTOS - photoDataUrls.length;
+    if (remaining <= 0) return;
+    const toProcess = files.slice(0, remaining);
+    try {
+      const compressed = await Promise.all(toProcess.map(compressImage));
+      setPhotoDataUrls((prev) => [...prev, ...compressed]);
+    } catch {
+      setError("Failed to read image.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +117,16 @@ export default function NewThreadPage() {
   if (loading || !session) return null;
 
   return (
-    <>
+    <div
+      className="min-h-screen"
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={(e) => {
+        if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDragging(false);
+        }
+      }}
+      onDrop={handleDrop}
+    >
       {isDragging && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center pointer-events-none">
           <div className="border-2 border-dashed border-[#c9a050] rounded-2xl px-16 py-12 text-[#c9a050] text-xl font-semibold">
@@ -251,6 +240,6 @@ export default function NewThreadPage() {
         </button>
       </form>
     </div>
-    </>
+    </div>
   );
 }

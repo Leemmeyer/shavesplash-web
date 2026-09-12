@@ -334,42 +334,22 @@ export default function ThreadPage() {
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const replyPhotoDataUrlsRef = useRef<string[]>([]);
-  replyPhotoDataUrlsRef.current = replyPhotoDataUrls;
-
-  useEffect(() => {
-    const onDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      setIsDraggingReply(true);
-    };
-    const onDragLeave = (e: DragEvent) => {
-      if (!e.relatedTarget) setIsDraggingReply(false);
-    };
-    const onDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      setIsDraggingReply(false);
-      const allFiles: File[] = e.dataTransfer?.files.length
-        ? Array.from(e.dataTransfer.files)
-        : Array.from(e.dataTransfer?.items ?? [])
-            .filter((i) => i.kind === "file")
-            .map((i) => i.getAsFile()!)
-            .filter(Boolean);
-      const files = allFiles.filter((f) => f.type.startsWith("image/") || f.type === "");
-      if (!files.length) return;
-      const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrlsRef.current.length;
-      if (remaining <= 0) return;
-      const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
-      setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
-    };
-    document.addEventListener("dragover", onDragOver);
-    document.addEventListener("dragleave", onDragLeave);
-    document.addEventListener("drop", onDrop);
-    return () => {
-      document.removeEventListener("dragover", onDragOver);
-      document.removeEventListener("dragleave", onDragLeave);
-      document.removeEventListener("drop", onDrop);
-    };
-  }, []);
+  const handleReplyDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingReply(false);
+    const allFiles: File[] = e.dataTransfer.files.length
+      ? Array.from(e.dataTransfer.files)
+      : Array.from(e.dataTransfer.items)
+          .filter((i) => i.kind === "file")
+          .map((i) => i.getAsFile()!)
+          .filter(Boolean);
+    const files = allFiles.filter((f) => f.type.startsWith("image/") || f.type === "");
+    if (!files.length) return;
+    const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
+    if (remaining <= 0) return;
+    const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+    setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
+  };
 
   const replyAuthors = useMemo(() => {
     if (!thread) return [];
@@ -555,7 +535,16 @@ export default function ThreadPage() {
   if (!thread) return null;
 
   return (
-    <>
+    <div
+      className="min-h-screen"
+      onDragOver={(e) => { e.preventDefault(); setIsDraggingReply(true); }}
+      onDragLeave={(e) => {
+        if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDraggingReply(false);
+        }
+      }}
+      onDrop={handleReplyDrop}
+    >
       {isDraggingReply && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center pointer-events-none">
           <div className="border-2 border-dashed border-[#c9a050] rounded-2xl px-16 py-12 text-[#c9a050] text-xl font-semibold">
@@ -870,6 +859,6 @@ export default function ThreadPage() {
         </div>
       )}
     </div>
-    </>
+    </div>
   );
 }

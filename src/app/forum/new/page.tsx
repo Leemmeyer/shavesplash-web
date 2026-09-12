@@ -73,19 +73,45 @@ export default function NewThreadPage() {
     setPhotoDataUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/") || f.type === "");
-    if (!files.length) return;
-    const toProcess = files.slice(0, MAX_PHOTOS - photoDataUrls.length);
-    try {
-      const compressed = await Promise.all(toProcess.map(compressImage));
-      setPhotoDataUrls((prev) => [...prev, ...compressed]);
-    } catch {
-      setError("Failed to read image.");
-    }
-  };
+  const photoDataUrlsRef = useRef<string[]>([]);
+  photoDataUrlsRef.current = photoDataUrls;
+
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes("Files")) {
+        e.preventDefault();
+        setIsDragging(true);
+      }
+    };
+    const onDragLeave = (e: DragEvent) => {
+      if (!e.relatedTarget) setIsDragging(false);
+    };
+    const onDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const files = Array.from(e.dataTransfer?.files ?? []).filter(
+        (f) => f.type.startsWith("image/") || f.type === ""
+      );
+      if (!files.length) return;
+      const remaining = MAX_PHOTOS - photoDataUrlsRef.current.length;
+      if (remaining <= 0) return;
+      const toProcess = files.slice(0, remaining);
+      try {
+        const compressed = await Promise.all(toProcess.map(compressImage));
+        setPhotoDataUrls((prev) => [...prev, ...compressed]);
+      } catch {
+        setError("Failed to read image.");
+      }
+    };
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("dragleave", onDragLeave);
+    document.addEventListener("drop", onDrop);
+    return () => {
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("drop", onDrop);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +135,15 @@ export default function NewThreadPage() {
   if (loading || !session) return null;
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
+    <>
+      {isDragging && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center pointer-events-none">
+          <div className="border-2 border-dashed border-[#c9a050] rounded-2xl px-16 py-12 text-[#c9a050] text-xl font-semibold">
+            Drop to attach photo
+          </div>
+        </div>
+      )}
+      <div className="max-w-2xl mx-auto px-6 py-10">
       <div className="flex items-center gap-3 mb-8">
         <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-300 text-sm">
           ← Back
@@ -159,12 +193,7 @@ export default function NewThreadPage() {
           <label className="block text-sm text-gray-400 mb-2">
             Photos (optional, up to {MAX_PHOTOS})
           </label>
-          <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            className={`rounded-xl transition-colors ${isDragging ? "ring-2 ring-[#c9a050]/50 bg-[#c9a050]/5" : ""}`}
-          >
+          <div className="rounded-xl">
           {photoDataUrls.length > 0 ? (
             <div className="flex flex-wrap gap-2 mb-2">
               {photoDataUrls.map((url, i) => (
@@ -220,5 +249,6 @@ export default function NewThreadPage() {
         </button>
       </form>
     </div>
+    </>
   );
 }

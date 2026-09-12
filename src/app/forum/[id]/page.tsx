@@ -334,6 +334,40 @@ export default function ThreadPage() {
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const replyPhotoDataUrlsRef = useRef<string[]>([]);
+  replyPhotoDataUrlsRef.current = replyPhotoDataUrls;
+
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes("Files")) {
+        e.preventDefault();
+        setIsDraggingReply(true);
+      }
+    };
+    const onDragLeave = (e: DragEvent) => {
+      if (!e.relatedTarget) setIsDraggingReply(false);
+    };
+    const onDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      setIsDraggingReply(false);
+      const files = Array.from(e.dataTransfer?.files ?? []).filter(
+        (f) => f.type.startsWith("image/") || f.type === ""
+      );
+      if (!files.length) return;
+      const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrlsRef.current.length;
+      if (remaining <= 0) return;
+      const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+      setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
+    };
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("dragleave", onDragLeave);
+    document.addEventListener("drop", onDrop);
+    return () => {
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("drop", onDrop);
+    };
+  }, []);
 
   const replyAuthors = useMemo(() => {
     if (!thread) return [];
@@ -433,16 +467,6 @@ export default function ThreadPage() {
     if (replyFileInputRef.current) replyFileInputRef.current.value = "";
   };
 
-  const handleReplyDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDraggingReply(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/") || f.type === "");
-    if (!files.length) return;
-    const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
-    const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
-    setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
-  };
-
   const handleReply = async () => {
     if ((!replyBody.trim() && !replyPhotoDataUrls.length) || submitting || !session) return;
     setSubmitting(true);
@@ -529,7 +553,15 @@ export default function ThreadPage() {
   if (!thread) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
+    <>
+      {isDraggingReply && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center pointer-events-none">
+          <div className="border-2 border-dashed border-[#c9a050] rounded-2xl px-16 py-12 text-[#c9a050] text-xl font-semibold">
+            Drop to attach photo
+          </div>
+        </div>
+      )}
+      <div className="max-w-3xl mx-auto px-6 py-10">
       {/* Back */}
       <Link href="/forum" className="text-gray-500 hover:text-gray-300 text-sm block mb-6">
         ← Forum
@@ -790,13 +822,10 @@ export default function ThreadPage() {
           ) : (
             <div
               onClick={() => replyFileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setIsDraggingReply(true); }}
-              onDragLeave={() => setIsDraggingReply(false)}
-              onDrop={handleReplyDrop}
               className={`border border-dashed rounded-xl flex items-center justify-center gap-2 py-3 mb-3 cursor-pointer transition-colors ${isDraggingReply ? "border-[#c9a050]/60 bg-[#c9a050]/5" : "border-white/10 hover:border-white/25"}`}
             >
               <span className="text-lg">🖼️</span>
-              <span className="text-xs text-gray-500">{isDraggingReply ? "Drop to attach" : "Attach photos (optional)"}</span>
+              <span className="text-xs text-gray-500">{isDraggingReply ? "Drop anywhere to attach" : "Attach photos (optional)"}</span>
             </div>
           )}
           <input ref={replyFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleReplyFileChange} />
@@ -839,5 +868,6 @@ export default function ThreadPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

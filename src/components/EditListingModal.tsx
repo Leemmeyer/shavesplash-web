@@ -383,8 +383,8 @@ export default function EditListingModal({ listing, onClose, onSaved }: Props) {
                   </button>
                 )}
               </div>
-            )}
               </div>
+            )}
             <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
           </div>
 

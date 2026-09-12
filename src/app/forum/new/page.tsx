@@ -55,6 +55,25 @@ export default function NewThreadPage() {
     if (!loading && !session) router.push("/sign-in");
   }, [session, loading, router]);
 
+  useEffect(() => {
+    const onPaste = async (e: ClipboardEvent) => {
+      const items = Array.from(e.clipboardData?.items ?? []).filter((i) => i.type.startsWith("image/"));
+      if (!items.length) return;
+      const files = items.map((i) => i.getAsFile()).filter((f): f is File => f !== null);
+      if (!files.length) return;
+      const remaining = MAX_PHOTOS - photoDataUrls.length;
+      if (remaining <= 0) return;
+      try {
+        const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+        setPhotoDataUrls((prev) => [...prev, ...compressed]);
+      } catch {
+        setError("Failed to read image.");
+      }
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [photoDataUrls.length]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;

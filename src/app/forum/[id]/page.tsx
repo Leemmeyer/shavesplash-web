@@ -334,6 +334,21 @@ export default function ThreadPage() {
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const onPaste = async (e: ClipboardEvent) => {
+      const items = Array.from(e.clipboardData?.items ?? []).filter((i) => i.type.startsWith("image/"));
+      if (!items.length) return;
+      const files = items.map((i) => i.getAsFile()).filter((f): f is File => f !== null);
+      if (!files.length) return;
+      const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
+      if (remaining <= 0) return;
+      const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+      setReplyPhotoDataUrls((prev) => [...prev, ...compressed]);
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [replyPhotoDataUrls.length]);
+
   const handleReplyDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingReply(false);

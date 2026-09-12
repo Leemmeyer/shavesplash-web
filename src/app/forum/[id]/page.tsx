@@ -339,10 +339,8 @@ export default function ThreadPage() {
 
   useEffect(() => {
     const onDragOver = (e: DragEvent) => {
-      if (e.dataTransfer?.types.includes("Files")) {
-        e.preventDefault();
-        setIsDraggingReply(true);
-      }
+      e.preventDefault();
+      setIsDraggingReply(true);
     };
     const onDragLeave = (e: DragEvent) => {
       if (!e.relatedTarget) setIsDraggingReply(false);
@@ -350,9 +348,13 @@ export default function ThreadPage() {
     const onDrop = async (e: DragEvent) => {
       e.preventDefault();
       setIsDraggingReply(false);
-      const files = Array.from(e.dataTransfer?.files ?? []).filter(
-        (f) => f.type.startsWith("image/") || f.type === ""
-      );
+      const allFiles: File[] = e.dataTransfer?.files.length
+        ? Array.from(e.dataTransfer.files)
+        : Array.from(e.dataTransfer?.items ?? [])
+            .filter((i) => i.kind === "file")
+            .map((i) => i.getAsFile()!)
+            .filter(Boolean);
+      const files = allFiles.filter((f) => f.type.startsWith("image/") || f.type === "");
       if (!files.length) return;
       const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrlsRef.current.length;
       if (remaining <= 0) return;

@@ -436,7 +436,7 @@ export default function ThreadPage() {
   const handleReplyDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingReply(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/") || f.type === "");
     if (!files.length) return;
     const remaining = MAX_REPLY_PHOTOS - replyPhotoDataUrls.length;
     const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));

@@ -76,7 +76,7 @@ export default function NewThreadPage() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/") || f.type === "");
     if (!files.length) return;
     const toProcess = files.slice(0, MAX_PHOTOS - photoDataUrls.length);
     try {

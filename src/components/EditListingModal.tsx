@@ -217,7 +217,7 @@ export default function EditListingModal({ listing, onClose, onSaved }: Props) {
   };
 
   const handleDroppedFiles = async (files: File[]) => {
-    const toProcess = files.filter(f => f.type.startsWith("image/")).slice(0, MAX_PHOTOS - photos.length);
+    const toProcess = files.filter(f => f.type.startsWith("image/") || f.type === "").slice(0, MAX_PHOTOS - photos.length);
     if (!toProcess.length) return;
     const encoded = await Promise.all(toProcess.map(resizeToBase64));
     setPhotos((prev) => [...prev, ...encoded]);

@@ -396,8 +396,9 @@ export default function MagazinePage() {
                           {title}
                         </span>
                       </div>
-                      <span className="text-gray-600 text-[11px]">
+                      <span className="text-gray-300 text-xs font-medium">
                         {new Date(edition.publishedAt).toLocaleDateString("en-US", {
+                          weekday: "short",
                           month: "short",
                           day: "numeric",
                         })}

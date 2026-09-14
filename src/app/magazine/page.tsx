@@ -320,7 +320,7 @@ export default function MagazinePage() {
     <div className="min-h-screen">
       {selectedEdition && <EditionModal edition={selectedEdition} onClose={handleClose} />}
 
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-6xl mx-auto px-4 py-10">
         {/* Page header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
@@ -369,7 +369,7 @@ export default function MagazinePage() {
             <p className="text-gray-600 text-sm">Morning Lather drops at 9am ET · Evening Edge drops at 8pm ET</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4">
             {visibleEditions.map((edition) => {
               const isMorning = edition.edition === "morning";
               const accentColor = isMorning ? "#c9a050" : "#9b8cc8";

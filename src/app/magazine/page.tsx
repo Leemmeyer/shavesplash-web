@@ -104,7 +104,7 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
           className="p-6 border-b border-white/5 flex-shrink-0"
         >
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span style={{ color: accentColor }} className="text-xs font-bold tracking-widest uppercase">
                   {isMorning ? "☕ Morning Edition" : "🌙 Evening Edition"}
@@ -113,14 +113,21 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
               <h2 className="text-[#f5f2eb] text-2xl font-bold mb-1">{title}</h2>
               <p className="text-gray-500 text-xs">{formatEditionTime(edition.publishedAt)}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-300 transition-colors p-1 flex-shrink-0 -mt-1 -mr-1"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-start gap-3 flex-shrink-0">
+              <img
+                src={`https://shavesplash.app/${isMorning ? "morning-lather" : "evening-edge"}.jpg`}
+                alt={title}
+                className="w-16 h-16 rounded-xl object-cover opacity-90"
+              />
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-300 transition-colors p-1 -mt-1 -mr-1"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

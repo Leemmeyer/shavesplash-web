@@ -724,6 +724,10 @@ function DatabasePageContent() {
   const { session } = useSession();
   const isAdmin = session?.user.email === ADMIN_EMAIL;
   const [items, setItems] = useState<GearItem[]>([]);
+
+  useEffect(() => {
+    if (session) api.post("/api/activity/log", { action: "gear_database_view" }).catch(() => {});
+  }, [session]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");

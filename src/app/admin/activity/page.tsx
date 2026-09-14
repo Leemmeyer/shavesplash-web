@@ -14,6 +14,7 @@ const ACTION_LABELS: Record<string, string> = {
   sotd_comment: "SOTD Comment",
   page_view: "Page View",
   magazine_read: "Magazine Read",
+  gear_database_view: "Gear Database",
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -27,6 +28,7 @@ const ACTION_COLORS: Record<string, string> = {
   sotd_comment: "#a78bfa",
   page_view: "#6b7280",
   magazine_read: "#9b8cc8",
+  gear_database_view: "#34d399",
 };
 
 function actionLabel(a: string) { return ACTION_LABELS[a] ?? a; }

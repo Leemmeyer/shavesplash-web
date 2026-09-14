@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
 const FEATURES = [
+  { icon: "📰", label: "Magazine", sub: "Twice daily digest of community activity, gear trends, and shave commentary" },
   { icon: "🔔", label: "Watchlist alerts", sub: "Get notified when items you want are listed" },
   { icon: "∞", label: "Unlimited listings", sub: "Free: 3 per month" },
   { icon: "📸", label: "Up to 10 photos per listing", sub: "Free: up to 3 per listing" },

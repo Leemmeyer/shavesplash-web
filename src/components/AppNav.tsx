@@ -43,6 +43,7 @@ const NAV_LINKS: { href: string; label: string; external?: boolean; gold?: boole
   { href: "/forum", label: "Forum" },
   { href: "/sotd", label: "SOTD" },
   { href: "/database", label: "Gear Database" },
+  { href: "/magazine", label: "Magazine" },
   { href: "https://shavesplash.com", label: "News & Reviews", external: true },
   { href: "/preferences", label: "Preferences" },
 ];

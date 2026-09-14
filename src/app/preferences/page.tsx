@@ -30,9 +30,17 @@ function PreferencesContent() {
   const [nameSaved, setNameSaved] = useState(false);
 
   // Email notification prefs
-  type EmailPrefs = { forumReplies: boolean; quoteReplies: boolean; sotdComments: boolean; directMessages: boolean };
-  const [emailPrefs, setEmailPrefs] = useState<EmailPrefs>({ forumReplies: true, quoteReplies: true, sotdComments: true, directMessages: true });
+  type MagazineNotifValue = "off" | "push" | "email" | "both";
+  type EmailPrefs = {
+    forumReplies: boolean; quoteReplies: boolean; sotdComments: boolean; directMessages: boolean;
+    magazineMorning: MagazineNotifValue; magazineEvening: MagazineNotifValue;
+  };
+  const [emailPrefs, setEmailPrefs] = useState<EmailPrefs>({
+    forumReplies: true, quoteReplies: true, sotdComments: true, directMessages: true,
+    magazineMorning: "push", magazineEvening: "push",
+  });
   const [savingEmailPref, setSavingEmailPref] = useState(false);
+  const [isExpert, setIsExpert] = useState(false);
 
   // Clear all data
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -171,15 +179,36 @@ function PreferencesContent() {
 
   useEffect(() => {
     api.get<{ prefs: EmailPrefs }>("/api/preferences/email-notifs")
-      .then((d) => setEmailPrefs(d.prefs))
+      .then((d) => setEmailPrefs((prev) => ({
+        ...prev,
+        ...d.prefs,
+        magazineMorning: (d.prefs as Record<string, unknown>).magazineMorning as MagazineNotifValue ?? "push",
+        magazineEvening: (d.prefs as Record<string, unknown>).magazineEvening as MagazineNotifValue ?? "push",
+      })))
+      .catch(() => {});
+    api.get<{ isExpert: boolean }>("/api/subscriptions/status")
+      .then((d) => setIsExpert(d.isExpert))
       .catch(() => {});
   }, []);
 
-  const handleEmailPrefToggle = async (key: keyof EmailPrefs) => {
+  const handleEmailPrefToggle = async (key: "forumReplies" | "quoteReplies" | "sotdComments" | "directMessages") => {
     const next = { ...emailPrefs, [key]: !emailPrefs[key] };
     setEmailPrefs(next);
     setSavingEmailPref(true);
     await api.put("/api/preferences/email-notifs", next).catch(() => {});
+    setSavingEmailPref(false);
+  };
+
+  const handleMagazinePrefToggle = async (key: "magazineMorning" | "magazineEvening") => {
+    const current = emailPrefs[key];
+    const emailOn = current === "email" || current === "both";
+    const next: MagazineNotifValue = emailOn
+      ? (current === "both" ? "push" : "off")
+      : (current === "push" ? "both" : "email");
+    const updated = { ...emailPrefs, [key]: next };
+    setEmailPrefs(updated);
+    setSavingEmailPref(true);
+    await api.put("/api/preferences/email-notifs", updated).catch(() => {});
     setSavingEmailPref(false);
   };
 
@@ -320,7 +349,7 @@ function PreferencesContent() {
               { key: "quoteReplies",   label: "Quote Replies",   sub: "When someone quotes your post" },
               { key: "sotdComments",   label: "SOTD Comments",   sub: "When someone comments on your shave" },
               { key: "directMessages", label: "Direct Messages", sub: "When you receive a new message" },
-            ] as { key: keyof EmailPrefs; label: string; sub: string }[]).map(({ key, label, sub }) => (
+            ] as { key: "forumReplies" | "quoteReplies" | "sotdComments" | "directMessages"; label: string; sub: string }[]).map(({ key, label, sub }) => (
               <div key={key} className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[#f5f2eb] text-sm font-medium">{label}</p>
@@ -334,6 +363,37 @@ function PreferencesContent() {
                 </button>
               </div>
             ))}
+
+            {/* Magazine email alerts — Expert only */}
+            {isExpert && (
+              <>
+                <div className="flex items-center gap-3 pt-2">
+                  <div className="flex-1 h-px bg-[#2a2a2a]" />
+                  <span className="text-[#c9a050] text-[10px] font-bold tracking-widest uppercase">Magazine</span>
+                  <div className="flex-1 h-px bg-[#2a2a2a]" />
+                </div>
+                {([
+                  { key: "magazineMorning" as const, label: "Morning Lather", sub: "☕ Daily email when the morning edition drops (9am ET)" },
+                  { key: "magazineEvening" as const, label: "Evening Edge",   sub: "🌙 Daily email when the evening edition drops (8pm ET)" },
+                ]).map(({ key, label, sub }) => {
+                  const on = emailPrefs[key] === "email" || emailPrefs[key] === "both";
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[#f5f2eb] text-sm font-medium">{label}</p>
+                        <p className="text-gray-500 text-xs">{sub}</p>
+                      </div>
+                      <button
+                        onClick={() => handleMagazinePrefToggle(key)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${on ? "bg-[#c9a050]" : "bg-[#333]"}`}
+                      >
+                        <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${on ? "translate-x-5" : "translate-x-0"}`} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
 

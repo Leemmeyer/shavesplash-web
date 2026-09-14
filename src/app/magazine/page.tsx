@@ -196,7 +196,7 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
               {/* SOTD table */}
               {content.sotdTable && content.sotdTable.length > 0 && (
                 <div>
-                  <SectionDivider label="Today's Shavers" color={accentColor} />
+                  <SectionDivider label="Recent Shavers" color={accentColor} />
                   <div className="mt-3 overflow-hidden rounded-lg border border-white/5">
                     <table className="w-full text-sm">
                       <thead>

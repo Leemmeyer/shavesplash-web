@@ -13,6 +13,7 @@ const ACTION_LABELS: Record<string, string> = {
   sotd_reaction: "SOTD Reaction",
   sotd_comment: "SOTD Comment",
   page_view: "Page View",
+  magazine_read: "Magazine Read",
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -25,6 +26,7 @@ const ACTION_COLORS: Record<string, string> = {
   sotd_reaction: "#f472b6",
   sotd_comment: "#a78bfa",
   page_view: "#6b7280",
+  magazine_read: "#9b8cc8",
 };
 
 function actionLabel(a: string) { return ACTION_LABELS[a] ?? a; }

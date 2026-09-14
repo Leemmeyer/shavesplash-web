@@ -293,11 +293,9 @@ export default function MagazinePage() {
     setSelectedEdition(edition);
     if (edition.isFree) {
       pendingInvalidate.current = true;
-      try {
-        await api.post("/api/magazine/claim-free-view", {});
-      } catch {
-        // non-fatal
-      }
+      api.post("/api/magazine/claim-free-view", {}).catch(() => {});
+    } else {
+      api.post("/api/magazine/read", { editionId: edition.id, edition: edition.edition }).catch(() => {});
     }
   }, []);
 

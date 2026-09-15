@@ -75,6 +75,14 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
   const isMorning = edition.edition === "morning";
   const accentColor = isMorning ? "#c9a050" : "#9b8cc8";
   const title = isMorning ? "Morning Lather" : "Evening Edge";
+  const [sotwPhotoUrl, setSotwPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!content?.sotwWinner?.id) return;
+    api.get<{ photoUrl: string | null }>(`/api/logs/${content.sotwWinner.id}/photo`)
+      .then((res) => setSotwPhotoUrl(res.photoUrl))
+      .catch(() => {});
+  }, [content?.sotwWinner?.id]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -230,8 +238,12 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 text-2xl">
-                      🪒
+                    <div className="w-14 h-14 rounded-xl bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 text-2xl overflow-hidden">
+                      {sotwPhotoUrl ? (
+                        <img src={sotwPhotoUrl} alt="Shave of the Week" className="w-full h-full object-cover" />
+                      ) : (
+                        "🪒"
+                      )}
                     </div>
                     <div>
                       <p className="text-[#f5f2eb] font-bold text-lg">{content.sotwWinner.displayName}</p>

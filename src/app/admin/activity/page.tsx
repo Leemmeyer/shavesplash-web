@@ -270,7 +270,7 @@ export default function ActivityPage() {
                   <span className="text-gray-600 text-[10px] whitespace-nowrap w-28 shrink-0">{formatDate(e.createdAt)}</span>
                   <span className="text-xs font-semibold shrink-0 w-24" style={{ color: actionColor(e.action) }}>{actionLabel(e.action)}</span>
                   <span className="text-gray-400 text-xs truncate flex-1">{e.displayName ?? e.userEmail ?? e.userId ?? "—"}</span>
-                  {e.path && <span className="text-gray-600 text-[10px] truncate max-w-32">{e.path}</span>}
+                  {e.path && <span className="hidden sm:inline text-gray-600 text-[10px] truncate max-w-32">{e.path}</span>}
                 </div>
               ))}
             </div>

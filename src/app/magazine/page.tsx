@@ -99,9 +99,9 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative bg-[#111] rounded-2xl border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <div className="relative bg-[#111] rounded-2xl border border-white/10 w-full max-w-2xl max-h-[90dvh] overflow-hidden flex flex-col shadow-2xl">
         {/* Modal header */}
         <div
           style={{

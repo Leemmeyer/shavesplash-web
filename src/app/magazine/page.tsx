@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
 
 type GearItem = { brand: string; name: string; category: string };
+type GearCommentItem = { brand: string; name: string; category: string; commentExcerpt: string };
 type SotdRow = { displayName: string; snippet: string; result: string };
 type SotwWinner = { id: string; displayName: string; result: string; gear: string; reactions: number };
 
@@ -19,6 +20,7 @@ type MagazineContent = {
   sotdTable: SotdRow[] | null;
   sotwWinner: SotwWinner | null;
   gearTable: GearItem[] | null;
+  gearComments: GearCommentItem[] | null;
 };
 
 type MagazineEdition = {
@@ -179,6 +181,24 @@ function EditionModal({ edition, onClose }: { edition: MagazineEdition; onClose:
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Gear Comments */}
+              {content.gearComments && content.gearComments.length > 0 && (
+                <div>
+                  <SectionDivider label="New Gear Comments" color={accentColor} />
+                  <div className="mt-3 space-y-2">
+                    {content.gearComments.map((item, i) => (
+                      <div key={i} className="bg-[#1a1a1a] rounded-lg px-4 py-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span style={{ color: accentColor }} className="text-xs font-semibold">{item.brand} {item.name}</span>
+                          <span className="text-gray-600 text-[10px]">{GEAR_CATEGORY_LABELS[item.category] ?? item.category}</span>
+                        </div>
+                        <p className="text-gray-400 text-xs leading-relaxed italic">&ldquo;{item.commentExcerpt}&rdquo;</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

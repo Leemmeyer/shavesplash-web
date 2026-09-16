@@ -49,6 +49,10 @@ const GEAR_CATEGORY_LABELS: Record<string, string> = {
   balms: "Balm",
   edpedt: "Fragrance",
   preshaves: "Pre-Shave",
+  bowls: "Bowl",
+  "991642cd-7f61-4f3c-8a7f-69040d96cb5d": "Bowl",
+  c02ee89lm0w: "Bowl",
+  byo027arsfl: "Beard Oil",
 };
 
 function formatEditionTime(iso: string): string {

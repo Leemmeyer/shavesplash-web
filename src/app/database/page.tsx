@@ -29,6 +29,7 @@ type GearItem = {
   hasPhoto: boolean;
   commentCount: number;
   createdAt: string;
+  lastCommentAt: string | null;
 };
 
 type GearComment = {
@@ -732,8 +733,8 @@ function DatabasePageContent() {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [showBatchSubmit, setShowBatchSubmit] = useState(false);
-  const [sort, setSort] = useState<"brand" | "name">(() => {
-    try { return (localStorage.getItem(DB_SORT_KEY) as "brand" | "name") ?? "brand"; } catch { return "brand"; }
+  const [sort, setSort] = useState<"brand" | "name" | "comments">(() => {
+    try { return (localStorage.getItem(DB_SORT_KEY) as "brand" | "name" | "comments") ?? "brand"; } catch { return "brand"; }
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editItem, setEditItem] = useState<GearItem | null>(null);
@@ -820,11 +821,16 @@ function DatabasePageContent() {
   const brands = [...new Set(items.map((i) => i.brand))].sort();
 
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) =>
-      sort === "brand"
+    return [...items].sort((a, b) => {
+      if (sort === "comments") {
+        const aTime = a.lastCommentAt ? new Date(a.lastCommentAt).getTime() : 0;
+        const bTime = b.lastCommentAt ? new Date(b.lastCommentAt).getTime() : 0;
+        return bTime - aTime || b.commentCount - a.commentCount;
+      }
+      return sort === "brand"
         ? a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
-        : a.name.localeCompare(b.name) || a.brand.localeCompare(b.brand)
-    );
+        : a.name.localeCompare(b.name) || a.brand.localeCompare(b.brand);
+    });
   }, [items, sort]);
 
   const filterGroups = useMemo((): FilterGroup[] => {
@@ -992,7 +998,7 @@ function DatabasePageContent() {
           <select
             value={sort}
             onChange={(e) => {
-              const v = e.target.value as "brand" | "name";
+              const v = e.target.value as "brand" | "name" | "comments";
               setSort(v);
               try { localStorage.setItem(DB_SORT_KEY, v); } catch {}
             }}
@@ -1000,6 +1006,7 @@ function DatabasePageContent() {
           >
             <option value="brand">Brand A–Z</option>
             <option value="name">Name A–Z</option>
+            <option value="comments">Recent Comments</option>
           </select>
         </div>
       </div>

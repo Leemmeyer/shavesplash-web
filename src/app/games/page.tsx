@@ -353,7 +353,7 @@ function GamesPageContent() {
     <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
       <div className="mb-8 text-center">
-        <div className="relative w-full max-w-sm mx-auto mb-4 rounded-2xl overflow-hidden">
+        <div className="relative w-full max-w-[150px] mx-auto mb-4 rounded-2xl overflow-hidden">
           <Image
             src="/den-master-hero.png"
             alt="Den Master"

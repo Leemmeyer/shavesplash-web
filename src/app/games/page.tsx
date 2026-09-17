@@ -21,7 +21,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 type GearOption = { id: string; brand: string; name: string };
-type SetupItem = { categoryId: string; gearId: string; brand: string; name: string };
+type SetupItem = { categoryId: string; gearId: string; brand: string; name: string; hasPhoto?: boolean };
 
 type WinnerData = {
   displayName: string;
@@ -36,6 +36,13 @@ type HallOfFameEntry = {
   items: SetupItem[];
 };
 
+type SubmittedSetup = {
+  userId: string;
+  displayName: string;
+  isWinner: boolean;
+  items: SetupItem[];
+};
+
 type GameState = {
   date: string;
   revealed: boolean;
@@ -44,6 +51,7 @@ type GameState = {
   winner: WinnerData | null;
   hallOfFame: HallOfFameEntry[];
   categories: { id: string; items: GearOption[] }[];
+  allSetups: SubmittedSetup[];
 };
 
 function formatDate(dateStr: string): string {
@@ -164,6 +172,64 @@ function CategoryPicker({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function GearThumb({ gearId, categoryId, hasPhoto }: { gearId: string; categoryId: string; hasPhoto?: boolean }) {
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasPhoto) return;
+    api.get<{ photoUrl: string | null }>(`/api/gear/${gearId}/photo`)
+      .then((d) => { if (d.photoUrl) setSrc(d.photoUrl); })
+      .catch(() => {});
+  }, [gearId, hasPhoto]);
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt="" className="w-9 h-9 object-cover rounded-lg border border-white/10 shrink-0" />
+    );
+  }
+  return (
+    <div className="w-9 h-9 rounded-lg border border-white/10 bg-[#2a2a2a] flex items-center justify-center text-base shrink-0">
+      {CATEGORY_ICONS[categoryId] ?? "📦"}
+    </div>
+  );
+}
+
+function SubmissionsTable({ setups }: { setups: SubmittedSetup[] }) {
+  if (setups.length === 0) return null;
+  return (
+    <div className="mb-8">
+      <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-4">
+        Today&apos;s Entries <span className="text-gray-600 text-sm font-sans ml-1">{setups.length}</span>
+      </h2>
+      <div className="space-y-2">
+        {setups.map((setup) => (
+          <div
+            key={setup.userId}
+            className={`bg-[#1e1e1e] rounded-xl border px-4 py-3 ${
+              setup.isWinner ? "border-[#c9a050]/40" : "border-white/5"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2.5">
+              {setup.isWinner && <span className="text-sm">🏆</span>}
+              <span className={`text-sm font-semibold ${setup.isWinner ? "text-[#c9a050]" : "text-[#f5f2eb]"}`}>
+                {setup.displayName}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {setup.items.map((item) => (
+                <div key={item.categoryId} title={`${item.brand} ${item.name}`}>
+                  <GearThumb gearId={item.gearId} categoryId={item.categoryId} hasPhoto={item.hasPhoto} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -319,6 +385,9 @@ function GamesPageContent() {
           <p className="text-gray-500 text-sm">Submissions for today have closed. Come back tomorrow!</p>
         </div>
       ) : null}
+
+      {/* All today's entries */}
+      <SubmissionsTable setups={state.allSetups ?? []} />
 
       {/* Hall of Fame */}
       {state.hallOfFame.length > 0 && (

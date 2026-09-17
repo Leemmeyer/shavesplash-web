@@ -51,8 +51,11 @@ type GameState = {
   mySetup: { items: SetupItem[] } | null;
   winner: WinnerData | null;
   hallOfFame: HallOfFameEntry[];
-  categories: { id: string; items: GearOption[] }[];
   allSetups: SubmittedSetup[];
+};
+
+type CategoriesState = {
+  categories: { id: string; items: GearOption[] }[];
 };
 
 function formatDate(dateStr: string): string {
@@ -302,6 +305,7 @@ function Countdown() {
 
 function GamesPageContent() {
   const [state, setState] = useState<GameState | null>(null);
+  const [categories, setCategories] = useState<CategoriesState["categories"]>([]);
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -309,17 +313,21 @@ function GamesPageContent() {
   const [expandedHof, setExpandedHof] = useState<string | null>(null);
 
   const fetchState = useCallback(() => {
+    // Two parallel fetches: state is fast, categories is slow — page renders on state alone
     api.get<GameState>("/api/games/today")
       .then((d) => setState(d))
       .catch(() => {})
       .finally(() => setLoading(false));
+    api.get<CategoriesState>("/api/games/categories")
+      .then((d) => setCategories(d.categories))
+      .catch(() => {});
   }, []);
 
   useEffect(() => { fetchState(); }, [fetchState]);
 
   const handleSubmit = async () => {
     if (submitting) return;
-    const catIds = state?.categories.map((c) => c.id) ?? [];
+    const catIds = categories.map((c) => c.id);
     const selectedCatIds = catIds.filter((id) => selections[id]);
 
     const required = ["razors", "blades", "soaps", "brushes"];
@@ -332,7 +340,7 @@ function GamesPageContent() {
 
     // Warn if none of the selected items have any log score data
     const gearById = new Map(
-      (state?.categories ?? []).flatMap((c) => c.items.map((i) => [i.id, i]))
+      categories.flatMap((c) => c.items.map((i) => [i.id, i]))
     );
     const anyScored = selectedCatIds.some((catId) => {
       const gearId = selections[catId];
@@ -411,8 +419,13 @@ function GamesPageContent() {
       {!state.hasSubmitted && !state.revealed ? (
         <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
           <p className="text-[#f5f2eb] font-semibold mb-4">Setup Builder</p>
+          {categories.length === 0 ? (
+            <div className="flex justify-center py-6">
+              <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
+            </div>
+          ) : (
           <div className="space-y-4">
-            {state.categories.map((cat) => (
+            {categories.map((cat) => (
               <CategoryPicker
                 key={cat.id}
                 categoryId={cat.id}
@@ -425,6 +438,7 @@ function GamesPageContent() {
               />
             ))}
           </div>
+          )}
           {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
           <button
             onClick={handleSubmit}

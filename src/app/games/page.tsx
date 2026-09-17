@@ -451,7 +451,7 @@ function GamesPageContent() {
         </div>
       ) : state.hasSubmitted && state.mySetup ? (
         <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
-          <p className="text-[#f5f2eb] font-semibold mb-1">Your Den</p>
+          <p className="text-[#f5f2eb] font-semibold mb-1">Your Setup</p>
           {!state.revealed && (
             <p className="text-gray-500 text-xs mb-4">Entered for today — check back at 9pm ET for the winner.</p>
           )}

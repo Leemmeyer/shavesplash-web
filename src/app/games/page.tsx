@@ -303,27 +303,18 @@ function Countdown() {
   );
 }
 
-function GamesPageContent() {
-  const [state, setState] = useState<GameState | null>(null);
-  const [categories, setCategories] = useState<CategoriesState["categories"]>([]);
-  const [loading, setLoading] = useState(true);
+function GamesPageContent({
+  state, categories, loading, onRefresh,
+}: {
+  state: GameState | null;
+  categories: CategoriesState["categories"];
+  loading: boolean;
+  onRefresh: () => void;
+}) {
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedHof, setExpandedHof] = useState<string | null>(null);
-
-  const fetchState = useCallback(() => {
-    // Two parallel fetches: state is fast, categories is slow — page renders on state alone
-    api.get<GameState>("/api/games/today")
-      .then((d) => setState(d))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-    api.get<CategoriesState>("/api/games/categories")
-      .then((d) => setCategories(d.categories))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => { fetchState(); }, [fetchState]);
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -355,7 +346,7 @@ function GamesPageContent() {
     setSubmitting(true);
     try {
       await api.post("/api/games/submit", { items: selections });
-      fetchState();
+      onRefresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to submit. Please try again.");
     } finally {
@@ -502,9 +493,31 @@ function GamesPageContent() {
 }
 
 export default function GamesPage() {
+  const [state, setState] = useState<GameState | null>(null);
+  const [categories, setCategories] = useState<CategoriesState["categories"]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchState = useCallback(() => {
+    api.get<GameState>("/api/games/today")
+      .then((d) => setState(d))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    api.get<CategoriesState>("/api/games/categories")
+      .then((d) => setCategories(d.categories))
+      .catch(() => {});
+  }, []);
+
+  // Fire immediately on mount — runs in parallel with AuthGuard's session check
+  useEffect(() => { fetchState(); }, [fetchState]);
+
   return (
     <AuthGuard>
-      <GamesPageContent />
+      <GamesPageContent
+        state={state}
+        categories={categories}
+        loading={loading}
+        onRefresh={fetchState}
+      />
     </AuthGuard>
   );
 }

@@ -176,15 +176,15 @@ function CategoryPicker({
   );
 }
 
-function GearThumb({ gearId, categoryId, hasPhoto }: { gearId: string; categoryId: string; hasPhoto?: boolean }) {
+function GearThumb({ gearId, categoryId, hasPhoto, visible }: { gearId: string; categoryId: string; hasPhoto?: boolean; visible: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasPhoto) return;
+    if (!hasPhoto || !visible) return;
     api.get<{ photoUrl: string | null }>(`/api/gear/${gearId}/photo`)
       .then((d) => { if (d.photoUrl) setSrc(d.photoUrl); })
       .catch(() => {});
-  }, [gearId, hasPhoto]);
+  }, [gearId, hasPhoto, visible]);
 
   if (src) {
     return (
@@ -199,53 +199,42 @@ function GearThumb({ gearId, categoryId, hasPhoto }: { gearId: string; categoryI
   );
 }
 
-function SubmissionsTable({ setups }: { setups: SubmittedSetup[] }) {
-  if (setups.length === 0) return null;
+function PlayerEntry({ setup }: { setup: SubmittedSetup }) {
+  const [expanded, setExpanded] = useState(false);
+  const summary = setup.items.map((i) => `${i.brand} ${i.name}`).join(", ");
+
   return (
-    <div className="mb-8">
-      <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-4">
-        Today&apos;s Entries <span className="text-gray-600 text-sm font-sans ml-1">{setups.length}</span>
-      </h2>
-      <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-[#1a1a1a] border-b border-white/10 text-left">
-              <th className="px-3 py-2.5 text-gray-500 text-xs uppercase tracking-wider font-medium whitespace-nowrap">Player</th>
-              <th className="px-3 py-2.5 text-gray-500 text-xs uppercase tracking-wider font-medium whitespace-nowrap">Category</th>
-              <th className="px-3 py-2.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Item</th>
-            </tr>
-          </thead>
-          <tbody>
-            {setups.flatMap((setup, si) =>
-              setup.items.map((item, ii) => (
-                <tr
-                  key={`${setup.userId}-${item.categoryId}`}
-                  className={`${
-                    ii === 0 && si > 0 ? "border-t border-white/10" : ii > 0 ? "border-t border-white/[0.04]" : ""
-                  } ${setup.isWinner ? "bg-[#c9a050]/[0.04]" : "bg-[#1e1e1e]"}`}
-                >
-                  {ii === 0 && (
-                    <td
-                      rowSpan={setup.items.length}
-                      className="px-3 py-2 align-top"
-                    >
-                      <div className="flex items-start gap-1.5 pt-1">
-                        {setup.isWinner && <span className="text-xs leading-none mt-0.5">🏆</span>}
-                        <span className={`font-semibold leading-snug ${setup.isWinner ? "text-[#c9a050]" : "text-[#f5f2eb]"}`}>
-                          {setup.displayName}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-                  <td className="px-3 py-2 whitespace-nowrap">
+    <div className={`rounded-xl border overflow-hidden ${setup.isWinner ? "border-[#c9a050]/40 bg-[#c9a050]/[0.04]" : "border-white/5 bg-[#1e1e1e]"}`}>
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            {setup.isWinner && <span className="text-xs leading-none">🏆</span>}
+            <span className={`font-semibold text-sm ${setup.isWinner ? "text-[#c9a050]" : "text-[#f5f2eb]"}`}>
+              {setup.displayName}
+            </span>
+          </div>
+          <p className="text-gray-500 text-xs leading-snug truncate">{summary}</p>
+        </div>
+        <span className="text-gray-600 text-xs mt-1 shrink-0">{expanded ? "▲" : "▼"}</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-white/5">
+          <table className="w-full text-sm border-collapse">
+            <tbody>
+              {setup.items.map((item) => (
+                <tr key={item.categoryId} className="border-t border-white/[0.04] first:border-0">
+                  <td className="px-4 py-2 whitespace-nowrap w-28">
                     <span className="text-gray-400 text-xs">
-                      {CATEGORY_ICONS[item.categoryId]}{" "}
-                      {CATEGORY_LABELS[item.categoryId] ?? item.categoryId}
+                      {CATEGORY_ICONS[item.categoryId]}{" "}{CATEGORY_LABELS[item.categoryId] ?? item.categoryId}
                     </span>
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <GearThumb gearId={item.gearId} categoryId={item.categoryId} hasPhoto={item.hasPhoto} />
+                      <GearThumb gearId={item.gearId} categoryId={item.categoryId} hasPhoto={item.hasPhoto} visible={expanded} />
                       <span className="leading-tight">
                         <span className="text-[#c9a050] font-medium">{item.brand}</span>{" "}
                         <span className="text-[#f5f2eb]">{item.name}</span>
@@ -253,10 +242,26 @@ function SubmissionsTable({ setups }: { setups: SubmittedSetup[] }) {
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubmissionsTable({ setups }: { setups: SubmittedSetup[] }) {
+  if (setups.length === 0) return null;
+  return (
+    <div className="mb-8">
+      <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-4">
+        Today&apos;s Entries <span className="text-gray-600 text-sm font-sans ml-1">{setups.length}</span>
+      </h2>
+      <div className="space-y-2">
+        {setups.map((setup) => (
+          <PlayerEntry key={setup.userId} setup={setup} />
+        ))}
       </div>
     </div>
   );
@@ -354,9 +359,6 @@ function GamesPageContent() {
         </p>
       </div>
 
-      {/* All today's entries — shown at top */}
-      <SubmissionsTable setups={state.allSetups ?? []} />
-
       {/* Today's winner */}
       {state.winner && (
         <div className="mb-8 bg-[#1e1e1e] border border-[#c9a050]/40 rounded-2xl p-5">
@@ -377,7 +379,7 @@ function GamesPageContent() {
       {/* Submission area */}
       {!state.hasSubmitted && !state.revealed ? (
         <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
-          <p className="text-[#f5f2eb] font-semibold mb-4">Build Your Den</p>
+          <p className="text-[#f5f2eb] font-semibold mb-4">Setup Builder</p>
           <div className="space-y-4">
             {state.categories.map((cat) => (
               <CategoryPicker
@@ -416,6 +418,9 @@ function GamesPageContent() {
           <p className="text-gray-500 text-sm">Submissions for today have closed. Come back tomorrow!</p>
         </div>
       ) : null}
+
+      {/* All today's entries */}
+      <SubmissionsTable setups={state.allSetups ?? []} />
 
       {/* Hall of Fame */}
       {state.hallOfFame.length > 0 && (

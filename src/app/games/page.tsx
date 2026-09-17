@@ -189,11 +189,11 @@ function GearThumb({ gearId, categoryId, hasPhoto }: { gearId: string; categoryI
   if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt="" className="w-9 h-9 object-cover rounded-lg border border-white/10 shrink-0" />
+      <img src={src} alt="" className="w-8 h-8 object-cover rounded-md border border-white/10 shrink-0" />
     );
   }
   return (
-    <div className="w-9 h-9 rounded-lg border border-white/10 bg-[#2a2a2a] flex items-center justify-center text-base shrink-0">
+    <div className="w-8 h-8 rounded-md border border-white/10 bg-[#2a2a2a] flex items-center justify-center text-sm shrink-0">
       {CATEGORY_ICONS[categoryId] ?? "📦"}
     </div>
   );
@@ -206,29 +206,57 @@ function SubmissionsTable({ setups }: { setups: SubmittedSetup[] }) {
       <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-4">
         Today&apos;s Entries <span className="text-gray-600 text-sm font-sans ml-1">{setups.length}</span>
       </h2>
-      <div className="space-y-2">
-        {setups.map((setup) => (
-          <div
-            key={setup.userId}
-            className={`bg-[#1e1e1e] rounded-xl border px-4 py-3 ${
-              setup.isWinner ? "border-[#c9a050]/40" : "border-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2.5">
-              {setup.isWinner && <span className="text-sm">🏆</span>}
-              <span className={`text-sm font-semibold ${setup.isWinner ? "text-[#c9a050]" : "text-[#f5f2eb]"}`}>
-                {setup.displayName}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {setup.items.map((item) => (
-                <div key={item.categoryId} title={`${item.brand} ${item.name}`}>
-                  <GearThumb gearId={item.gearId} categoryId={item.categoryId} hasPhoto={item.hasPhoto} />
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+      <div className="overflow-x-auto rounded-xl border border-white/10">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-[#1a1a1a] border-b border-white/10 text-left">
+              <th className="px-3 py-2.5 text-gray-500 text-xs uppercase tracking-wider font-medium whitespace-nowrap">Player</th>
+              <th className="px-3 py-2.5 text-gray-500 text-xs uppercase tracking-wider font-medium whitespace-nowrap">Category</th>
+              <th className="px-3 py-2.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Item</th>
+            </tr>
+          </thead>
+          <tbody>
+            {setups.flatMap((setup, si) =>
+              setup.items.map((item, ii) => (
+                <tr
+                  key={`${setup.userId}-${item.categoryId}`}
+                  className={`${
+                    ii === 0 && si > 0 ? "border-t border-white/10" : ii > 0 ? "border-t border-white/[0.04]" : ""
+                  } ${setup.isWinner ? "bg-[#c9a050]/[0.04]" : "bg-[#1e1e1e]"}`}
+                >
+                  {ii === 0 && (
+                    <td
+                      rowSpan={setup.items.length}
+                      className="px-3 py-2 align-top"
+                    >
+                      <div className="flex items-start gap-1.5 pt-1">
+                        {setup.isWinner && <span className="text-xs leading-none mt-0.5">🏆</span>}
+                        <span className={`font-semibold leading-snug ${setup.isWinner ? "text-[#c9a050]" : "text-[#f5f2eb]"}`}>
+                          {setup.displayName}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className="text-gray-400 text-xs">
+                      {CATEGORY_ICONS[item.categoryId]}{" "}
+                      {CATEGORY_LABELS[item.categoryId] ?? item.categoryId}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <GearThumb gearId={item.gearId} categoryId={item.categoryId} hasPhoto={item.hasPhoto} />
+                      <span className="leading-tight">
+                        <span className="text-[#c9a050] font-medium">{item.brand}</span>{" "}
+                        <span className="text-[#f5f2eb]">{item.name}</span>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -319,12 +347,15 @@ function GamesPageContent() {
     <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-1">Daily Setup</h1>
+        <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-1">Den Master</h1>
         <p className="text-gray-500 text-sm">{formatDate(state.date)}</p>
         <p className="text-gray-600 text-xs mt-1.5">
-          Build today&apos;s shave kit. One entry per day — winner revealed at 9pm ET.
+          Build today&apos;s perfect shave den. One entry per day — winner revealed at 9pm ET.
         </p>
       </div>
+
+      {/* All today's entries — shown at top */}
+      <SubmissionsTable setups={state.allSetups ?? []} />
 
       {/* Today's winner */}
       {state.winner && (
@@ -346,7 +377,7 @@ function GamesPageContent() {
       {/* Submission area */}
       {!state.hasSubmitted && !state.revealed ? (
         <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
-          <p className="text-[#f5f2eb] font-semibold mb-4">Build Your Setup</p>
+          <p className="text-[#f5f2eb] font-semibold mb-4">Build Your Den</p>
           <div className="space-y-4">
             {state.categories.map((cat) => (
               <CategoryPicker
@@ -367,13 +398,13 @@ function GamesPageContent() {
             disabled={submitting}
             className="w-full mt-5 py-3 bg-[#c9a050] text-black font-semibold rounded-xl hover:bg-[#d4aa60] transition-colors disabled:opacity-50"
           >
-            {submitting ? "Submitting…" : "Enter Today's Setup"}
+            {submitting ? "Submitting…" : "Enter Today's Den"}
           </button>
           <Countdown />
         </div>
       ) : state.hasSubmitted && state.mySetup ? (
         <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
-          <p className="text-[#f5f2eb] font-semibold mb-1">Your Setup</p>
+          <p className="text-[#f5f2eb] font-semibold mb-1">Your Den</p>
           {!state.revealed && (
             <p className="text-gray-500 text-xs mb-4">Entered for today — check back at 9pm ET for the winner.</p>
           )}
@@ -385,9 +416,6 @@ function GamesPageContent() {
           <p className="text-gray-500 text-sm">Submissions for today have closed. Come back tomorrow!</p>
         </div>
       ) : null}
-
-      {/* All today's entries */}
-      <SubmissionsTable setups={state.allSetups ?? []} />
 
       {/* Hall of Fame */}
       {state.hallOfFame.length > 0 && (

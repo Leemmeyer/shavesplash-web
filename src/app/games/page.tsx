@@ -380,7 +380,7 @@ function GamesPageContent() {
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#c9a050] mb-1">Den Master</h1>
         <p className="text-gray-500 text-sm">{formatDate(state.date)}</p>
         <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-          Pick the Optimal Shave Setup. Scores are based on results entered from SOTDs. If you don&apos;t see your item in the selector, add it to the{" "}
+          Pick the Optimal Shave Setup. Scores are based on results entered from SOTDs — the more categories you fill, the higher your potential score. If you don&apos;t see your item in the selector, add it to the{" "}
           <a href="/database" className="text-[#c9a050] underline underline-offset-2 hover:text-[#d4aa60]">Gear Database</a>.
           {" "}The winner will be chosen at 8:45pm ET.
         </p>

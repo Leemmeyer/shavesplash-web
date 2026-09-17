@@ -15,6 +15,7 @@ const ACTION_LABELS: Record<string, string> = {
   page_view: "Page View",
   magazine_read: "Magazine Read",
   gear_database_view: "Gear Database",
+  den_master_submit: "Den Master",
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -29,6 +30,7 @@ const ACTION_COLORS: Record<string, string> = {
   page_view: "#6b7280",
   magazine_read: "#9b8cc8",
   gear_database_view: "#34d399",
+  den_master_submit: "#c9a050",
 };
 
 function actionLabel(a: string) { return ACTION_LABELS[a] ?? a; }

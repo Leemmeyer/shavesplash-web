@@ -413,7 +413,7 @@ function GamesPageContent() {
             disabled={submitting}
             className="w-full mt-5 py-3 bg-[#c9a050] text-black font-semibold rounded-xl hover:bg-[#d4aa60] transition-colors disabled:opacity-50"
           >
-            {submitting ? "Submitting…" : "Enter Today's Den"}
+            {submitting ? "Submitting…" : "Enter Today's Setup"}
           </button>
           <Countdown />
         </div>

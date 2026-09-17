@@ -30,7 +30,7 @@ type GearItem = {
   commentCount: number;
   createdAt: string;
   lastCommentAt: string | null;
-  selectedCount: number;
+  viewCount: number;
 };
 
 type GearComment = {
@@ -830,8 +830,8 @@ function DatabasePageContent() {
       }
       if (sort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      if (sort === "most-selected") return b.selectedCount - a.selectedCount;
-      if (sort === "least-selected") return a.selectedCount - b.selectedCount;
+      if (sort === "most-selected") return b.viewCount - a.viewCount;
+      if (sort === "least-selected") return a.viewCount - b.viewCount;
       return sort === "brand"
         ? a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
         : a.name.localeCompare(b.name) || a.brand.localeCompare(b.brand);
@@ -1052,8 +1052,8 @@ function DatabasePageContent() {
               selected={selected.has(item.id)}
               onToggle={() => toggleSelect(item.id)}
               onEdit={() => setEditItem(item)}
-              onView={() => setViewItem(item)}
-              onComment={() => { setScrollToComments(true); setViewItem(item); }}
+              onView={() => { setViewItem(item); api.post(`/api/gear/${item.id}/view`, {}).catch(() => {}); }}
+              onComment={() => { setScrollToComments(true); setViewItem(item); api.post(`/api/gear/${item.id}/view`, {}).catch(() => {}); }}
             />
           ))}
         </div>

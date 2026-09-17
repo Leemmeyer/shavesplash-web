@@ -30,6 +30,7 @@ type GearItem = {
   commentCount: number;
   createdAt: string;
   lastCommentAt: string | null;
+  selectedCount: number;
 };
 
 type GearComment = {
@@ -733,7 +734,7 @@ function DatabasePageContent() {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [showBatchSubmit, setShowBatchSubmit] = useState(false);
-  const [sort, setSort] = useState<"brand" | "name" | "comments">(() => {
+  const [sort, setSort] = useState<"brand" | "name" | "comments" | "newest" | "oldest" | "most-selected" | "least-selected">(() => {
     try { return (localStorage.getItem(DB_SORT_KEY) as "brand" | "name" | "comments") ?? "brand"; } catch { return "brand"; }
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -827,6 +828,10 @@ function DatabasePageContent() {
         const bTime = b.lastCommentAt ? new Date(b.lastCommentAt).getTime() : 0;
         return bTime - aTime || b.commentCount - a.commentCount;
       }
+      if (sort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sort === "most-selected") return b.selectedCount - a.selectedCount;
+      if (sort === "least-selected") return a.selectedCount - b.selectedCount;
       return sort === "brand"
         ? a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
         : a.name.localeCompare(b.name) || a.brand.localeCompare(b.brand);
@@ -1007,6 +1012,10 @@ function DatabasePageContent() {
             <option value="brand">Brand A–Z</option>
             <option value="name">Name A–Z</option>
             <option value="comments">Recent Comments</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="most-selected">Most Selected</option>
+            <option value="least-selected">Least Selected</option>
           </select>
         </div>
       </div>

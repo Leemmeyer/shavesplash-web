@@ -21,7 +21,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };
 
-type GearOption = { id: string; brand: string; name: string };
+type GearOption = { id: string; brand: string; name: string; hasScore?: boolean };
 type SetupItem = { categoryId: string; gearId: string; brand: string; name: string; hasPhoto?: boolean };
 
 type WinnerData = {
@@ -325,6 +325,20 @@ function GamesPageContent() {
       setError(`Please choose a ${CATEGORY_LABELS[missing[0]] ?? missing[0]} before submitting.`);
       return;
     }
+
+    // Warn if none of the selected items have any log score data
+    const gearById = new Map(
+      (state?.categories ?? []).flatMap((c) => c.items.map((i) => [i.id, i]))
+    );
+    const anyScored = catIds.some((catId) => {
+      const gearId = selections[catId];
+      return gearId && gearById.get(gearId)?.hasScore;
+    });
+    if (!anyScored) {
+      setError("No Scores are Available for These Items. Please choose again.");
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
     try {

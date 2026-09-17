@@ -320,9 +320,9 @@ function GamesPageContent() {
   const handleSubmit = async () => {
     if (submitting) return;
     const catIds = state?.categories.map((c) => c.id) ?? [];
-    const missing = catIds.filter((id) => !selections[id]);
-    if (missing.length > 0) {
-      setError(`Please choose a ${CATEGORY_LABELS[missing[0]] ?? missing[0]} before submitting.`);
+    const selectedCatIds = catIds.filter((id) => selections[id]);
+    if (selectedCatIds.length === 0) {
+      setError("Please choose at least one item before submitting.");
       return;
     }
 
@@ -330,7 +330,7 @@ function GamesPageContent() {
     const gearById = new Map(
       (state?.categories ?? []).flatMap((c) => c.items.map((i) => [i.id, i]))
     );
-    const anyScored = catIds.some((catId) => {
+    const anyScored = selectedCatIds.some((catId) => {
       const gearId = selections[catId];
       return gearId && gearById.get(gearId)?.hasScore;
     });

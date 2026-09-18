@@ -24,18 +24,18 @@ const CATEGORY_ICONS: Record<string, string> = {
 type GearOption = { id: string; brand: string; name: string; hasScore?: boolean };
 type SetupItem = { categoryId: string; gearId: string; brand: string; name: string; hasPhoto?: boolean };
 
+type ScoreData = { rawScore: number | null; bonusPct: number; finalScore: number | null };
+
 type WinnerData = {
   displayName: string;
-  score: number | null;
   items: SetupItem[];
-};
+} & ScoreData;
 
 type HallOfFameEntry = {
   date: string;
   displayName: string;
-  score: number | null;
   items: SetupItem[];
-};
+} & ScoreData;
 
 type SubmittedSetup = {
   userId: string;
@@ -65,12 +65,19 @@ function formatDate(dateStr: string): string {
 
 const RESULT_LABELS = ["DFS", "DFS+/DFS", "DFS+", "BBS-/DFS+", "BBS-", "BBS/BBS-", "BBS", "BBS+/BBS", "BBS+"];
 
-function ScoreDisplay({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-gray-500 text-sm">No data</span>;
-  const idx = Math.max(0, Math.min(8, Math.round(score * 8)));
+function ScoreDisplay({ rawScore, bonusPct, finalScore }: ScoreData) {
+  if (rawScore === null) return <span className="text-gray-500 text-sm">No data</span>;
+  const idx = Math.max(0, Math.min(8, Math.round(rawScore * 8)));
   const label = RESULT_LABELS[idx]!;
   const color = idx >= 7 ? "#c9a050" : idx >= 5 ? "#a0c950" : idx >= 3 ? "#50a0c9" : "#9ca3af";
-  return <span className="text-sm font-semibold" style={{ color }}>{label}</span>;
+  const numerical = finalScore !== null ? Math.round(finalScore * 100) : null;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-sm font-semibold" style={{ color }}>{label}</span>
+      {bonusPct > 0 && <span className="text-xs text-gray-500">+{bonusPct}%</span>}
+      {numerical !== null && <span className="text-xs text-gray-500">· {numerical}</span>}
+    </div>
+  );
 }
 
 function SetupCard({ items }: { items: SetupItem[] }) {
@@ -395,7 +402,7 @@ function GamesPageContent({
               <p className="text-[#f5f2eb] font-bold">{state.winner.displayName}</p>
             </div>
             <div className="ml-auto">
-              <ScoreDisplay score={state.winner.score} />
+              <ScoreDisplay {...state.winner} />
             </div>
           </div>
           <SetupCard items={state.winner.items} />
@@ -470,7 +477,7 @@ function GamesPageContent({
                     <span className="text-[#f5f2eb] text-sm font-medium">{entry.displayName}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <ScoreDisplay score={entry.score} />
+                    <ScoreDisplay {...entry} />
                     <span className="text-gray-600 text-xs">{expandedHof === entry.date ? "▲" : "▼"}</span>
                   </div>
                 </button>

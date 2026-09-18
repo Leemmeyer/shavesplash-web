@@ -65,17 +65,62 @@ function formatDate(dateStr: string): string {
 
 const RESULT_LABELS = ["DFS", "DFS+/DFS", "DFS+", "BBS-/DFS+", "BBS-", "BBS/BBS-", "BBS", "BBS+/BBS", "BBS+"];
 
-function ScoreDisplay({ rawScore, bonusPct, finalScore }: ScoreData) {
-  if (rawScore === null) return <span className="text-gray-500 text-sm">No data</span>;
+function scoreLabel(rawScore: number) {
   const idx = Math.max(0, Math.min(8, Math.round(rawScore * 8)));
   const label = RESULT_LABELS[idx]!;
   const color = idx >= 7 ? "#c9a050" : idx >= 5 ? "#a0c950" : idx >= 3 ? "#50a0c9" : "#9ca3af";
-  const numerical = finalScore !== null ? Math.round(finalScore * 100) : null;
+  return { label, color, idx };
+}
+
+// Full winner card display — labeled columns with explanation
+function ScoreDisplay({ rawScore, bonusPct, finalScore }: ScoreData) {
+  if (rawScore === null) return <span className="text-gray-500 text-sm">No data</span>;
+  const { label, color } = scoreLabel(rawScore);
+  const rawNumerical = Math.round(rawScore * 100);
+  const finalNumerical = finalScore !== null ? Math.round(finalScore * 100) : null;
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-sm font-semibold" style={{ color }}>{label}</span>
-      {bonusPct > 0 && <span className="text-xs text-gray-500">+{bonusPct}%</span>}
-      {numerical !== null && <span className="text-xs text-gray-500">· {numerical}</span>}
+    <div>
+      <div className="flex items-end gap-5">
+        <div className="text-center">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg of Items</p>
+          <p className="text-sm font-semibold" style={{ color }}>
+            {label} <span className="text-gray-500 text-xs font-normal">({rawNumerical})</span>
+          </p>
+        </div>
+        {bonusPct > 0 && (
+          <div className="text-center">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Bonus</p>
+            <p className="text-sm font-semibold text-gray-400">+{bonusPct}%</p>
+          </div>
+        )}
+        {finalNumerical !== null && (
+          <div className="text-center">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Final Score</p>
+            <p className="text-2xl font-bold text-[#c9a050]">{finalNumerical}</p>
+          </div>
+        )}
+      </div>
+      {bonusPct > 0 && (
+        <p className="text-[10px] text-gray-600 mt-2">
+          A bonus of 2.5% is applied for every item chosen above the required 4.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Compact single-line display for hall of fame rows
+function ScoreCompact({ rawScore, bonusPct, finalScore }: ScoreData) {
+  if (rawScore === null) return <span className="text-gray-500 text-sm">No data</span>;
+  const { label, color } = scoreLabel(rawScore);
+  const rawNumerical = Math.round(rawScore * 100);
+  const finalNumerical = finalScore !== null ? Math.round(finalScore * 100) : null;
+  return (
+    <div className="flex items-center gap-1.5 text-sm">
+      <span className="font-semibold" style={{ color }}>{label}</span>
+      <span className="text-gray-600 text-xs">({rawNumerical})</span>
+      {bonusPct > 0 && <span className="text-gray-500 text-xs">+{bonusPct}%</span>}
+      {finalNumerical !== null && <span className="font-bold text-[#c9a050]">{finalNumerical}</span>}
     </div>
   );
 }
@@ -477,7 +522,7 @@ function GamesPageContent({
                     <span className="text-[#f5f2eb] text-sm font-medium">{entry.displayName}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <ScoreDisplay {...entry} />
+                    <ScoreCompact {...entry} />
                     <span className="text-gray-600 text-xs">{expandedHof === entry.date ? "▲" : "▼"}</span>
                   </div>
                 </button>

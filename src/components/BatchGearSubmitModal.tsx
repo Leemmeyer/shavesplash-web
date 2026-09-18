@@ -15,6 +15,7 @@ const CATEGORIES = [
   { id: "balms", label: "Balms" },
   { id: "preshaves", label: "Preshaves" },
   { id: "edpedt", label: "EDP/EDT" },
+  { id: "beardoils", label: "Beard Oils" },
 ];
 
 function catLabel(id: string) {

@@ -17,6 +17,7 @@ const CATEGORIES = [
   { id: "balms", label: "Balms", icon: "🧴" },
   { id: "preshaves", label: "Preshaves", icon: "✨" },
   { id: "edpedt", label: "EDP/EDT", icon: "🌸" },
+  { id: "beardoils", label: "Beard Oils", icon: "🌿" },
   { id: "bowls", label: "Bowls", icon: "🥣" },
 ];
 

@@ -29,6 +29,7 @@ const CATEGORY_OPTIONS = [
   { id: "balms", label: "Balm", icon: "🧴" },
   { id: "preshaves", label: "Preshave", icon: "✨" },
   { id: "edpedt", label: "EDP/EDT", icon: "🌸" },
+  { id: "beardoils", label: "Beard Oil", icon: "🌿" },
   { id: "bowls", label: "Bowl", icon: "🥣" },
 ];
 
@@ -233,12 +234,13 @@ function SubmitForm({ defaultCategory, fromDenId }: { defaultCategory: string; f
   const isEdpEdt = categoryId === "edpedt";
   const isPreshave = categoryId === "preshaves";
   const isBalm = categoryId === "balms";
+  const isBeardOil = categoryId === "beardoils";
   const isBowl = categoryId === "bowls";
-  const hasSize = isSoap || isAftershave || isEdpEdt || isBalm;
-  const hasIngredients = isSoap || isAftershave || isBalm || isPreshave || isEdpEdt;
+  const hasSize = isSoap || isAftershave || isEdpEdt || isBalm || isBeardOil;
+  const hasIngredients = isSoap || isAftershave || isBalm || isPreshave || isEdpEdt || isBeardOil;
   const sizeUnit = (isSoap || isBalm) ? "oz" : "mL";
   const isStraight = isRazor && edgeType === "Straight";
-  const hasScent = isSoap || isAftershave;
+  const hasScent = isSoap || isAftershave || isBeardOil;
 
   const doSubmit = async () => {
     setSaving(true);

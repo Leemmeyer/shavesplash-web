@@ -45,7 +45,7 @@ const SCENT_FAMILY_OPTIONS = ["Citrus","Floral","Fougère","Gourmand","Leather",
 const CATEGORY_LABELS: Record<string, string> = {
   razors: "Razor", blades: "Blade", brushes: "Brush",
   soaps: "Soap", aftershaves: "Aftershave", balms: "Balm",
-  preshaves: "Preshave", edpedt: "EDP/EDT", bowls: "Bowl",
+  preshaves: "Preshave", edpedt: "EDP/EDT", beardoils: "Beard Oil", bowls: "Bowl",
 };
 
 // All fields per category, with display labels
@@ -110,6 +110,15 @@ const ALL_FIELDS: Record<string, { key: string; label: string }[]> = {
     { key: "baseNotes", label: "Base Notes" },
     { key: "ingredients", label: "Ingredients" },
     { key: "inspiration", label: "Inspiration" },
+    { key: "size", label: "Size (mL)" },
+  ],
+  beardoils: [
+    { key: "scentFamily", label: "Scent Family" },
+    { key: "familySubtype", label: "Subtype" },
+    { key: "topNotes", label: "Top Notes" },
+    { key: "heartNotes", label: "Heart Notes" },
+    { key: "baseNotes", label: "Base Notes" },
+    { key: "ingredients", label: "Ingredients" },
     { key: "size", label: "Size (mL)" },
   ],
   bowls: [
@@ -353,6 +362,13 @@ function SubmissionEditForm({ categoryId, draftData, setField }: {
   );
 
   if (categoryId === "edpedt") return (
+    <div className="space-y-3">
+      {scentFields}
+      <EField label="Size (mL)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />
+    </div>
+  );
+
+  if (categoryId === "beardoils") return (
     <div className="space-y-3">
       {scentFields}
       <EField label="Size (mL)" value={str("size")} onChange={(v) => setField("size", v ? parseFloat(v) : undefined)} type="number" />

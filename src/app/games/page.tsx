@@ -31,12 +31,6 @@ type WinnerData = {
   items: SetupItem[];
 } & ScoreData;
 
-type HallOfFameEntry = {
-  date: string;
-  displayName: string;
-  items: SetupItem[];
-} & ScoreData;
-
 type LeaderboardEntry = {
   displayName: string;
   monthWins: number;
@@ -56,7 +50,6 @@ type GameState = {
   hasSubmitted: boolean;
   mySetup: { items: SetupItem[] } | null;
   winner: WinnerData | null;
-  hallOfFame: HallOfFameEntry[];
   leaderboard: LeaderboardEntry[];
   allSetups: SubmittedSetup[];
 };
@@ -121,21 +114,6 @@ function ScoreDisplay({ rawScore, bonusPct, finalScore }: ScoreData) {
   );
 }
 
-// Compact single-line display for hall of fame rows
-function ScoreCompact({ rawScore, bonusPct, finalScore }: ScoreData) {
-  if (rawScore === null) return <span className="text-gray-500 text-sm">No data</span>;
-  const { label, color } = scoreLabel(rawScore);
-  const rawNumerical = Math.round(rawScore * 100);
-  const finalNumerical = finalScore !== null ? Math.round(finalScore * 100) : null;
-  return (
-    <div className="flex items-center gap-1.5 text-sm">
-      <span className="font-semibold" style={{ color }}>{label}</span>
-      <span className="text-gray-600 text-xs">({rawNumerical})</span>
-      {bonusPct > 0 && <span className="text-gray-500 text-xs">+{bonusPct}%</span>}
-      {finalNumerical !== null && <span className="font-bold text-[#c9a050]">{finalNumerical}</span>}
-    </div>
-  );
-}
 
 function SetupCard({ items }: { items: SetupItem[] }) {
   return (
@@ -374,7 +352,6 @@ function GamesPageContent({
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedHof, setExpandedHof] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -553,36 +530,6 @@ function GamesPageContent({
         </div>
       )}
 
-      {/* Hall of Fame */}
-      {state.hallOfFame.length > 0 && (
-        <div>
-          <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-4">Hall of Fame</h2>
-          <div className="space-y-2">
-            {state.hallOfFame.map((entry) => (
-              <div key={entry.date} className="bg-[#1e1e1e] border border-white/5 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setExpandedHof((prev) => prev === entry.date ? null : entry.date)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[#c9a050] text-xs font-mono">{entry.date}</span>
-                    <span className="text-[#f5f2eb] text-sm font-medium">{entry.displayName}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <ScoreCompact {...entry} />
-                    <span className="text-gray-600 text-xs">{expandedHof === entry.date ? "▲" : "▼"}</span>
-                  </div>
-                </button>
-                {expandedHof === entry.date && (
-                  <div className="px-4 pb-4 pt-1 border-t border-white/5">
-                    <SetupCard items={entry.items} />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

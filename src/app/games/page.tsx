@@ -96,7 +96,7 @@ function ScoreDisplay({ rawScore, bonusPct, finalScore }: ScoreData) {
         {finalNumerical !== null && (
           <div className="text-center">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Final Score</p>
-            <p className="text-2xl font-bold text-[#c9a050]">{finalNumerical}</p>
+            <p className="text-sm font-bold text-[#c9a050]">{finalNumerical}</p>
           </div>
         )}
       </div>

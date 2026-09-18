@@ -63,18 +63,14 @@ function formatDate(dateStr: string): string {
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+const RESULT_LABELS = ["DFS", "DFS+/DFS", "DFS+", "BBS-/DFS+", "BBS-", "BBS/BBS-", "BBS", "BBS+/BBS", "BBS+"];
+
 function ScoreDisplay({ score }: { score: number | null }) {
   if (score === null) return <span className="text-gray-500 text-sm">No data</span>;
-  const pct = Math.round(score * 100);
-  const color = score >= 0.8 ? "#c9a050" : score >= 0.6 ? "#a0c950" : score >= 0.4 ? "#50a0c9" : "#c95050";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden w-20">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
-      </div>
-      <span className="text-sm font-semibold" style={{ color }}>{pct}%</span>
-    </div>
-  );
+  const idx = Math.max(0, Math.min(8, Math.round(score * 8)));
+  const label = RESULT_LABELS[idx]!;
+  const color = idx >= 7 ? "#c9a050" : idx >= 5 ? "#a0c950" : idx >= 3 ? "#50a0c9" : "#9ca3af";
+  return <span className="text-sm font-semibold" style={{ color }}>{label}</span>;
 }
 
 function SetupCard({ items }: { items: SetupItem[] }) {

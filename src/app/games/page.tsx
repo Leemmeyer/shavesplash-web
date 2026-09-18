@@ -37,6 +37,12 @@ type HallOfFameEntry = {
   items: SetupItem[];
 } & ScoreData;
 
+type LeaderboardEntry = {
+  displayName: string;
+  monthWins: number;
+  allTimeWins: number;
+};
+
 type SubmittedSetup = {
   userId: string;
   displayName: string;
@@ -51,6 +57,7 @@ type GameState = {
   mySetup: { items: SetupItem[] } | null;
   winner: WinnerData | null;
   hallOfFame: HallOfFameEntry[];
+  leaderboard: LeaderboardEntry[];
   allSetups: SubmittedSetup[];
 };
 
@@ -61,6 +68,11 @@ type CategoriesState = {
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+function monthLabel(dateStr: string): string {
+  const [y, m] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 const RESULT_LABELS = ["DFS", "DFS+/DFS", "DFS+", "BBS-/DFS+", "BBS-", "BBS/BBS-", "BBS", "BBS+/BBS", "BBS+"];
@@ -505,6 +517,41 @@ function GamesPageContent({
 
       {/* All today's entries */}
       <SubmissionsTable setups={state.allSetups ?? []} />
+
+      {/* Leaderboard */}
+      {state.leaderboard.length > 0 && (
+        <div className="mb-8">
+          <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-1">Leaderboard</h2>
+          <p className="text-gray-600 text-xs mb-4">
+            The player with the most wins in {monthLabel(state.date)} will be crowned Den Master Champion.
+          </p>
+          <div className="bg-[#1e1e1e] border border-white/5 rounded-xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto] px-4 py-2 border-b border-white/5">
+              <span className="text-[10px] text-gray-600 uppercase tracking-wider">Player</span>
+              <span className="text-[10px] text-gray-600 uppercase tracking-wider text-right w-24">{monthLabel(state.date)}</span>
+              <span className="text-[10px] text-gray-600 uppercase tracking-wider text-right w-20">All Time</span>
+            </div>
+            {state.leaderboard.map((entry, i) => (
+              <div
+                key={entry.displayName}
+                className="grid grid-cols-[1fr_auto_auto] items-center px-4 py-3 border-t border-white/5 first:border-0"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-gray-600 text-xs w-4 shrink-0">{i + 1}</span>
+                  <span className={`text-sm font-medium truncate ${i === 0 && entry.monthWins > 0 ? "text-[#c9a050]" : "text-[#f5f2eb]"}`}>
+                    {entry.displayName}
+                  </span>
+                  {i === 0 && entry.monthWins > 0 && <span className="text-xs shrink-0">👑</span>}
+                </div>
+                <span className={`text-sm font-semibold text-right w-24 ${entry.monthWins > 0 ? "text-[#c9a050]" : "text-gray-600"}`}>
+                  {entry.monthWins}
+                </span>
+                <span className="text-sm text-gray-400 text-right w-20">{entry.allTimeWins}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Hall of Fame */}
       {state.hallOfFame.length > 0 && (

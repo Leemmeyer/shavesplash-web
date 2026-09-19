@@ -422,7 +422,7 @@ function GamesPageContent({
         <p className="text-gray-400 text-sm mt-2 leading-relaxed">
           Pick the Optimal Shave Setup. You must choose at least a Razor, Blade, Soap, and Brush — the more categories you fill, the higher your potential score. Scores are based on results entered from SOTDs. If you don&apos;t see your item in the selector, add it to the{" "}
           <a href="/database" className="text-[#c9a050] underline underline-offset-2 hover:text-[#d4aa60]">Gear Database</a>.
-          {" "}The winner will be chosen at 8:45pm ET.
+          {" "}The winner will be chosen at 8:45pm ET. A new round opens at 12am ET.
         </p>
       </div>
 

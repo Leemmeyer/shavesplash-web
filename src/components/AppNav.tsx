@@ -218,7 +218,7 @@ export default function AppNav() {
                           <span className="text-lg">✉️</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-[#f5f2eb] text-xs font-semibold">{unreadCount} unread message{unreadCount !== 1 ? "s" : ""}</p>
-                            <p className="text-gray-500 text-xs">Tap to view BST messages</p>
+                            <p className="text-gray-500 text-xs">Tap to view your messages</p>
                           </div>
                           <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">{unreadCount > 99 ? "99+" : unreadCount}</span>
                         </Link>

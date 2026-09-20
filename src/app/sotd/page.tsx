@@ -608,7 +608,7 @@ function SotdWeekWinner({ session, isAdmin }: { session: { user: { id: string; e
         setWinner(d.winner);
         const start = new Date(d.weekStart);
         const end = new Date(d.weekEnd);
-        const fmt = (dt: Date) => dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        const fmt = (dt: Date) => dt.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" });
         setWeekLabel(`${fmt(start)} – ${fmt(end)}`);
         const photo = await api.get<{ photoUrl: string | null }>(`/api/logs/${d.winner.id}/photo`).catch(() => ({ photoUrl: null }));
         if (photo.photoUrl) setPhotoUrl(photo.photoUrl);

@@ -57,10 +57,12 @@ const GEAR_CATEGORY_LABELS: Record<string, string> = {
 
 function formatEditionTime(iso: string): string {
   const d = new Date(iso);
+  const tz = { timeZone: "America/New_York" } as const;
   return (
-    d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) +
+    d.toLocaleDateString("en-US", { ...tz, weekday: "long", month: "long", day: "numeric" }) +
     " · " +
-    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+    d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit", hour12: true }) +
+    " ET"
   );
 }
 
@@ -439,6 +441,7 @@ export default function MagazinePage() {
                       </div>
                       <span className="text-gray-300 text-xs font-medium">
                         {new Date(edition.publishedAt).toLocaleDateString("en-US", {
+                          timeZone: "America/New_York",
                           weekday: "short",
                           month: "short",
                           day: "numeric",

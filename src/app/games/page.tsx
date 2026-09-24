@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 
 const GAMES = [
@@ -32,9 +31,14 @@ function GameCard({
   return (
     <Link href={href} className="group block bg-[#1e1e1e] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all hover:scale-[1.01]">
       {/* Hero area */}
-      <div className="relative h-40 bg-[#161616] flex items-center justify-center">
+      <div className="relative h-40 bg-[#161616] overflow-hidden">
         {icon && (
-          <Image src={icon} alt={title} fill className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={icon}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+          />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#1e1e1e] to-transparent opacity-60" />
       </div>

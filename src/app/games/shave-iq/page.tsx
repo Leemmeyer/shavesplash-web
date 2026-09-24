@@ -28,6 +28,8 @@ type LeaderboardEntry = { displayName: string; monthWins: number; allTimeWins: n
 
 type TodayEntry = { displayName: string; isWinner: boolean };
 
+type Winner = { displayName: string; score: number; totalSlots: number };
+
 type GameState = {
   date: string;
   revealed: boolean;
@@ -36,7 +38,7 @@ type GameState = {
   hasSubmitted: boolean;
   myAnswers: Record<string, string> | null;
   myScore: number | null;
-  winner: { displayName: string; score: number; totalSlots: number } | null;
+  winners: Winner[] | null;
   leaderboard: LeaderboardEntry[];
   todayEntries: TodayEntry[];
 };
@@ -302,18 +304,22 @@ function ShaveIQContent({
         )}
       </div>
 
-      {/* Today's winner */}
-      {state.winner && (
+      {/* Today's winner(s) */}
+      {state.winners && state.winners.length > 0 && (
         <div className="mb-8 bg-[#1e1e1e] border border-[#50a0c9]/40 rounded-2xl p-5">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🏆</span>
-            <div>
-              <p className="text-[#50a0c9] text-xs font-semibold uppercase tracking-wider mb-0.5">Today&apos;s Winner</p>
-              <p className="text-[#f5f2eb] font-bold text-lg">{state.winner.displayName}</p>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl shrink-0">🏆</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[#50a0c9] text-xs font-semibold uppercase tracking-wider mb-1">
+                {state.winners.length > 1 ? "Today's Winners — Tie!" : "Today's Winner"}
+              </p>
+              {state.winners.map((w) => (
+                <p key={w.displayName} className="text-[#f5f2eb] font-bold text-lg leading-tight">{w.displayName}</p>
+              ))}
             </div>
-            <div className="ml-auto text-right">
+            <div className="ml-auto text-right shrink-0">
               <p className="text-[#50a0c9] font-bold text-2xl">
-                {state.winner.score}<span className="text-gray-500 text-base font-normal">/{state.winner.totalSlots}</span>
+                {state.winners[0]!.score}<span className="text-gray-500 text-base font-normal">/{state.winners[0]!.totalSlots}</span>
               </p>
               <p className="text-gray-600 text-xs">correct</p>
             </div>

@@ -25,6 +25,8 @@ type Slot = { categoryId: string; correctId?: string; options: GearOption[] };
 
 type LeaderboardEntry = { displayName: string; monthWins: number; allTimeWins: number };
 
+type TodayEntry = { displayName: string; isWinner: boolean };
+
 type GameState = {
   date: string;
   revealed: boolean;
@@ -35,6 +37,7 @@ type GameState = {
   myScore: number | null;
   winner: { displayName: string; score: number; totalSlots: number } | null;
   leaderboard: LeaderboardEntry[];
+  todayEntries: TodayEntry[];
 };
 
 function formatDate(dateStr: string): string {
@@ -97,7 +100,7 @@ function SlotPicker({
         {slot.options.map((opt) => {
           const isSelected = selected === opt.id;
           const isCorrect = slot.correctId === opt.id;
-          const isWrong = slot.correctId && isSelected && !isCorrect;
+          const isWrong = !!slot.correctId && isSelected && !isCorrect;
 
           let border = "border-white/10 hover:border-white/20";
           let bg = "bg-[#1e1e1e]";
@@ -125,6 +128,78 @@ function SlotPicker({
   );
 }
 
+function GuessCard({
+  slots, myAnswers, revealed,
+}: {
+  slots: Slot[];
+  myAnswers: Record<string, string>;
+  revealed: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      {slots.map((slot) => {
+        const selectedId = myAnswers[slot.categoryId];
+        const selectedOpt = slot.options.find((o) => o.id === selectedId);
+        const correctOpt = revealed && slot.correctId
+          ? slot.options.find((o) => o.id === slot.correctId)
+          : null;
+        const isCorrect = revealed && selectedId === slot.correctId;
+        const isWrong = revealed && selectedId !== slot.correctId;
+
+        return (
+          <div key={slot.categoryId} className="flex items-start gap-2">
+            <span className="text-base w-6 text-center shrink-0 mt-0.5">
+              {CATEGORY_ICONS[slot.categoryId] ?? "📦"}
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] text-gray-600 uppercase tracking-wider">
+                {CATEGORY_LABELS[slot.categoryId] ?? slot.categoryId}
+              </span>
+              <div className="flex items-center gap-2">
+                <p className="text-[#f5f2eb] text-sm leading-tight">
+                  <span className="text-[#50a0c9]">{selectedOpt?.brand ?? "—"}</span>{" "}
+                  {selectedOpt?.name ?? ""}
+                </p>
+                {isCorrect && <span className="text-green-400 text-sm shrink-0">✓</span>}
+                {isWrong && <span className="text-red-400 text-sm shrink-0">✗</span>}
+              </div>
+              {isWrong && correctOpt && (
+                <p className="text-gray-500 text-xs leading-tight mt-0.5">
+                  Correct: <span className="text-gray-400">{correctOpt.brand} {correctOpt.name}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TodayEntriesSection({ entries }: { entries: TodayEntry[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="mb-8">
+      <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-4">
+        Today&apos;s Entries <span className="text-gray-600 text-sm font-sans ml-1">{entries.length}</span>
+      </h2>
+      <div className="bg-[#1e1e1e] border border-white/5 rounded-xl overflow-hidden">
+        {entries.map((entry, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-3 px-4 py-3 border-t border-white/5 first:border-0 ${entry.isWinner ? "bg-[#50a0c9]/[0.04]" : ""}`}
+          >
+            {entry.isWinner && <span className="text-sm shrink-0">🏆</span>}
+            <span className={`text-sm font-medium ${entry.isWinner ? "text-[#50a0c9]" : "text-[#f5f2eb]"}`}>
+              {entry.displayName}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ShaveIQContent({
   state, loading, onRefresh,
 }: {
@@ -133,25 +208,18 @@ function ShaveIQContent({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state) setRevealed(state.revealed);
-  }, [state]);
+    if (state?.myAnswers) setAnswers(state.myAnswers);
+  }, [state?.myAnswers]);
 
-  // Fetch the photo separately (avoids including ~100KB base64 in the main response)
   useEffect(() => {
     if (!state) return;
     api.get<{ photoUrl: string }>("/api/games/sotd-guesser/photo")
       .then((d) => setPhotoUrl(d.photoUrl))
       .catch(() => {});
   }, [state?.date]);
-
-  // Pre-fill selections from myAnswers after submit/reveal
-  useEffect(() => {
-    if (state?.myAnswers) setAnswers(state.myAnswers);
-  }, [state?.myAnswers]);
 
   const handleSubmit = async () => {
     if (!state || submitting) return;
@@ -184,22 +252,23 @@ function ShaveIQContent({
     return <p className="text-center text-gray-500 py-20">Failed to load game. Please refresh.</p>;
   }
 
-  const effectiveAnswers = state.hasSubmitted && state.myAnswers ? state.myAnswers : answers;
+  const revealed = state.revealed;
+  const myAnswers = state.myAnswers ?? answers;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
-      <div className="mb-6 text-center">
+      <div className="mb-8 text-center">
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#50a0c9] mb-1">Shave IQ</h1>
         <p className="text-gray-500 text-sm">{formatDate(state.date)}</p>
         <p className="text-gray-400 text-sm mt-2 leading-relaxed">
           Identify every item in today&apos;s SOTD photo. Pick one option per gear slot —
-          the photo clears after the winner is revealed at 8:45pm ET.
+          the photo clears after the winner is revealed at 8:45pm ET. A new round opens at 12am ET.
         </p>
       </div>
 
       {/* Photo */}
-      <div className="relative mb-6 rounded-2xl overflow-hidden bg-[#161616]" style={{ aspectRatio: "4/3" }}>
+      <div className="relative mb-8 rounded-2xl overflow-hidden bg-[#161616]" style={{ aspectRatio: "4/3" }}>
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -209,23 +278,22 @@ function ShaveIQContent({
             style={{ filter: revealed ? "blur(0px)" : "blur(6px) brightness(0.85)", transform: "scale(1.04)" }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 200 }}>
             <div className="w-8 h-8 border-2 border-[#50a0c9]/30 border-t-[#50a0c9] rounded-full animate-spin" />
           </div>
         )}
         {!revealed && photoUrl && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-black/50 backdrop-blur-sm rounded-2xl px-5 py-3 text-center">
-              <p className="text-white font-semibold text-sm">Identify the gear</p>
-              <p className="text-gray-400 text-xs mt-0.5">Photo reveals after 8:45pm ET</p>
+          <div className="absolute inset-0 flex items-end justify-center pb-4">
+            <div className="bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2 text-center">
+              <p className="text-gray-300 text-xs">Photo reveals after 8:45pm ET</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Winner card */}
+      {/* Today's winner */}
       {state.winner && (
-        <div className="mb-6 bg-[#1e1e1e] border border-[#50a0c9]/40 rounded-2xl p-5">
+        <div className="mb-8 bg-[#1e1e1e] border border-[#50a0c9]/40 rounded-2xl p-5">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏆</span>
             <div>
@@ -233,85 +301,81 @@ function ShaveIQContent({
               <p className="text-[#f5f2eb] font-bold text-lg">{state.winner.displayName}</p>
             </div>
             <div className="ml-auto text-right">
-              <p className="text-[#50a0c9] font-bold text-2xl">{state.winner.score}<span className="text-gray-500 text-base font-normal">/{state.winner.totalSlots}</span></p>
+              <p className="text-[#50a0c9] font-bold text-2xl">
+                {state.winner.score}<span className="text-gray-500 text-base font-normal">/{state.winner.totalSlots}</span>
+              </p>
               <p className="text-gray-600 text-xs">correct</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* My score (after submit + reveal) */}
-      {state.hasSubmitted && state.myScore !== null && (
-        <div className="mb-6 bg-[#1e1e1e] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
-          <div>
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-0.5">Your Score</p>
-            <p className="text-[#f5f2eb] font-bold text-2xl">
-              {state.myScore}<span className="text-gray-500 text-base font-normal">/{state.totalSlots}</span>
-            </p>
+      {/* Submission area */}
+      {!state.hasSubmitted && !revealed ? (
+        <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
+          <p className="text-[#f5f2eb] font-semibold mb-4">Make Your Guesses</p>
+          <div className="space-y-5">
+            {state.slots.map((slot) => (
+              <SlotPicker
+                key={slot.categoryId}
+                slot={slot}
+                selected={answers[slot.categoryId] ?? null}
+                onSelect={(id) => setAnswers((prev) => ({ ...prev, [slot.categoryId]: id }))}
+                disabled={false}
+              />
+            ))}
           </div>
-          <p className="text-gray-500 text-sm ml-2">
-            {state.myScore === state.totalSlots
-              ? "Perfect score! 🎉"
-              : state.myScore > state.totalSlots / 2
-              ? "Nice work — sharp eye."
-              : "Keep training that Shave IQ."}
-          </p>
+          {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full mt-5 py-3 bg-[#50a0c9] text-black font-semibold rounded-xl hover:bg-[#5caed4] transition-colors disabled:opacity-50"
+          >
+            {submitting ? "Submitting…" : "Submit Guesses"}
+          </button>
+          <Countdown />
         </div>
-      )}
-
-      {/* Gear slots */}
-      <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-6">
-        <p className="text-[#f5f2eb] font-semibold mb-4">
-          {state.hasSubmitted ? "Your Guesses" : "Make Your Guesses"}
-          {state.hasSubmitted && !revealed && (
-            <span className="text-gray-600 text-xs font-normal ml-2">Check back at 9pm ET for results</span>
+      ) : state.hasSubmitted ? (
+        <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[#f5f2eb] font-semibold">Your Guesses</p>
+            {revealed && state.myScore !== null && (
+              <p className="text-sm font-semibold text-[#50a0c9]">
+                {state.myScore}/{state.totalSlots}{" "}
+                <span className="text-gray-500 font-normal text-xs">correct</span>
+              </p>
+            )}
+          </div>
+          {!revealed && (
+            <p className="text-gray-500 text-xs mb-4">Entered for today — check back at 9pm ET for the winner.</p>
           )}
-        </p>
-
-        <div className="space-y-5">
-          {state.slots.map((slot) => (
-            <SlotPicker
-              key={slot.categoryId}
-              slot={slot}
-              selected={effectiveAnswers[slot.categoryId] ?? null}
-              onSelect={(id) => setAnswers((prev) => ({ ...prev, [slot.categoryId]: id }))}
-              disabled={state.hasSubmitted || revealed}
-            />
-          ))}
+          {revealed && (
+            <p className="text-gray-500 text-xs mb-4">
+              {state.myScore === state.totalSlots
+                ? "Perfect score! 🎉"
+                : state.myScore !== null && state.myScore > state.totalSlots / 2
+                ? "Nice work — sharp eye."
+                : "Keep training that Shave IQ."}
+            </p>
+          )}
+          <GuessCard slots={state.slots} myAnswers={myAnswers} revealed={revealed} />
+          {!revealed && <Countdown />}
         </div>
+      ) : revealed && !state.hasSubmitted ? (
+        <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8 text-center">
+          <p className="text-gray-500 text-sm">Submissions for today have closed. Come back tomorrow!</p>
+        </div>
+      ) : null}
 
-        {!state.hasSubmitted && !revealed && (
-          <>
-            {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full mt-5 py-3 bg-[#50a0c9] text-black font-semibold rounded-xl hover:bg-[#5caed4] transition-colors disabled:opacity-50"
-            >
-              {submitting ? "Submitting…" : "Submit Guesses"}
-            </button>
-            <Countdown />
-          </>
-        )}
-
-        {state.hasSubmitted && !revealed && (
-          <div className="mt-4 text-center">
-            <p className="text-gray-600 text-xs">Guesses locked in. Results at 8:45pm ET.</p>
-            <Countdown />
-          </div>
-        )}
-
-        {revealed && !state.hasSubmitted && (
-          <p className="text-gray-500 text-sm text-center mt-4">Submissions for today have closed. Come back tomorrow!</p>
-        )}
-      </div>
+      {/* Today's entries — names only */}
+      <TodayEntriesSection entries={state.todayEntries} />
 
       {/* Leaderboard */}
       {state.leaderboard.length > 0 && (
-        <div>
+        <div className="mb-8">
           <h2 className="font-[family-name:var(--font-fredericka)] text-xl text-[#f5f2eb] mb-1">Leaderboard</h2>
           <p className="text-gray-600 text-xs mb-4">
-            Most wins in {monthLabel(state.date)} earns the Shave IQ Champion title.
+            The player with the most wins in {monthLabel(state.date)} will be crowned Shave IQ Champion.
           </p>
           <div className="bg-[#1e1e1e] border border-white/5 rounded-xl overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto] px-4 py-2 border-b border-white/5">

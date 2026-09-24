@@ -206,7 +206,7 @@ function ShaveIQContent({
             src={photoUrl}
             alt="Today's SOTD"
             className="w-full h-full object-cover transition-all duration-1000"
-            style={{ filter: revealed ? "blur(0px)" : "blur(22px) brightness(0.75)", transform: "scale(1.06)" }}
+            style={{ filter: revealed ? "blur(0px)" : "blur(6px) brightness(0.85)", transform: "scale(1.04)" }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

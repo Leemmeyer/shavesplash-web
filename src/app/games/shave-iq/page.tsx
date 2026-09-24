@@ -28,7 +28,6 @@ type LeaderboardEntry = { displayName: string; monthWins: number; allTimeWins: n
 type GameState = {
   date: string;
   revealed: boolean;
-  photoUrl: string;
   totalSlots: number;
   slots: Slot[];
   hasSubmitted: boolean;
@@ -135,10 +134,19 @@ function ShaveIQContent({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (state) setRevealed(state.revealed);
   }, [state]);
+
+  // Fetch the photo separately (avoids including ~100KB base64 in the main response)
+  useEffect(() => {
+    if (!state) return;
+    api.get<{ photoUrl: string }>("/api/games/sotd-guesser/photo")
+      .then((d) => setPhotoUrl(d.photoUrl))
+      .catch(() => {});
+  }, [state?.date]);
 
   // Pre-fill selections from myAnswers after submit/reveal
   useEffect(() => {
@@ -177,7 +185,6 @@ function ShaveIQContent({
   }
 
   const effectiveAnswers = state.hasSubmitted && state.myAnswers ? state.myAnswers : answers;
-  const photoRevealed = revealed;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
@@ -193,14 +200,20 @@ function ShaveIQContent({
 
       {/* Photo */}
       <div className="relative mb-6 rounded-2xl overflow-hidden bg-[#161616]" style={{ aspectRatio: "4/3" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={state.photoUrl}
-          alt="Today's SOTD"
-          className="w-full h-full object-cover transition-all duration-1000"
-          style={{ filter: photoRevealed ? "blur(0px)" : "blur(22px) brightness(0.75)", transform: "scale(1.06)" }}
-        />
-        {!photoRevealed && (
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt="Today's SOTD"
+            className="w-full h-full object-cover transition-all duration-1000"
+            style={{ filter: revealed ? "blur(0px)" : "blur(22px) brightness(0.75)", transform: "scale(1.06)" }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-[#50a0c9]/30 border-t-[#50a0c9] rounded-full animate-spin" />
+          </div>
+        )}
+        {!revealed && photoUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-black/50 backdrop-blur-sm rounded-2xl px-5 py-3 text-center">
               <p className="text-white font-semibold text-sm">Identify the gear</p>

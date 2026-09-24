@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
@@ -259,6 +260,16 @@ function ShaveIQContent({
     <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
       <div className="mb-8 text-center">
+        <div className="relative w-full max-w-[280px] mx-auto mb-4 rounded-2xl overflow-hidden">
+          <Image
+            src="/shave-iq-hero.jpg"
+            alt="Shave IQ"
+            width={800}
+            height={534}
+            className="w-full h-auto object-cover"
+            priority
+          />
+        </div>
         <h1 className="font-[family-name:var(--font-fredericka)] text-3xl text-[#50a0c9] mb-1">Shave IQ</h1>
         <p className="text-gray-500 text-sm">{formatDate(state.date)}</p>
         <p className="text-gray-400 text-sm mt-2 leading-relaxed">

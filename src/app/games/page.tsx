@@ -17,27 +17,24 @@ const GAMES = [
     href: "/games/shave-iq",
     title: "Shave IQ",
     description: "A blurred SOTD photo, four choices per gear slot. Guess every item in today's shave before the winner is revealed at 8:45pm ET.",
-    icon: null,
-    emoji: "🔍",
+    icon: "/shave-iq-hero.jpg",
     cta: "Play Shave IQ",
     accent: "#50a0c9",
   },
 ];
 
 function GameCard({
-  href, title, description, icon, emoji, cta, accent,
+  href, title, description, icon, cta, accent,
 }: {
   href: string; title: string; description: string;
-  icon: string | null; emoji?: string; cta: string; accent: string;
+  icon: string | null; cta: string; accent: string;
 }) {
   return (
     <Link href={href} className="group block bg-[#1e1e1e] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all hover:scale-[1.01]">
       {/* Hero area */}
       <div className="relative h-40 bg-[#161616] flex items-center justify-center">
-        {icon ? (
-          <Image src={icon} alt={title} fill className="object-contain p-6 opacity-90 group-hover:opacity-100 transition-opacity" />
-        ) : (
-          <span className="text-6xl">{emoji}</span>
+        {icon && (
+          <Image src={icon} alt={title} fill className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#1e1e1e] to-transparent opacity-60" />
       </div>

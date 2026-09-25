@@ -5,16 +5,6 @@ import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  razors: "Razor",
-  blades: "Blade",
-  brushes: "Brush",
-  soaps: "Soap",
-  aftershaves: "Aftershave",
-  balms: "Balm",
-  preshaves: "Pre-Shave",
-  edpedt: "EDP / EDT",
-};
 
 const CATEGORY_ICONS: Record<string, string> = {
   razors: "🪒", blades: "⚡", brushes: "🖌️", soaps: "🫧",
@@ -22,7 +12,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 type GearOption = { id: string; brand: string; name: string };
-type Slot = { categoryId: string; correctId?: string; options: GearOption[] };
+type Slot = { categoryId: string; categoryLabel: string; correctId?: string; options: GearOption[] };
 
 type LeaderboardEntry = { displayName: string; monthWins: number; allTimeWins: number };
 
@@ -96,7 +86,7 @@ function SlotPicker({
       <div className="flex items-center gap-2 mb-2">
         <span className="text-base">{CATEGORY_ICONS[slot.categoryId] ?? "📦"}</span>
         <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-          {CATEGORY_LABELS[slot.categoryId] ?? slot.categoryId}
+          {slot.categoryLabel}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -156,7 +146,7 @@ function GuessCard({
             </span>
             <div className="min-w-0 flex-1">
               <span className="text-[10px] text-gray-600 uppercase tracking-wider">
-                {CATEGORY_LABELS[slot.categoryId] ?? slot.categoryId}
+                {slot.categoryLabel}
               </span>
               <div className="flex items-center gap-2">
                 <p className="text-[#f5f2eb] text-sm leading-tight">

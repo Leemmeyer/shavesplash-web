@@ -207,7 +207,7 @@ function ShaveIQContent({
     if (state?.myAnswers) setAnswers(state.myAnswers);
   }, [state?.myAnswers]);
 
-  // Refetch on reveal — the pre-reveal photo is blurred server-side
+  // Refetch on reveal — the pre-reveal photo is blurred server-side (no CSS blur needed)
   useEffect(() => {
     if (!state) return;
     api.get<{ photoUrl: string }>("/api/games/sotd-guesser/photo")
@@ -279,7 +279,7 @@ function ShaveIQContent({
             src={photoUrl}
             alt="Today's SOTD"
             className="w-full h-full object-cover transition-all duration-1000"
-            style={{ filter: revealed ? "blur(0px)" : "blur(6px) brightness(0.85)", transform: "scale(1.04)" }}
+            style={{ filter: revealed ? "none" : "brightness(0.85)", transform: "scale(1.04)" }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 200 }}>

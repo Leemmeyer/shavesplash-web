@@ -207,12 +207,13 @@ function ShaveIQContent({
     if (state?.myAnswers) setAnswers(state.myAnswers);
   }, [state?.myAnswers]);
 
+  // Refetch on reveal — the pre-reveal photo is blurred server-side
   useEffect(() => {
     if (!state) return;
     api.get<{ photoUrl: string }>("/api/games/sotd-guesser/photo")
       .then((d) => setPhotoUrl(d.photoUrl))
       .catch(() => {});
-  }, [state?.date]);
+  }, [state?.date, state?.revealed]);
 
   const handleSubmit = async () => {
     if (!state || submitting) return;

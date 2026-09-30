@@ -425,6 +425,10 @@ function LogForm({
     ...CATEGORY_ORDER.filter((id) => itemsByCat[id]?.length),
     ...Object.keys(itemsByCat).filter((id) => !CATEGORY_ORDER.includes(id) && itemsByCat[id]?.length),
   ];
+  // Second razor + blade section goes below Blades, or below Razors if there are no blades
+  const secondaryAnchor = categories.includes("razors")
+    ? (categories.includes("blades") ? "blades" : "razors")
+    : undefined;
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto overflow-x-hidden">
@@ -559,8 +563,25 @@ function LogForm({
                         </div>
                       )}
 
-                      {/* Secondary razor */}
-                      {catId === "razors" && (
+
+                      {/* Blade uses */}
+                      {catId === "blades" && sel?.itemId && (
+                        <div className="ml-8 mt-1.5 flex items-center gap-2">
+                          <span className="text-xs text-gray-500">Uses:</span>
+                          <input
+                            type="number" min={0} placeholder="0"
+                            value={sel.bladeUses ?? ""}
+                            onChange={(e) => setSelectedItems((prev) => ({
+                              ...prev,
+                              blades: { ...prev.blades, bladeUses: e.target.value ? parseInt(e.target.value, 10) : undefined },
+                            }))}
+                            className="w-20 bg-[#242424] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                          />
+                        </div>
+                      )}
+
+                      {/* Second razor + blade, below the primary blade (or razor if no blades) */}
+                      {catId === secondaryAnchor && (
                         showSecondaryRazor ? (
                           <div className="mt-2">
                             <div className="flex items-center gap-2 mb-1.5 px-1">
@@ -617,6 +638,35 @@ function LogForm({
                                 </select>
                               </div>
                             )}
+                            {(itemsByCat["blades"] ?? []).length > 0 && (
+                              <div className="flex items-center gap-2 min-w-0 overflow-hidden mt-2">
+                                <span className="w-6 flex-shrink-0 flex items-center justify-center"><CategoryIcon catId="blades" /></span>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <select
+                                    value={selectedItems["bladesSecondary"]?.itemId ?? ""}
+                                    onChange={(e) => {
+                                      const item = (itemsByCat["blades"] ?? []).find((i) => i.id === e.target.value);
+                                      if (item) setItemSelection("bladesSecondary", item.id, `${item.brand} ${item.name}`);
+                                      else clearItem("bladesSecondary");
+                                    }}
+                                    style={{ width: "100%", display: "block", boxSizing: "border-box" }}
+                                    className="bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
+                                  >
+                                    <option value="">Blade (secondary)…</option>
+                                    {(itemsByCat["blades"] ?? [])
+                                      .slice()
+                                      .sort((a, b) => `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`))
+                                      .map((item) => (
+                                        <option key={item.id} value={item.id}>{item.brand} {item.name}</option>
+                                      ))}
+                                  </select>
+                                </div>
+                                {selectedItems["bladesSecondary"]?.itemId && (
+                                  <button type="button" onClick={() => clearItem("bladesSecondary")}
+                                    className="text-gray-600 hover:text-red-400 transition-colors text-sm flex-shrink-0">✕</button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <button
@@ -628,22 +678,6 @@ function LogForm({
                             <span>add second razor</span>
                           </button>
                         )
-                      )}
-
-                      {/* Blade uses */}
-                      {catId === "blades" && sel?.itemId && (
-                        <div className="ml-8 mt-1.5 flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Uses:</span>
-                          <input
-                            type="number" min={0} placeholder="0"
-                            value={sel.bladeUses ?? ""}
-                            onChange={(e) => setSelectedItems((prev) => ({
-                              ...prev,
-                              blades: { ...prev.blades, bladeUses: e.target.value ? parseInt(e.target.value, 10) : undefined },
-                            }))}
-                            className="w-20 bg-[#242424] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-[#f5f2eb] focus:outline-none focus:border-[#c9a050]/50"
-                          />
-                        </div>
                       )}
                     </div>
                   );

@@ -61,7 +61,7 @@ function BrushSvg() {
   );
 }
 function CategoryIcon({ catId }: { catId: string }) {
-  if (catId === 'blades') return <BladeSvg />;
+  if (catId === 'blades' || catId === 'bladesSecondary') return <BladeSvg />;
   if (catId === 'brushes') return <BrushSvg />;
   const lookupId = catId === 'razorsSecondary' ? 'razors' : catId;
   return <span>{CATEGORY_ICONS[lookupId] ?? '📦'}</span>;
@@ -91,9 +91,9 @@ function generateReportText(
   });
   let text = `Shave Report - ${date}\n\n`;
 
-  const order = ["razors","razorsSecondary","blades","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
+  const order = ["razors","razorsSecondary","blades","bladesSecondary","brushes","soaps","aftershaves","balms","preshaves","edpedt"];
   const labels: Record<string,string> = {
-    razors:"Razor", razorsSecondary:"Razor (also used)", blades:"Blade", brushes:"Brush", soaps:"Soap",
+    razors:"Razor", razorsSecondary:"Razor (also used)", blades:"Blade", bladesSecondary:"Blade (also used)", brushes:"Brush", soaps:"Soap",
     aftershaves:"Aftershave", balms:"Balm", preshaves:"Preshave", edpedt:"EDP/EDT",
   };
   const allKeys = [
@@ -569,7 +569,7 @@ function LogForm({
                               <div className="flex-1 h-px bg-white/5" />
                               <button
                                 type="button"
-                                onClick={() => { clearItem("razorsSecondary"); setShowSecondaryRazor(false); }}
+                                onClick={() => { clearItem("razorsSecondary"); clearItem("bladesSecondary"); setShowSecondaryRazor(false); }}
                                 className="text-gray-600 hover:text-red-400 transition-colors text-xs"
                               >✕</button>
                             </div>
@@ -976,6 +976,7 @@ function LogsContent() {
                   const color = resultColor(log.result, resultOptions);
                   const gearSortOrder = (key: string) => {
                     if (key === 'razorsSecondary') return CATEGORY_ORDER.indexOf('razors') + 0.5;
+                    if (key === 'bladesSecondary') return CATEGORY_ORDER.indexOf('blades') + 0.5;
                     const idx = CATEGORY_ORDER.indexOf(key);
                     return idx >= 0 ? idx : CATEGORY_ORDER.length;
                   };
@@ -997,7 +998,7 @@ function LogsContent() {
                         <span className="text-[#f5f2eb] text-sm font-medium w-36 flex-shrink-0">{formatDate(log.date)}</span>
                         <span className="text-sm font-bold w-20 flex-shrink-0" style={{ color }}>{log.result}</span>
                         <span className="text-gray-500 text-sm truncate flex-1 hidden sm:block">
-                          {usedItems.filter(([k]) => k !== 'razorsSecondary').slice(0,3).map(([,s])=>s.itemName).join(" · ")}
+                          {usedItems.filter(([k]) => k !== 'razorsSecondary' && k !== 'bladesSecondary').slice(0,3).map(([,s])=>s.itemName).join(" · ")}
                         </span>
                         {log.hasPhoto && (
                           <LogThumbnail logId={log.id} photoCache={photoCache} setPhotoCache={setPhotoCache} />

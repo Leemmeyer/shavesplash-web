@@ -287,8 +287,9 @@ const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRem
 
   const color = resultColor(post.resultRank, post.resultOptionsCount);
   const avg = avgScore(post.scores);
+  // The second blade is recorded on the log but never shown on SOTD cards
   const usedItems = Object.entries(post.selectedItems)
-    .filter(([, s]) => s.itemName)
+    .filter(([k, s]) => k !== 'bladesSecondary' && s.itemName)
     .sort(([a], [b]) => {
       const sortKey = (k: string) => k === 'razorsSecondary' ? 1.5 : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
       return sortKey(a) - sortKey(b);

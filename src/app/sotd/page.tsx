@@ -13,7 +13,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   razors: "🪒", razorsSecondary: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  razors: "Razor", razorsSecondary: "Razors (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
+  razors: "Razor", razorsSecondary: "Razors (2nd)", bladesSecondary: "Blade (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
   aftershaves: "Aftershave", balms: "Balm", preshaves: "Pre-Shave", edpedt: "EDP/EDT",
 };
 
@@ -46,7 +46,7 @@ function BrushSvg() {
 }
 
 function CategoryIcon({ catId }: { catId: string }) {
-  if (catId === 'blades') return <BladeSvg />;
+  if (catId === 'blades' || catId === 'bladesSecondary') return <BladeSvg />;
   if (catId === 'brushes') return <BrushSvg />;
   return <span>{CATEGORY_ICONS[catId] ?? '•'}</span>;
 }
@@ -287,11 +287,14 @@ const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRem
 
   const color = resultColor(post.resultRank, post.resultOptionsCount);
   const avg = avgScore(post.scores);
-  // The second blade is recorded on the log but never shown on SOTD cards
   const usedItems = Object.entries(post.selectedItems)
-    .filter(([k, s]) => k !== 'bladesSecondary' && s.itemName)
+    .filter(([, s]) => s.itemName)
     .sort(([a], [b]) => {
-      const sortKey = (k: string) => k === 'razorsSecondary' ? 1.5 : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
+      // Second razor, then second blade, directly below the primary razor
+      const sortKey = (k: string) =>
+        k === 'razorsSecondary' ? 1.5
+        : k === 'bladesSecondary' ? 1.6
+        : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
       return sortKey(a) - sortKey(b);
     });
 

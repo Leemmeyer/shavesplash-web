@@ -21,7 +21,7 @@ type GearEdit = {
   id: string;
   gearItemId: string;
   current: { brand: string; name: string; data: Record<string, unknown>; hasPhoto: boolean };
-  proposed: { brand?: string; name?: string; data?: Record<string, unknown> };
+  proposed: { brand?: string; name?: string; data?: Record<string, unknown>; hasNewPhoto?: boolean };
   submittedBy: string;
   submittedByName: string | null;
   submittedByEmail: string | null;
@@ -391,12 +391,12 @@ function SubmissionEditForm({ categoryId, draftData, setField }: {
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 
-function FullPhotoModal({ id, onClose }: { id: string; onClose: () => void }) {
+function FullPhotoModal({ id, path, onClose }: { id: string; path?: string; onClose: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
-    api.get<{ photoUrl: string | null }>(`/api/admin/gear/${id}/photo`)
+    api.get<{ photoUrl: string | null }>(path ?? `/api/admin/gear/${id}/photo`)
       .then((d) => setUrl(d.photoUrl)).catch(() => {});
-  }, [id]);
+  }, [id, path]);
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onClick={onClose}>
@@ -587,13 +587,13 @@ function SubmissionDetailModal({ item, onAction, onClose }: {
   );
 }
 
-function PhotoThumbnail({ id }: { id: string }) {
+function PhotoThumbnail({ id, path }: { id: string; path?: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    api.get<{ photoUrl: string | null }>(`/api/admin/gear/${id}/photo`)
+    api.get<{ photoUrl: string | null }>(path ?? `/api/admin/gear/${id}/photo`)
       .then((d) => setUrl(d.photoUrl)).catch(() => {});
-  }, [id]);
+  }, [id, path]);
   if (!url) return <div className="w-full h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /></div>;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={url} alt="" onLoad={() => setLoaded(true)} className={`w-full h-full object-contain transition-opacity ${loaded ? "opacity-100" : "opacity-0"}`} />;
@@ -763,6 +763,7 @@ function EditCard({ edit, onAction }: {
 }) {
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
   const [done, setDone] = useState(false);
+  const [enlarged, setEnlarged] = useState<"current" | "new" | null>(null);
 
   const handle = async (action: "approve" | "reject") => {
     setBusy(action);
@@ -772,13 +773,17 @@ function EditCard({ edit, onAction }: {
 
   if (done) return null;
 
-  const { brand, name, data } = edit.proposed;
+  const { brand, name, data, hasNewPhoto } = edit.proposed;
+  const newPhotoPath = `/api/admin/gear/edits/${edit.id}/photo`;
 
   return (
     <div className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-5">
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-2 py-0.5">Edit Proposal</span>
+          {hasNewPhoto && (
+            <span className="text-xs bg-amber-500/15 text-amber-400 border border-amber-500/30 rounded-full px-2 py-0.5 font-semibold">📷 New photo</span>
+          )}
           <span className="text-[10px] text-gray-600">{new Date(edit.createdAt).toLocaleDateString()}</span>
         </div>
         <p className="text-gray-500 text-sm">
@@ -786,6 +791,38 @@ function EditCard({ edit, onAction }: {
         </p>
         <SubmitterBadge name={edit.submittedByName} email={edit.submittedByEmail} />
       </div>
+      {/* Photo change: current vs proposed, side by side */}
+      {hasNewPhoto && (
+        <div className="flex items-center gap-3 mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+          <div className="text-center">
+            <p className="text-[10px] text-gray-500 mb-1">Current</p>
+            {edit.current.hasPhoto ? (
+              <button onClick={() => setEnlarged("current")} className="w-24 h-24 rounded-lg overflow-hidden bg-black/30 border border-white/10">
+                <PhotoThumbnail id={edit.gearItemId} />
+              </button>
+            ) : (
+              <div className="w-24 h-24 rounded-lg bg-black/30 border border-white/10 flex items-center justify-center text-[10px] text-gray-600">No photo</div>
+            )}
+          </div>
+          <span className="text-amber-400 text-lg">→</span>
+          <div className="text-center">
+            <p className="text-[10px] text-amber-400 mb-1 font-semibold">New</p>
+            <button onClick={() => setEnlarged("new")} className="w-24 h-24 rounded-lg overflow-hidden bg-black/30 border border-amber-500/40">
+              <PhotoThumbnail id={edit.gearItemId} path={newPhotoPath} />
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-500 flex-1">
+            {edit.current.hasPhoto ? "Approving replaces the current photo." : "Approving adds this photo."} Click to enlarge.
+          </p>
+        </div>
+      )}
+      {enlarged && (
+        <FullPhotoModal
+          id={edit.gearItemId}
+          path={enlarged === "new" ? newPhotoPath : undefined}
+          onClose={() => setEnlarged(null)}
+        />
+      )}
       <div className="space-y-1 mt-2">
         {brand && <p className="text-xs"><span className="text-gray-600">Brand → </span><span className="text-[#f5f2eb]">{brand}</span></p>}
         {name && <p className="text-xs"><span className="text-gray-600">Name → </span><span className="text-[#f5f2eb]">{name}</span></p>}
@@ -799,7 +836,7 @@ function EditCard({ edit, onAction }: {
       <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
         <button onClick={() => handle("approve")} disabled={!!busy}
           className="flex-1 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50">
-          {busy === "approve" ? "Approving…" : "Approve"}
+          {busy === "approve" ? "Approving…" : hasNewPhoto && edit.current.hasPhoto ? "Approve (replaces photo)" : "Approve"}
         </button>
         <button onClick={() => handle("reject")} disabled={!!busy}
           className="flex-1 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-500 transition-colors disabled:opacity-50">

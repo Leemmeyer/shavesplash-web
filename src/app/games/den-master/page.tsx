@@ -49,6 +49,7 @@ type GameState = {
   revealed: boolean;
   hasSubmitted: boolean;
   mySetup: { items: SetupItem[] } | null;
+  usedThisMonth?: Record<string, string>; // gearId → date first used this month
   winner: WinnerData | null;
   leaderboard: LeaderboardEntry[];
   allSetups: SubmittedSetup[];
@@ -133,11 +134,17 @@ function SetupCard({ items }: { items: SetupItem[] }) {
   );
 }
 
+function shortDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function CategoryPicker({
-  categoryId, items, selected, onSelect,
+  categoryId, items, selected, onSelect, usedOn,
 }: {
   categoryId: string; items: GearOption[]; selected: string | null;
   onSelect: (id: string | null) => void;
+  usedOn?: Record<string, string>; // items already picked this month → date
 }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -198,18 +205,26 @@ function CategoryPicker({
             {filtered.length === 0 ? (
               <p className="text-gray-600 text-xs text-center py-4">No items found</p>
             ) : (
-              filtered.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => { onSelect(item.id); setOpen(false); setSearch(""); }}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${
-                    item.id === selected ? "text-[#c9a050]" : "text-[#f5f2eb]"
-                  }`}
-                >
-                  <span className="font-medium">{item.brand}</span>{" "}
-                  <span className="text-gray-400">{item.name}</span>
-                </button>
-              ))
+              filtered.map((item) => {
+                const usedDate = usedOn?.[item.id];
+                return (
+                  <button
+                    key={item.id}
+                    disabled={!!usedDate}
+                    onClick={() => { onSelect(item.id); setOpen(false); setSearch(""); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                      usedDate ? "opacity-40 cursor-not-allowed"
+                        : item.id === selected ? "text-[#c9a050] hover:bg-white/5" : "text-[#f5f2eb] hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="flex-1">
+                      <span className="font-medium">{item.brand}</span>{" "}
+                      <span className="text-gray-400">{item.name}</span>
+                    </span>
+                    {usedDate && <span className="text-[10px] text-gray-500 flex-shrink-0">Used {shortDate(usedDate)}</span>}
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
@@ -446,7 +461,8 @@ function GamesPageContent({
       {/* Submission area */}
       {!state.hasSubmitted && !state.revealed ? (
         <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-5 mb-8">
-          <p className="text-[#f5f2eb] font-semibold mb-4">Setup Builder</p>
+          <p className="text-[#f5f2eb] font-semibold mb-1">Setup Builder</p>
+          <p className="text-gray-500 text-xs mb-4">Razors, brushes, soaps, aftershaves and EDP/EDT can each be picked once per calendar month.</p>
           {categories.length === 0 ? (
             <div className="flex justify-center py-6">
               <div className="w-5 h-5 border-2 border-[#c9a050]/30 border-t-[#c9a050] rounded-full animate-spin" />
@@ -459,6 +475,7 @@ function GamesPageContent({
                 categoryId={cat.id}
                 items={cat.items}
                 selected={selections[cat.id] ?? null}
+                usedOn={state.usedThisMonth}
                 onSelect={(id) => setSelections((prev) => {
                   if (id === null) { const n = { ...prev }; delete n[cat.id]; return n; }
                   return { ...prev, [cat.id]: id };

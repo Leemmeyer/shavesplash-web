@@ -13,7 +13,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   razors: "🪒", razorsSecondary: "🪒", soaps: "🫧", aftershaves: "💧", balms: "🧴", preshaves: "✨", edpedt: "🌸",
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  razors: "Razor", razorsSecondary: "Razors (2nd)", bladesSecondary: "Blade (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
+  razors: "Razor", razorsSecondary: "Razor (2nd)", bladesSecondary: "Blade (2nd)", blades: "Blade", brushes: "Brush", soaps: "Soap",
   aftershaves: "Aftershave", balms: "Balm", preshaves: "Pre-Shave", edpedt: "EDP/EDT",
 };
 
@@ -290,10 +290,10 @@ const SotdCard = memo(function SotdCard({ post, onReact, session, isAdmin, onRem
   const usedItems = Object.entries(post.selectedItems)
     .filter(([, s]) => s.itemName)
     .sort(([a], [b]) => {
-      // Second razor, then second blade, directly below the primary razor
+      // Razor, Blade, then the second razor and second blade
       const sortKey = (k: string) =>
-        k === 'razorsSecondary' ? 1.5
-        : k === 'bladesSecondary' ? 1.6
+        k === 'razorsSecondary' ? 2.1
+        : k === 'bladesSecondary' ? 2.2
         : (CATEGORY_ORDER.indexOf(k) + 1 || Infinity);
       return sortKey(a) - sortKey(b);
     });
